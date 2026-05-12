@@ -48,6 +48,6 @@ useEffect(() => {
     <Marker position={[22.2553, -97.8686]} icon={iconoBus}>
       <Popup>Ruta Centro</Popup>
     </Marker>
-  </MapContainer>
+  <MapContainer<any>
 );
 }
