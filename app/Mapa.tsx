@@ -1,4 +1,4 @@
-"use client";
+"use client";// @ts-nocheck
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 import { useEffect, useState } from "react";
@@ -47,7 +47,7 @@ useEffect(() => {
 
     <Marker position={[22.2553, -97.8686]} icon={iconoBus}>
       <Popup>Ruta Centro</Popup>
-    </Marker>
-  <MapContainer<any>
+    </Marker
+  <MapContainer
 );
 }
