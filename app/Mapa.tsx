@@ -1,31 +1,13 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-
-const iconoBus = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
-  iconSize: [40, 40],
-});
-
 export default function Mapa() {
   return (
-    <MapContainer
-      center={[22.2553, -97.8686]}
-      zoom={12}
-      scrollWheelZoom={true}
-      style={{
-        height: "500px",
-        width: "100%",
-        borderRadius: "15px",
-      }}
-    >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-
-      <Marker position={[22.2553, -97.8686]} icon={iconoBus}>
-        <Popup>Ruta de prueba</Popup>
-      </Marker>
-    </MapContainer>
+    <div className="w-full h-[500px] rounded-2xl overflow-hidden border">
+      <iframe
+        title="Mapa Tampico"
+        src="https://www.openstreetmap.org/export/embed.html?bbox=-97.95%2C22.18%2C-97.78%2C22.32&layer=mapnik&marker=22.2553%2C-97.8686"
+        className="w-full h-full"
+      />
+    </div>
   );
 }
