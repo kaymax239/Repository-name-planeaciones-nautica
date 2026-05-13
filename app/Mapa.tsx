@@ -1,4 +1,3 @@
-// @ts-nocheck
 "use client";
 
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
@@ -22,13 +21,9 @@ export default function Mapa() {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <Marker
-        position={[22.2553, -97.8686]}
-        icon={iconoBus}
-      >
-        <Popup>Ruta Centro</Popup>
+      <Marker position={[22.2553, -97.8686]} icon={iconoBus}>
+        <Popup>Ruta Circuito Norte</Popup>
       </Marker>
-
     </MapContainer>
   );
 }
