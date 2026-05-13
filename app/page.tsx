@@ -21,10 +21,10 @@ export default function Home() {
         const lng = position.coords.longitude;
 
         try {
-          await addDoc(collection(db, "reportes"), {
-            ruta: nombreRuta,
-            lat,
-            lng,
+          await addDoc(collection(db, "autobuses"), {
+            nombre: nombreRuta,
+            lat: lat,
+            lng: lng,
             fecha: new Date(),
           });
 
@@ -34,7 +34,8 @@ export default function Home() {
           alert("Error guardando reporte");
         }
       },
-      () => {
+      (error) => {
+        console.error(error);
         alert("No se pudo obtener tu ubicación");
       }
     );
