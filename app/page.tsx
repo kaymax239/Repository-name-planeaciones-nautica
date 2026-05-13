@@ -4,7 +4,11 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "./firebase";
 import { useState } from "react";
 import "leaflet/dist/leaflet.css";
-import Mapa from "./Mapa";
+import import dynamic from "next/dynamic";
+
+const Mapa = dynamic(() => import("./Mapa"), {
+  ssr: false,
+});
 
 export default function Home() {
   const [rutaSeleccionada, setRutaSeleccionada] = useState("");
