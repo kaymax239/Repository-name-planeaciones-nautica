@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -7,9 +8,9 @@ import {
   Popup,
 } from "react-leaflet";
 
-import "leaflet/dist/leaflet.css";
+import L from "leaflet";
 
-import { useEffect, useState } from "react";
+import "leaflet/dist/leaflet.css";
 
 import {
   collection,
@@ -17,6 +18,12 @@ import {
 } from "firebase/firestore";
 
 import { db } from "./firebase";
+
+const iconoBus = new L.Icon({
+  iconUrl:
+    "https://cdn-icons-png.flaticon.com/512/61/61231.png",
+  iconSize: [40, 40],
+});
 
 export default function Mapa() {
   const [reportes, setReportes] = useState<any[]>([]);
@@ -41,7 +48,7 @@ export default function Mapa() {
   return (
     <MapContainer
       center={[22.2553, -97.8686]}
-      zoom={13}
+      zoom={12}
       scrollWheelZoom={true}
       style={{
         height: "500px",
@@ -57,9 +64,10 @@ export default function Mapa() {
         <Marker
           key={index}
           position={[reporte.lat, reporte.lng]}
+          icon={iconoBus}
         >
           <Popup>
-            🚍 {reporte.nombre}
+            🚌 {reporte.nombre}
           </Popup>
         </Marker>
       ))}
