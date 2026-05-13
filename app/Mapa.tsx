@@ -11,3 +11,4 @@ export default function Mapa() {
     </div>
   );
 }
+// cambio nuevo
