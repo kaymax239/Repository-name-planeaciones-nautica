@@ -17,9 +17,7 @@ export default function Mapa() {
       scrollWheelZoom={true}
       style={{ height: "500px", width: "100%" }}
     >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
       <Marker position={[22.2553, -97.8686]} icon={iconoBus}>
         <Popup>Ruta Circuito Norte</Popup>
