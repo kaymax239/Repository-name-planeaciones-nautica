@@ -1,51 +1,69 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { useState } from "react";
+import Mapa from "./Mapa";
 
-const Mapa = dynamic(() => import("./Mapa"), {
-  ssr: false,
-});
+import { collection, addDoc } from "firebase/firestore";
+import { db } from "./firebase";
+
+import { useState } from "react";
 
 export default function Home() {
   const [rutaSeleccionada, setRutaSeleccionada] = useState("");
 
-  const rutas = [
-    "Ruta Centro",
-    "Ruta Norte",
-    "Ruta Sur",
-    "Ruta Playa",
-  ];
+  const guardarRuta = async (ruta: string) => {
+    setRutaSeleccionada(ruta);
+
+    await addDoc(collection(db, "reportes"), {
+      ruta: ruta,
+      fecha: new Date(),
+      lat: 22.2553,
+      lng: -97.8686,
+    });
+
+    alert("Reporte guardado en Firebase");
+  };
 
   return (
     <main className="p-4">
-      <h1 className="text-3xl font-bold mb-4">
+      <h1 className="text-2xl font-bold mb-4">
         Aplicación rutas autobuses Tampico
       </h1>
-
-      <div className="mb-4">
-        <h2 className="text-xl font-semibold mb-2">
-          Selecciona una ruta:
-        </h2>
-
-        <div className="flex gap-2 flex-wrap">
-          {rutas.map((ruta) => (
-            <button
-              key={ruta}
-              onClick={() => setRutaSeleccionada(ruta)}
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-800"
-            >
-              {ruta}
-            </button>
-          ))}
-        </div>
-      </div>
 
       {rutaSeleccionada && (
         <div className="mb-4 p-3 bg-green-600 text-white rounded">
           Ruta seleccionada: {rutaSeleccionada}
         </div>
       )}
+
+      <div className="mb-4">
+        <button
+          onClick={() => guardarRuta("Ruta Circuito Norte")}
+          className="w-full bg-blue-600 text-white p-4 rounded mb-3"
+        >
+          Me subí a esta ruta: Ruta Circuito Norte
+        </button>
+
+        <button
+          onClick={() => guardarRuta("Ruta Centro")}
+          className="w-full bg-blue-600 text-white p-4 rounded mb-3"
+        >
+          Me subí a esta ruta: Ruta Centro
+        </button>
+
+        <button
+          onClick={() => guardarRuta("Ruta Madero")}
+          className="w-full bg-blue-600 text-white p-4 rounded mb-3"
+        >
+          Me subí a esta ruta: Ruta Madero
+        </button>
+
+        <button
+          onClick={() => guardarRuta("Ruta Tampico")}
+          className="w-full bg-blue-600 text-white p-4 rounded mb-3"
+        >
+          Me subí a esta ruta: Ruta Tampico
+        </button>
+      </div>
 
       <Mapa />
     </main>
