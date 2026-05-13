@@ -20,22 +20,16 @@ export default function Home() {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        try {
-          await addDoc(collection(db, "autobuses"), {
-            nombre: nombreRuta,
-            lat: lat,
-            lng: lng,
-            fecha: new Date(),
-          });
+        await addDoc(collection(db, "autobuses"), {
+          nombre: nombreRuta,
+          lat,
+          lng,
+          fecha: new Date(),
+        });
 
-          alert("Reporte guardado con tu ubicación");
-        } catch (error) {
-          console.error(error);
-          alert("Error guardando reporte");
-        }
+        alert("Reporte guardado con tu ubicación");
       },
-      (error) => {
-        console.error(error);
+      () => {
         alert("No se pudo obtener tu ubicación");
       }
     );
