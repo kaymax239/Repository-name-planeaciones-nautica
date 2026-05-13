@@ -10,7 +10,7 @@ export default function Home() {
 
   const guardarRuta = async (ruta: string) => {
     if (!navigator.geolocation) {
-      alert("Tu navegador no permite ubicación.");
+      alert("Tu navegador no soporta geolocalización");
       return;
     }
 
@@ -19,18 +19,25 @@ export default function Home() {
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
 
-        await addDoc(collection(db, "autobuses"), {
-          nombre: ruta,
-          lat: lat,
-          lng: lng,
-          fecha: new Date(),
-        });
+        try {
+          await addDoc(collection(db, "autobuses"), {
+            nombre: ruta,
+            lat: lat,
+            lng: lng,
+            fecha: new Date(),
+          });
 
-        setRutaSeleccionada(ruta);
-        alert(`Reporte guardado con tu ubicación: ${ruta}`);
+          setRutaSeleccionada(ruta);
+
+          alert(`Reporte guardado con tu ubicación: ${ruta}`);
+        } catch (error) {
+          console.error(error);
+          alert("Error guardando en Firebase");
+        }
       },
-      () => {
-        alert("No se pudo obtener tu ubicación. Dale permiso al navegador.");
+      (error) => {
+        console.error(error);
+        alert("No diste permiso de ubicación");
       }
     );
   };
