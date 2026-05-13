@@ -43,7 +43,11 @@ export default function Mapa() {
       center={[22.2553, -97.8686]}
       zoom={13}
       scrollWheelZoom={true}
-      style={{ height: "500px", width: "100%" }}
+      style={{
+        height: "500px",
+        width: "100%",
+        borderRadius: "15px",
+      }}
     >
       <TileLayer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -55,7 +59,7 @@ export default function Mapa() {
           position={[reporte.lat, reporte.lng]}
         >
           <Popup>
-            {reporte.nombre || reporte.ruta}
+            🚍 {reporte.nombre}
           </Popup>
         </Marker>
       ))}
