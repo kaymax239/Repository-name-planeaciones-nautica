@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
 import dynamic from "next/dynamic";
+import { useState } from "react";
 
 const Mapa = dynamic(() => import("./Mapa"), {
   ssr: false,
@@ -11,42 +11,43 @@ export default function Home() {
   const [rutaSeleccionada, setRutaSeleccionada] = useState("");
 
   const rutas = [
-    "Ruta Circuito Norte",
     "Ruta Centro",
-    "Ruta Madero",
-    "Ruta Tampico",
+    "Ruta Norte",
+    "Ruta Sur",
+    "Ruta Playa",
   ];
-
-  function reportarSubida(ruta: string) {
-    setRutaSeleccionada(ruta);
-    alert(`Reportaste que subiste a: ${ruta}`);
-  }
 
   return (
     <main className="p-4">
-      <h1 className="text-2xl font-bold mb-4">
+      <h1 className="text-3xl font-bold mb-4">
         Aplicación rutas autobuses Tampico
       </h1>
 
-      <Mapa />
+      <div className="mb-4">
+        <h2 className="text-xl font-semibold mb-2">
+          Selecciona una ruta:
+        </h2>
 
-      <div className="mt-4 grid gap-3">
-        {rutas.map((ruta) => (
-          <button
-            key={ruta}
-            onClick={() => reportarSubida(ruta)}
-            className="bg-blue-600 text-white px-4 py-3 rounded-xl"
-          >
-            Me subí a esta ruta: {ruta}
-          </button>
-        ))}
+        <div className="flex gap-2 flex-wrap">
+          {rutas.map((ruta) => (
+            <button
+              key={ruta}
+              onClick={() => setRutaSeleccionada(ruta)}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-800"
+            >
+              {ruta}
+            </button>
+          ))}
+        </div>
       </div>
 
       {rutaSeleccionada && (
-        <div className="mt-4 bg-green-600 text-white px-4 py-3 rounded-xl">
+        <div className="mb-4 p-3 bg-green-600 text-white rounded">
           Ruta seleccionada: {rutaSeleccionada}
         </div>
       )}
+
+      <Mapa />
     </main>
   );
 }
