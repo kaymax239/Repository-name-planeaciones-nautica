@@ -1,22 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-} from "react-leaflet";
-
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-
 import "leaflet/dist/leaflet.css";
-
-import {
-  collection,
-  onSnapshot,
-} from "firebase/firestore";
-
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 
 const iconoBus = new L.Icon({
@@ -28,17 +16,14 @@ export default function Mapa() {
   const [reportes, setReportes] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "autobuses"),
-      (snapshot) => {
-        const datos = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+    const unsubscribe = onSnapshot(collection(db, "autobuses"), (snapshot) => {
+      const datos = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
 
-        setReportes(datos);
-      }
-    );
+      setReportes(datos);
+    });
 
     return () => unsubscribe();
   }, []);
@@ -62,9 +47,7 @@ export default function Mapa() {
           position={[reporte.lat, reporte.lng]}
           icon={iconoBus}
         >
-          <Popup>
-            Ruta: {reporte.nombre}
-          </Popup>
+          <Popup>Ruta: {reporte.nombre}</Popup>
         </Marker>
       ))}
     </MapContainer>
