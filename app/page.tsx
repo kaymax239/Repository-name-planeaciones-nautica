@@ -9,6 +9,15 @@ const Mapa = dynamic(() => import("./Mapa"), {
 });
 
 export default function Home() {
+  const rutas = [
+    "Ruta Haciendas Tampico por UAT",
+    "Ruta Haciendas Tampico por Avenida Hidalgo",
+    "Ruta Circuito Norte",
+    "Ruta Centro",
+    "Ruta Madero",
+    "Ruta Tampico",
+  ];
+
   async function reportarRuta(nombreRuta: string) {
     if (!navigator.geolocation) {
       alert("Tu navegador no soporta GPS");
@@ -17,19 +26,14 @@ export default function Home() {
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        try {
-          await addDoc(collection(db, "autobuses"), {
-            nombre: nombreRuta,
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            fecha: new Date(),
-          });
+        await addDoc(collection(db, "autobuses"), {
+          nombre: nombreRuta,
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          fecha: new Date(),
+        });
 
-          alert("✅ Reporte guardado en Firebase con tu ubicación");
-        } catch (error) {
-          console.error(error);
-          alert("❌ Error guardando en Firebase");
-        }
+        alert("✅ Reporte guardado en Firebase con tu ubicación");
       },
       () => {
         alert("❌ No se pudo obtener tu ubicación");
@@ -46,17 +50,15 @@ export default function Home() {
       <Mapa />
 
       <div className="mt-4 flex flex-col gap-3">
-        {["Ruta Circuito Norte", "Ruta Centro", "Ruta Madero", "Ruta Tampico"].map(
-          (ruta) => (
-            <button
-              key={ruta}
-              onClick={() => reportarRuta(ruta)}
-              className="bg-blue-600 text-white p-4 rounded-xl text-lg"
-            >
-              Reportar ubicación: {ruta}
-            </button>
-          )
-        )}
+        {rutas.map((ruta) => (
+          <button
+            key={ruta}
+            onClick={() => reportarRuta(ruta)}
+            className="bg-blue-600 text-white p-4 rounded-xl text-lg"
+          >
+            Reportar ubicación: {ruta}
+          </button>
+        ))}
       </div>
     </main>
   );
