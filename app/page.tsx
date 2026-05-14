@@ -15,6 +15,7 @@ export default function Home() {
     "Ruta Haciendas Tampico por Avenida Hidalgo",
     "Ruta Altamira UAT",
     "Ruta Pedrera UAT",
+    "Ruta Azteca UAT",
     "Ruta Circuito Norte",
     "Ruta Centro",
     "Ruta Madero",
