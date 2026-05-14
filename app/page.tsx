@@ -9,9 +9,12 @@ const Mapa = dynamic(() => import("./Mapa"), {
 });
 
 export default function Home() {
+
   const rutas = [
     "Ruta Haciendas Tampico por UAT",
     "Ruta Haciendas Tampico por Avenida Hidalgo",
+    "Ruta Altamira UAT",
+    "Ruta Pedrera UAT",
     "Ruta Circuito Norte",
     "Ruta Centro",
     "Ruta Madero",
@@ -19,13 +22,16 @@ export default function Home() {
   ];
 
   async function reportarRuta(nombreRuta: string) {
+
     if (!navigator.geolocation) {
       alert("Tu navegador no soporta GPS");
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
+
       async (position) => {
+
         await addDoc(collection(db, "autobuses"), {
           nombre: nombreRuta,
           lat: position.coords.latitude,
@@ -35,14 +41,18 @@ export default function Home() {
 
         alert("✅ Reporte guardado en Firebase con tu ubicación");
       },
+
       () => {
         alert("❌ No se pudo obtener tu ubicación");
       }
+
     );
   }
 
   return (
+
     <main className="p-4 bg-gray-100 min-h-screen">
+
       <h1 className="text-3xl font-bold text-center mb-4">
         Rutas Tampico MAFA
       </h1>
@@ -50,7 +60,9 @@ export default function Home() {
       <Mapa />
 
       <div className="mt-4 flex flex-col gap-3">
+
         {rutas.map((ruta) => (
+
           <button
             key={ruta}
             onClick={() => reportarRuta(ruta)}
@@ -58,8 +70,12 @@ export default function Home() {
           >
             Reportar ubicación: {ruta}
           </button>
+
         ))}
+
       </div>
+
     </main>
+
   );
 }
