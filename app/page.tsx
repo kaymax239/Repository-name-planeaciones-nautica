@@ -16,6 +16,7 @@ export default function Home() {
     "Ruta Altamira UAT",
     "Ruta Pedrera UAT",
     "Ruta Azteca UAT",
+    "Ruta Niños Héroes",
     "Ruta Circuito Norte",
     "Ruta Centro",
     "Ruta Madero",
