@@ -28,6 +28,7 @@ export default function Mapa() {
         }))
         .filter((reporte: any) => {
           if (!reporte.lat || !reporte.lng) return false;
+          if (reporte.estado === "Seguimiento terminado") return false;
 
           const fechaMs = reporte.fecha?.seconds
             ? reporte.fecha.seconds * 1000
@@ -35,7 +36,12 @@ export default function Mapa() {
 
           const minutos = (ahora - fechaMs) / 1000 / 60;
 
-          return reporte.estado === "En vivo" || minutos <= 30;
+          return minutos <= 10;
+        })
+        .sort((a: any, b: any) => {
+          const fechaA = a.fecha?.seconds || 0;
+          const fechaB = b.fecha?.seconds || 0;
+          return fechaB - fechaA;
         });
 
       setReportes(datos);
