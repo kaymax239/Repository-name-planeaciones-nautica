@@ -235,7 +235,7 @@ export default function Mapa() {
     <div
       style={{
         position: "relative",
-        height: "100vh",
+        height: "500px",
         width: "100%",
         fontFamily: "Arial, sans-serif",
         background: darkMode ? "#020617" : "white",
@@ -376,7 +376,7 @@ export default function Mapa() {
         center={[22.2553, -97.8686]}
         zoom={12}
         style={{
-          height: "100vh",
+          height: "500px",
           width: "100%",
           filter: darkMode ? "brightness(0.75)" : "none",
         }}
