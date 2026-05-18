@@ -53,6 +53,8 @@ export default function Mapa({
   rutaSeleccionada?: string;
 }) {
   const [autobuses, setAutobuses] = useState<any[]>([]);
+  const [busqueda, setBusqueda] = useState("");
+
   const [miUbicacion, setMiUbicacion] = useState<{
     lat: number;
     lng: number;
@@ -85,7 +87,9 @@ export default function Mapa({
 
       const activos = docs.filter((bus) => {
         if (!bus.fecha?.seconds) return false;
+
         const tiempoBus = bus.fecha.seconds * 1000;
+
         return ahora - tiempoBus < 30 * 60 * 1000;
       });
 
@@ -101,6 +105,13 @@ export default function Mapa({
 
   const haciendasActivo = busesHaciendas.length > 0;
 
+  const mostrarHaciendas =
+    busqueda.trim() === "" ||
+    "haciendas por av. hidalgo"
+      .toLowerCase()
+      .includes(busqueda.toLowerCase()) ||
+    "hidalgo".includes(busqueda.toLowerCase());
+
   const ultimosPorRuta: Record<string, any> = {};
 
   autobuses.forEach((bus) => {
@@ -108,6 +119,7 @@ export default function Mapa({
       ultimosPorRuta[bus.nombre] = bus;
     } else {
       const actual = ultimosPorRuta[bus.nombre].fecha.seconds;
+
       if (bus.fecha.seconds > actual) {
         ultimosPorRuta[bus.nombre] = bus;
       }
@@ -187,52 +199,82 @@ export default function Mapa({
           </div>
         </div>
 
-        <div
+        {/* BUSCADOR */}
+        <input
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar ruta..."
           style={{
             marginTop: "14px",
-            padding: "13px",
-            borderRadius: "16px",
-            background: haciendasActivo ? "#ecfdf5" : "#f3f4f6",
-            border: haciendasActivo
-              ? "1px solid #22c55e"
-              : "1px solid #d1d5db",
+            width: "100%",
+            padding: "12px",
+            borderRadius: "14px",
+            border: "1px solid #d1d5db",
+            fontSize: "15px",
+            outline: "none",
+            boxSizing: "border-box",
           }}
-        >
+        />
+
+        {mostrarHaciendas ? (
           <div
             style={{
-              fontWeight: "bold",
-              color: "#111827",
-              fontSize: "15px",
+              marginTop: "14px",
+              padding: "13px",
+              borderRadius: "16px",
+              background: haciendasActivo ? "#ecfdf5" : "#f3f4f6",
+              border: haciendasActivo
+                ? "1px solid #22c55e"
+                : "1px solid #d1d5db",
             }}
           >
-            Haciendas por Av. Hidalgo
-          </div>
-
-          <div
-            style={{
-              marginTop: "4px",
-              color: haciendasActivo ? "#16a34a" : "#6b7280",
-              fontSize: "14px",
-            }}
-          >
-            {haciendasActivo
-              ? `🟢 ${busesHaciendas.length} bus(es) reportando`
-              : "⚪ Sin reportes activos"}
-          </div>
-
-          {rutaSeleccionada && (
             <div
               style={{
-                marginTop: "6px",
-                color: "#2563eb",
-                fontSize: "13px",
                 fontWeight: "bold",
+                color: "#111827",
+                fontSize: "15px",
               }}
             >
-              Ruta seleccionada: {rutaSeleccionada}
+              Haciendas por Av. Hidalgo
             </div>
-          )}
-        </div>
+
+            <div
+              style={{
+                marginTop: "4px",
+                color: haciendasActivo ? "#16a34a" : "#6b7280",
+                fontSize: "14px",
+              }}
+            >
+              {haciendasActivo
+                ? `🟢 ${busesHaciendas.length} bus(es) reportando`
+                : "⚪ Sin reportes activos"}
+            </div>
+
+            {rutaSeleccionada && (
+              <div
+                style={{
+                  marginTop: "6px",
+                  color: "#2563eb",
+                  fontSize: "13px",
+                  fontWeight: "bold",
+                }}
+              >
+                Ruta seleccionada: {rutaSeleccionada}
+              </div>
+            )}
+          </div>
+        ) : (
+          <div
+            style={{
+              marginTop: "14px",
+              fontSize: "14px",
+              color: "#6b7280",
+              textAlign: "center",
+            }}
+          >
+            No se encontró esa ruta.
+          </div>
+        )}
       </div>
 
       <MapContainer
@@ -252,14 +294,16 @@ export default function Mapa({
           <MoverMapa lat={miUbicacion.lat} lng={miUbicacion.lng} />
         )}
 
-        <Polyline
-          positions={rutaHaciendas as any}
-          pathOptions={{
-            color: "#2563eb",
-            weight: 6,
-            opacity: 0.85,
-          }}
-        />
+        {mostrarHaciendas && (
+          <Polyline
+            positions={rutaHaciendas as any}
+            pathOptions={{
+              color: "#2563eb",
+              weight: 6,
+              opacity: 0.85,
+            }}
+          />
+        )}
 
         {miUbicacion && (
           <Marker
