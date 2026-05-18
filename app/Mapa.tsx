@@ -7,12 +7,37 @@ import "leaflet/dist/leaflet.css";
 import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 
-const iconoBus = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
-  iconSize: [42, 42],
-  iconAnchor: [21, 42],
-  popupAnchor: [0, -40],
-});
+function crearIconoBus(color: string) {
+  return L.divIcon({
+    className: "",
+    html: `
+      <div style="
+        background:${color};
+        width:42px;
+        height:42px;
+        border-radius:50%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        border:3px solid white;
+        box-shadow:0 3px 10px rgba(0,0,0,0.4);
+        font-size:24px;
+      ">
+        🚌
+      </div>
+    `,
+    iconSize: [42, 42],
+    iconAnchor: [21, 21],
+    popupAnchor: [0, -22],
+  });
+}
+
+function colorPorOcupacion(ocupacion: string) {
+  if (ocupacion === "Vacío") return "#16a34a";
+  if (ocupacion === "Medio") return "#facc15";
+  if (ocupacion === "Lleno") return "#dc2626";
+  return "#2563eb";
+}
 
 export default function Mapa() {
   const [reportes, setReportes] = useState<any[]>([]);
@@ -63,26 +88,30 @@ export default function Mapa() {
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
-      {reportes.map((reporte: any) => (
-        <Marker
-          key={`${reporte.id}-${reporte.lat}-${reporte.lng}`}
-          position={[reporte.lat, reporte.lng]}
-          icon={iconoBus}
-        >
-          <Popup>
-            🚌 <b>{reporte.nombre}</b>
-            <br />
-            Estado: {reporte.estado || "Reporte"}
-            <br />
-            Ocupación: {reporte.ocupacion || "Sin dato"}
-            <br />
-            Última actualización:{" "}
-            {reporte.fecha?.seconds
-              ? new Date(reporte.fecha.seconds * 1000).toLocaleTimeString()
-              : "Sin hora"}
-          </Popup>
-        </Marker>
-      ))}
+      {reportes.map((reporte: any) => {
+        const color = colorPorOcupacion(reporte.ocupacion);
+
+        return (
+          <Marker
+            key={`${reporte.id}-${reporte.lat}-${reporte.lng}-${reporte.ocupacion}`}
+            position={[reporte.lat, reporte.lng]}
+            icon={crearIconoBus(color)}
+          >
+            <Popup>
+              🚌 <b>{reporte.nombre}</b>
+              <br />
+              Estado: {reporte.estado || "Reporte"}
+              <br />
+              Ocupación: {reporte.ocupacion || "Sin dato"}
+              <br />
+              Última actualización:{" "}
+              {reporte.fecha?.seconds
+                ? new Date(reporte.fecha.seconds * 1000).toLocaleTimeString()
+                : "Sin hora"}
+            </Popup>
+          </Marker>
+        );
+      })}
     </MapContainer>
   );
 }
