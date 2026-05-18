@@ -8,6 +8,7 @@ import {
   Marker,
   Popup,
   Polyline,
+  useMap,
 } from "react-leaflet";
 
 import L from "leaflet";
@@ -28,6 +29,12 @@ const busIcon = new L.Icon({
   iconSize: [38, 38],
 });
 
+const userIcon = new L.Icon({
+  iconUrl:
+    "https://cdn-icons-png.flaticon.com/512/447/447031.png",
+  iconSize: [35, 35],
+});
+
 const rutaHaciendas = [
   [22.2786, -97.8771],
   [22.2765, -97.8732],
@@ -38,12 +45,47 @@ const rutaHaciendas = [
   [22.2550, -97.8530],
 ];
 
+function MoverMapa({
+  lat,
+  lng,
+}: {
+  lat: number;
+  lng: number;
+}) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView([lat, lng], 15);
+  }, [lat, lng, map]);
+
+  return null;
+}
+
 export default function Mapa({
   rutaSeleccionada,
 }: {
   rutaSeleccionada?: string;
 }) {
   const [autobuses, setAutobuses] = useState<any[]>([]);
+
+  const [miUbicacion, setMiUbicacion] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  useEffect(() => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setMiUbicacion({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        });
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
+  }, []);
 
   useEffect(() => {
     const q = query(collection(db, "autobuses"));
@@ -56,7 +98,6 @@ export default function Mapa({
         ...doc.data(),
       })) as any[];
 
-      // SOLO ACTIVOS
       const activos = docs.filter((bus) => {
         if (!bus.fecha?.seconds) return false;
 
@@ -65,7 +106,6 @@ export default function Mapa({
         return ahora - tiempoBus < 30 * 60 * 1000;
       });
 
-      // SOLO EL MÁS NUEVO POR RUTA
       const ultimosPorRuta: Record<string, any> = {};
 
       activos.forEach((bus) => {
@@ -133,7 +173,6 @@ export default function Mapa({
           Transporte en tiempo real
         </div>
 
-        {/* RUTA HACIENDAS */}
         <div
           style={{
             marginTop: "12px",
@@ -166,19 +205,6 @@ export default function Mapa({
               : "⚪ Sin reportes activos"}
           </span>
         </div>
-
-        {rutaSeleccionada && (
-          <div
-            style={{
-              marginTop: "10px",
-              fontSize: "14px",
-              color: "#2563eb",
-              fontWeight: "bold",
-            }}
-          >
-            Ruta seleccionada: {rutaSeleccionada}
-          </div>
-        )}
       </div>
 
       <MapContainer
@@ -194,6 +220,14 @@ export default function Mapa({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
+        {/* MOVER MAPA */}
+        {miUbicacion && (
+          <MoverMapa
+            lat={miUbicacion.lat}
+            lng={miUbicacion.lng}
+          />
+        )}
+
         {/* LINEA HACIENDAS */}
         <Polyline
           positions={rutaHaciendas as any}
@@ -202,6 +236,19 @@ export default function Mapa({
             weight: 6,
           }}
         />
+
+        {/* MI UBICACION */}
+        {miUbicacion && (
+          <Marker
+            position={[
+              miUbicacion.lat,
+              miUbicacion.lng,
+            ]}
+            icon={userIcon}
+          >
+            <Popup>📍 Tú estás aquí</Popup>
+          </Marker>
+        )}
 
         {/* BUSES */}
         {autobuses.map((bus: any) => (
