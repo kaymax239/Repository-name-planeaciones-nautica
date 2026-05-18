@@ -97,6 +97,7 @@ function MarkerAnimado({
 
       const lat =
         inicio[0] + (fin[0] - inicio[0]) * progreso;
+
       const lng =
         inicio[1] + (fin[1] - inicio[1]) * progreso;
 
@@ -117,11 +118,7 @@ function MarkerAnimado({
   );
 }
 
-export default function Mapa({
-  rutaSeleccionada,
-}: {
-  rutaSeleccionada?: string;
-}) {
+export default function Mapa() {
   const [autobuses, setAutobuses] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState("");
   const [darkMode, setDarkMode] = useState(false);
@@ -133,7 +130,10 @@ export default function Mapa({
 
   useEffect(() => {
     const guardado = localStorage.getItem("darkMode");
-    if (guardado === "true") setDarkMode(true);
+
+    if (guardado === "true") {
+      setDarkMode(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -167,7 +167,9 @@ export default function Mapa({
 
       const activos = docs.filter((bus) => {
         if (!bus.fecha?.seconds) return false;
+
         const tiempoBus = bus.fecha.seconds * 1000;
+
         return ahora - tiempoBus < 30 * 60 * 1000;
       });
 
@@ -187,8 +189,7 @@ export default function Mapa({
     busqueda.trim() === "" ||
     "haciendas por av. hidalgo"
       .toLowerCase()
-      .includes(busqueda.toLowerCase()) ||
-    "hidalgo".includes(busqueda.toLowerCase());
+      .includes(busqueda.toLowerCase());
 
   const ultimosPorRuta: Record<string, any> = {};
 
@@ -197,6 +198,7 @@ export default function Mapa({
       ultimosPorRuta[bus.nombre] = bus;
     } else {
       const actual = ultimosPorRuta[bus.nombre].fecha.seconds;
+
       if (bus.fecha.seconds > actual) {
         ultimosPorRuta[bus.nombre] = bus;
       }
@@ -204,6 +206,30 @@ export default function Mapa({
   });
 
   const busesMapa = Object.values(ultimosPorRuta);
+
+  const ultimoBusHaciendas = busesHaciendas.sort(
+    (a, b) => b.fecha.seconds - a.fecha.seconds
+  )[0];
+
+  let tiempoTexto = "Sin reportes";
+
+  if (ultimoBusHaciendas?.fecha?.seconds) {
+    const ahora = Date.now();
+    const tiempoBus =
+      ultimoBusHaciendas.fecha.seconds * 1000;
+
+    const minutos = Math.floor(
+      (ahora - tiempoBus) / 1000 / 60
+    );
+
+    if (minutos <= 0) {
+      tiempoTexto = "Hace unos segundos";
+    } else if (minutos === 1) {
+      tiempoTexto = "Hace 1 minuto";
+    } else {
+      tiempoTexto = `Hace ${minutos} minutos`;
+    }
+  }
 
   return (
     <div
@@ -228,9 +254,6 @@ export default function Mapa({
           borderRadius: "22px",
           padding: "16px",
           boxShadow: "0 8px 25px rgba(0,0,0,0.35)",
-          border: darkMode
-            ? "1px solid #334155"
-            : "1px solid rgba(255,255,255,0.8)",
         }}
       >
         <div
@@ -259,7 +282,7 @@ export default function Mapa({
                 color: darkMode ? "#cbd5e1" : "#6b7280",
               }}
             >
-              Transporte en tiempo real
+              Reportes ciudadanos en tiempo real
             </div>
           </div>
 
@@ -277,22 +300,6 @@ export default function Mapa({
           >
             {darkMode ? "☀️" : "🌙"}
           </button>
-
-          <div
-            style={{
-              background: "#2563eb",
-              color: "white",
-              padding: "10px 14px",
-              borderRadius: "16px",
-              textAlign: "center",
-              minWidth: "70px",
-            }}
-          >
-            <div style={{ fontSize: "22px", fontWeight: "bold" }}>
-              {autobuses.length}
-            </div>
-            <div style={{ fontSize: "11px" }}>activos</div>
-          </div>
         </div>
 
         <input
@@ -304,7 +311,7 @@ export default function Mapa({
             width: "100%",
             padding: "12px",
             borderRadius: "14px",
-            border: darkMode ? "1px solid #475569" : "1px solid #d1d5db",
+            border: "none",
             fontSize: "15px",
             outline: "none",
             boxSizing: "border-box",
@@ -313,11 +320,11 @@ export default function Mapa({
           }}
         />
 
-        {mostrarHaciendas ? (
+        {mostrarHaciendas && (
           <div
             style={{
               marginTop: "14px",
-              padding: "13px",
+              padding: "14px",
               borderRadius: "16px",
               background: haciendasActivo
                 ? darkMode
@@ -326,18 +333,13 @@ export default function Mapa({
                 : darkMode
                 ? "#1e293b"
                 : "#f3f4f6",
-              border: haciendasActivo
-                ? "1px solid #22c55e"
-                : darkMode
-                ? "1px solid #475569"
-                : "1px solid #d1d5db",
             }}
           >
             <div
               style={{
                 fontWeight: "bold",
                 color: darkMode ? "#f8fafc" : "#111827",
-                fontSize: "15px",
+                fontSize: "16px",
               }}
             >
               Haciendas por Av. Hidalgo
@@ -345,43 +347,27 @@ export default function Mapa({
 
             <div
               style={{
-                marginTop: "4px",
-                color: haciendasActivo
-                  ? darkMode
-                    ? "#86efac"
-                    : "#16a34a"
-                  : darkMode
-                  ? "#cbd5e1"
-                  : "#6b7280",
+                marginTop: "5px",
                 fontSize: "14px",
+                color: haciendasActivo
+                  ? "#22c55e"
+                  : "#6b7280",
               }}
             >
               {haciendasActivo
-                ? `🟢 ${busesHaciendas.length} bus(es) reportando`
-                : "⚪ Sin reportes activos"}
+                ? `🟢 ${busesHaciendas.length} bus(es) activos`
+                : "⚪ Sin buses activos"}
             </div>
 
             <div
               style={{
                 marginTop: "6px",
-                color: darkMode ? "#93c5fd" : "#2563eb",
                 fontSize: "13px",
-                fontWeight: "bold",
+                color: darkMode ? "#cbd5e1" : "#475569",
               }}
             >
-              ETA aproximado: en desarrollo
+              Último reporte: {tiempoTexto}
             </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              marginTop: "14px",
-              fontSize: "14px",
-              color: darkMode ? "#cbd5e1" : "#6b7280",
-              textAlign: "center",
-            }}
-          >
-            No se encontró esa ruta.
           </div>
         )}
       </div>
@@ -408,7 +394,6 @@ export default function Mapa({
             pathOptions={{
               color: darkMode ? "#60a5fa" : "#2563eb",
               weight: 6,
-              opacity: 0.9,
             }}
           />
         )}
