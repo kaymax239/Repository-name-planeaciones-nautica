@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
 import {
   MapContainer,
   TileLayer,
@@ -74,6 +73,50 @@ function BotonMiUbicacion({
   );
 }
 
+function MarkerAnimado({
+  bus,
+}: {
+  bus: any;
+}) {
+  const [posicion, setPosicion] = useState<[number, number]>([
+    bus.lat,
+    bus.lng,
+  ]);
+
+  useEffect(() => {
+    const inicio = posicion;
+    const fin: [number, number] = [bus.lat, bus.lng];
+
+    let frame = 0;
+    const totalFrames = 35;
+
+    const animar = () => {
+      frame++;
+
+      const progreso = frame / totalFrames;
+
+      const lat =
+        inicio[0] + (fin[0] - inicio[0]) * progreso;
+      const lng =
+        inicio[1] + (fin[1] - inicio[1]) * progreso;
+
+      setPosicion([lat, lng]);
+
+      if (frame < totalFrames) {
+        requestAnimationFrame(animar);
+      }
+    };
+
+    requestAnimationFrame(animar);
+  }, [bus.lat, bus.lng]);
+
+  return (
+    <Marker position={posicion} icon={busIcon}>
+      <Popup>🚌 {bus.nombre}</Popup>
+    </Marker>
+  );
+}
+
 export default function Mapa({
   rutaSeleccionada,
 }: {
@@ -90,9 +133,7 @@ export default function Mapa({
 
   useEffect(() => {
     const guardado = localStorage.getItem("darkMode");
-    if (guardado === "true") {
-      setDarkMode(true);
-    }
+    if (guardado === "true") setDarkMode(true);
   }, []);
 
   useEffect(() => {
@@ -156,7 +197,6 @@ export default function Mapa({
       ultimosPorRuta[bus.nombre] = bus;
     } else {
       const actual = ultimosPorRuta[bus.nombre].fecha.seconds;
-
       if (bus.fecha.seconds > actual) {
         ultimosPorRuta[bus.nombre] = bus;
       }
@@ -246,7 +286,6 @@ export default function Mapa({
               borderRadius: "16px",
               textAlign: "center",
               minWidth: "70px",
-              boxShadow: "0 4px 12px rgba(37,99,235,0.35)",
             }}
           >
             <div style={{ fontSize: "22px", fontWeight: "bold" }}>
@@ -322,18 +361,16 @@ export default function Mapa({
                 : "⚪ Sin reportes activos"}
             </div>
 
-            {rutaSeleccionada && (
-              <div
-                style={{
-                  marginTop: "6px",
-                  color: darkMode ? "#93c5fd" : "#2563eb",
-                  fontSize: "13px",
-                  fontWeight: "bold",
-                }}
-              >
-                Ruta seleccionada: {rutaSeleccionada}
-              </div>
-            )}
+            <div
+              style={{
+                marginTop: "6px",
+                color: darkMode ? "#93c5fd" : "#2563eb",
+                fontSize: "13px",
+                fontWeight: "bold",
+              }}
+            >
+              ETA aproximado: en desarrollo
+            </div>
           </div>
         ) : (
           <div
@@ -386,9 +423,7 @@ export default function Mapa({
         )}
 
         {busesMapa.map((bus: any) => (
-          <Marker key={bus.id} position={[bus.lat, bus.lng]} icon={busIcon}>
-            <Popup>🚌 {bus.nombre}</Popup>
-          </Marker>
+          <MarkerAnimado key={bus.id} bus={bus} />
         ))}
       </MapContainer>
     </div>
