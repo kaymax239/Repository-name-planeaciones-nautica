@@ -1,194 +1,104 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import {
   collection,
-  addDoc,
-  updateDoc,
   doc,
-  serverTimestamp,
   onSnapshot,
+  serverTimestamp,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
+import dynamic from "next/dynamic";
 
 const Mapa = dynamic(() => import("./Mapa"), {
   ssr: false,
 });
 
+const rutasDisponibles = [
+  "Ruta Haciendas Tampico por UAT",
+  "Ruta Tampico Centro",
+  "Ruta Madero",
+  "Ruta Altamira",
+];
+
 export default function Home() {
-  const [zonaActiva, setZonaActiva] = useState("UAT");
-  const [rutaSeleccionada, setRutaSeleccionada] = useState("");
-  const [ocupacion, setOcupacion] = useState("Medio");
-  const [seguimientoActivo, setSeguimientoActivo] = useState(false);
+  const [ruta, setRuta] = useState("");
+  const [mensaje, setMensaje] = useState("");
   const [watchId, setWatchId] = useState<number | null>(null);
-  const [documentoId, setDocumentoId] = useState<string | null>(null);
-  const [reportes, setReportes] = useState<any[]>([]);
-  const [busCercano, setBusCercano] = useState<any | null>(null);
-
-  const zonas: any = {
-    UAT: [
-      "Ruta Haciendas Tampico por UAT",
-      "Ruta Altamira UAT",
-      "Ruta Pedrera UAT",
-      "Ruta Azteca UAT",
-      "Ruta Niños Héroes",
-    ],
-    Tampico: [
-      "Ruta Haciendas Tampico por Avenida Hidalgo",
-      "Ruta Centro",
-      "Ruta Tampico",
-      "Ruta Circuito Norte",
-    ],
-    Madero: ["Ruta Madero"],
-    Altamira: ["Ruta Altamira UAT", "Ruta Pedrera UAT", "Ruta Azteca UAT"],
-  };
-
-  const rutasActuales = zonas[zonaActiva];
+  const [conteoRutas, setConteoRutas] = useState<any>({});
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "autobuses"), (snapshot) => {
-      const ahora = Date.now();
+      const conteo: any = {};
 
-      const datos = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((reporte: any) => {
-          if (!reporte.lat || !reporte.lng) return false;
-          if (reporte.estado === "Seguimiento terminado") return false;
+      rutasDisponibles.forEach((ruta) => {
+        conteo[ruta] = 0;
+      });
 
-          const fechaMs = reporte.fecha?.seconds
-            ? reporte.fecha.seconds * 1000
-            : 0;
+      snapshot.forEach((doc) => {
+        const data: any = doc.data();
 
-          const minutos = (ahora - fechaMs) / 1000 / 60;
+        if (!data.fecha?.seconds) return;
 
-          return minutos <= 10;
-        });
+        const fecha = data.fecha.seconds * 1000;
+        const ahora = Date.now();
+        const minutos = (ahora - fecha) / 1000 / 60;
 
-      setReportes(datos);
+        if (data.activo === true && minutos <= 30) {
+          conteo[data.nombre] = (conteo[data.nombre] || 0) + 1;
+        }
+      });
+
+      setConteoRutas(conteo);
     });
 
     return () => unsubscribe();
   }, []);
 
-  function contarPorRuta(ruta: string) {
-    return reportes.filter((reporte) => reporte.nombre === ruta).length;
-  }
+  const getDeviceId = () => {
+    let deviceId = localStorage.getItem("deviceId");
 
-  function calcularDistancia(lat1: number, lng1: number, lat2: number, lng2: number) {
-    const R = 6371;
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLng = ((lng2 - lng1) * Math.PI) / 180;
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return R * c;
-  }
-
-  function buscarBusCercano() {
-    if (!navigator.geolocation) {
-      alert("Tu navegador no soporta GPS");
-      return;
+    if (!deviceId) {
+      deviceId = crypto.randomUUID();
+      localStorage.setItem("deviceId", deviceId);
     }
 
-    if (reportes.length === 0) {
-      alert("No hay autobuses activos en este momento");
-      return;
-    }
+    return deviceId;
+  };
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const miLat = position.coords.latitude;
-        const miLng = position.coords.longitude;
-
-        const busesConDistancia = reportes.map((bus) => {
-          const distancia = calcularDistancia(miLat, miLng, bus.lat, bus.lng);
-
-          return {
-            ...bus,
-            distancia,
-          };
-        });
-
-        busesConDistancia.sort((a, b) => a.distancia - b.distancia);
-
-        setBusCercano(busesConDistancia[0]);
-      },
-      () => {
-        alert("No se pudo obtener tu ubicación");
-      }
-    );
-  }
-
-  async function reportarUnaVez(nombreRuta: string) {
-    if (!navigator.geolocation) {
-      alert("Tu navegador no soporta GPS");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        await addDoc(collection(db, "autobuses"), {
-          nombre: nombreRuta,
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          estado: "Reporte único",
-          ocupacion,
-          fecha: serverTimestamp(),
-        });
-
-        alert("✅ Reporte guardado");
-      },
-      () => {
-        alert("❌ No se pudo obtener tu ubicación");
-      }
-    );
-  }
-
-  async function iniciarSeguimiento() {
-    if (!rutaSeleccionada) {
-      alert("Primero selecciona una ruta");
+  const reportarRuta = async () => {
+    if (!ruta) {
+      setMensaje("Primero selecciona una ruta.");
       return;
     }
 
     if (!navigator.geolocation) {
-      alert("Tu navegador no soporta GPS");
+      setMensaje("Tu celular no permite usar ubicación.");
       return;
     }
 
-    const nuevoDoc = await addDoc(collection(db, "autobuses"), {
-      nombre: rutaSeleccionada,
-      lat: 22.2553,
-      lng: -97.8686,
-      estado: "En vivo",
-      ocupacion,
-      fecha: serverTimestamp(),
-    });
+    setMensaje("Enviando ubicación en tiempo real...");
 
-    setDocumentoId(nuevoDoc.id);
+    const deviceId = getDeviceId();
 
     const id = navigator.geolocation.watchPosition(
       async (position) => {
-        await updateDoc(doc(db, "autobuses", nuevoDoc.id), {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-          estado: "En vivo",
-          ocupacion,
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+
+        await setDoc(doc(db, "autobuses", deviceId), {
+          nombre: ruta,
+          lat,
+          lng,
+          activo: true,
           fecha: serverTimestamp(),
         });
+
+        setMensaje("Bus activo en tiempo real.");
       },
       () => {
-        alert("❌ No se pudo actualizar tu ubicación");
+        setMensaje("No se pudo obtener la ubicación.");
       },
       {
         enableHighAccuracy: true,
@@ -198,198 +108,176 @@ export default function Home() {
     );
 
     setWatchId(id);
-    setSeguimientoActivo(true);
-    alert("🟢 Ubicación en vivo activada");
-  }
+  };
 
-  async function detenerSeguimiento() {
+  const detenerReporte = async () => {
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
-    }
+      setWatchId(null);
 
-    if (documentoId) {
-      await updateDoc(doc(db, "autobuses", documentoId), {
-        estado: "Seguimiento terminado",
-        fecha: serverTimestamp(),
-      });
-    }
+      const deviceId = getDeviceId();
 
-    setWatchId(null);
-    setDocumentoId(null);
-    setSeguimientoActivo(false);
-    alert("🔴 Seguimiento detenido");
-  }
+      await setDoc(
+        doc(db, "autobuses", deviceId),
+        {
+          activo: false,
+          fecha: serverTimestamp(),
+        },
+        { merge: true }
+      );
+
+      setMensaje("Reporte detenido.");
+    }
+  };
 
   return (
-    <main className="min-h-screen bg-slate-100 pb-20">
-      <div className="bg-gradient-to-r from-blue-700 to-cyan-500 text-white p-5 rounded-b-3xl shadow-xl">
-        <h1 className="text-4xl font-extrabold text-center">
-          🚌 Rutas Tampico MAFA
-        </h1>
-
-        <p className="text-center mt-2 opacity-90">
-          Autobuses activos: {reportes.length}
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#f1f5f9",
+        padding: "15px",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      <section
+        style={{
+          background: "linear-gradient(135deg, #1d4ed8, #0f172a)",
+          color: "white",
+          borderRadius: "24px",
+          padding: "20px",
+          marginBottom: "20px",
+          boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+        }}
+      >
+        <h1 style={{ margin: 0 }}>🚍 Rutas Tampico 2</h1>
+        <p style={{ color: "#dbeafe" }}>
+          Rastreo comunitario de rutas en tiempo real.
         </p>
-      </div>
+      </section>
 
-      <div className="p-4">
-        <div className="overflow-hidden rounded-3xl shadow-2xl border-4 border-white">
-          <Mapa />
-        </div>
+      <section
+        style={{
+          height: "340px",
+          borderRadius: "22px",
+          overflow: "hidden",
+          marginBottom: "20px",
+          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+        }}
+      >
+        <Mapa />
+      </section>
 
-        <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4">
-            📍 Bus más cercano a mí
-          </h2>
+      <section
+        style={{
+          background: "white",
+          borderRadius: "20px",
+          padding: "15px",
+          marginBottom: "20px",
+          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+        }}
+      >
+        <h2>🚌 Buses activos por ruta</h2>
 
-          <button
-            onClick={buscarBusCercano}
-            className="w-full bg-purple-600 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
+        {rutasDisponibles.map((nombreRuta) => (
+          <div
+            key={nombreRuta}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "12px",
+              borderRadius: "14px",
+              background: "#f8fafc",
+              marginBottom: "10px",
+              border: "1px solid #e2e8f0",
+            }}
           >
-            🔎 Buscar bus más cercano
-          </button>
+            <span style={{ fontWeight: "bold" }}>{nombreRuta}</span>
 
-          {busCercano && (
-            <div className="mt-4 bg-purple-100 p-4 rounded-2xl">
-              <p className="font-bold text-lg">🚌 {busCercano.nombre}</p>
-              <p>Estado: {busCercano.estado}</p>
-              <p>Ocupación: {busCercano.ocupacion || "Sin dato"}</p>
-              <p>
-                Distancia aproximada: {busCercano.distancia.toFixed(2)} km
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4">
-            📍 Selecciona zona
-          </h2>
-
-          <div className="grid grid-cols-2 gap-3">
-            {Object.keys(zonas).map((zona) => (
-              <button
-                key={zona}
-                onClick={() => {
-                  setZonaActiva(zona);
-                  setRutaSeleccionada("");
-                }}
-                className={`p-4 rounded-2xl font-bold text-lg ${
-                  zonaActiva === zona
-                    ? "bg-blue-600 text-white shadow-lg"
-                    : "bg-slate-200 text-slate-700"
-                }`}
-              >
-                {zona}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4">
-            📊 Buses activos por ruta
-          </h2>
-
-          <div className="flex flex-col gap-2">
-            {rutasActuales.map((ruta: string) => (
-              <div
-                key={ruta}
-                className="flex justify-between items-center bg-slate-100 p-3 rounded-xl"
-              >
-                <span className="font-bold">{ruta}</span>
-
-                <span className="bg-blue-600 text-white px-3 py-1 rounded-full font-bold">
-                  {contarPorRuta(ruta)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4">
-            🟢 Compartir ubicación en vivo
-          </h2>
-
-          <select
-            value={rutaSeleccionada}
-            onChange={(e) => setRutaSeleccionada(e.target.value)}
-            className="w-full p-4 border-2 border-slate-300 rounded-2xl mb-4 text-lg"
-          >
-            <option value="">Selecciona una ruta</option>
-
-            {rutasActuales.map((ruta: string) => (
-              <option key={ruta} value={ruta}>
-                {ruta}
-              </option>
-            ))}
-          </select>
-
-          <h3 className="text-lg font-bold mb-2">
-            ¿Cómo va el autobús?
-          </h3>
-
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            {["Vacío", "Medio", "Lleno"].map((opcion) => (
-              <button
-                key={opcion}
-                onClick={() => setOcupacion(opcion)}
-                className={`p-3 rounded-xl font-bold ${
-                  ocupacion === opcion
-                    ? opcion === "Vacío"
-                      ? "bg-green-600 text-white"
-                      : opcion === "Medio"
-                      ? "bg-yellow-400 text-black"
-                      : "bg-red-600 text-white"
-                    : "bg-slate-200 text-slate-700"
-                }`}
-              >
-                {opcion === "Vacío"
-                  ? "🟢"
-                  : opcion === "Medio"
-                  ? "🟡"
-                  : "🔴"}{" "}
-                {opcion}
-              </button>
-            ))}
-          </div>
-
-          {!seguimientoActivo ? (
-            <button
-              onClick={iniciarSeguimiento}
-              className="w-full bg-green-600 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
+            <span
+              style={{
+                background:
+                  conteoRutas[nombreRuta] > 0 ? "#16a34a" : "#94a3b8",
+                color: "white",
+                padding: "6px 12px",
+                borderRadius: "999px",
+                fontWeight: "bold",
+              }}
             >
-              🟢 Estoy en el autobús
-            </button>
-          ) : (
-            <button
-              onClick={detenerSeguimiento}
-              className="w-full bg-red-600 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
-            >
-              🔴 Detener seguimiento
-            </button>
-          )}
-        </div>
-
-        <div className="mt-5">
-          <h2 className="text-2xl font-bold mb-4">
-            🚏 Reportar una vez — {zonaActiva}
-          </h2>
-
-          <div className="flex flex-col gap-4">
-            {rutasActuales.map((ruta: string) => (
-              <button
-                key={ruta}
-                onClick={() => reportarUnaVez(ruta)}
-                className="bg-blue-600 text-white p-5 rounded-2xl text-lg font-bold shadow-lg"
-              >
-                📍 {ruta}
-              </button>
-            ))}
+              {conteoRutas[nombreRuta] || 0} activo
+            </span>
           </div>
-        </div>
-      </div>
+        ))}
+      </section>
+
+      <section
+        style={{
+          background: "white",
+          borderRadius: "20px",
+          padding: "15px",
+          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
+        }}
+      >
+        <h2>📍 Selecciona tu ruta</h2>
+
+        <select
+          value={ruta}
+          onChange={(e) => setRuta(e.target.value)}
+          style={{
+            width: "100%",
+            padding: "15px",
+            borderRadius: "12px",
+            border: "1px solid #cbd5e1",
+            fontSize: "16px",
+            marginBottom: "15px",
+          }}
+        >
+          <option value="">Selecciona una ruta</option>
+
+          {rutasDisponibles.map((nombreRuta) => (
+            <option key={nombreRuta} value={nombreRuta}>
+              {nombreRuta}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={reportarRuta}
+          style={{
+            width: "100%",
+            padding: "15px",
+            borderRadius: "12px",
+            border: "none",
+            background: "#2563eb",
+            color: "white",
+            fontSize: "17px",
+            fontWeight: "bold",
+            marginBottom: "10px",
+          }}
+        >
+          🚍 Me subí a esta ruta
+        </button>
+
+        <button
+          onClick={detenerReporte}
+          style={{
+            width: "100%",
+            padding: "15px",
+            borderRadius: "12px",
+            border: "none",
+            background: "#dc2626",
+            color: "white",
+            fontSize: "17px",
+            fontWeight: "bold",
+          }}
+        >
+          🛑 Detener reporte
+        </button>
+
+        {mensaje && (
+          <p style={{ marginTop: "15px", fontWeight: "bold" }}>{mensaje}</p>
+        )}
+      </section>
     </main>
   );
 }
