@@ -37,14 +37,41 @@ const rutaHaciendas = [
   [22.255, -97.853],
 ];
 
-function MoverMapa({ lat, lng }: { lat: number; lng: number }) {
+function BotonMiUbicacion({
+  miUbicacion,
+}: {
+  miUbicacion: { lat: number; lng: number } | null;
+}) {
   const map = useMap();
 
-  useEffect(() => {
-    map.setView([lat, lng], 15);
-  }, [lat, lng, map]);
+  const centrarMapa = () => {
+    if (miUbicacion) {
+      map.setView([miUbicacion.lat, miUbicacion.lng], 16);
+    }
+  };
 
-  return null;
+  return (
+    <button
+      onClick={centrarMapa}
+      style={{
+        position: "absolute",
+        right: "18px",
+        bottom: "30px",
+        zIndex: 1000,
+        width: "58px",
+        height: "58px",
+        borderRadius: "50%",
+        border: "none",
+        background: "#2563eb",
+        color: "white",
+        fontSize: "26px",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+        cursor: "pointer",
+      }}
+    >
+      📍
+    </button>
+  );
 }
 
 export default function Mapa({
@@ -87,9 +114,7 @@ export default function Mapa({
 
       const activos = docs.filter((bus) => {
         if (!bus.fecha?.seconds) return false;
-
         const tiempoBus = bus.fecha.seconds * 1000;
-
         return ahora - tiempoBus < 30 * 60 * 1000;
       });
 
@@ -137,7 +162,6 @@ export default function Mapa({
         fontFamily: "Arial, sans-serif",
       }}
     >
-      {/* PANEL PREMIUM */}
       <div
         style={{
           position: "absolute",
@@ -199,7 +223,6 @@ export default function Mapa({
           </div>
         </div>
 
-        {/* BUSCADOR */}
         <input
           value={busqueda}
           onChange={(e) => setBusqueda(e.target.value)}
@@ -290,9 +313,7 @@ export default function Mapa({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {miUbicacion && (
-          <MoverMapa lat={miUbicacion.lat} lng={miUbicacion.lng} />
-        )}
+        <BotonMiUbicacion miUbicacion={miUbicacion} />
 
         {mostrarHaciendas && (
           <Polyline
