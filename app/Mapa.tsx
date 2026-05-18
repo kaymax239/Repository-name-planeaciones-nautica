@@ -38,7 +38,11 @@ const rutaHaciendas = [
   [22.2550, -97.8530],
 ];
 
-export default function Mapa() {
+export default function Mapa({
+  rutaSeleccionada,
+}: {
+  rutaSeleccionada?: string;
+}) {
   const [autobuses, setAutobuses] = useState<any[]>([]);
 
   useEffect(() => {
@@ -162,6 +166,19 @@ export default function Mapa() {
               : "⚪ Sin reportes activos"}
           </span>
         </div>
+
+        {rutaSeleccionada && (
+          <div
+            style={{
+              marginTop: "10px",
+              fontSize: "14px",
+              color: "#2563eb",
+              fontWeight: "bold",
+            }}
+          >
+            Ruta seleccionada: {rutaSeleccionada}
+          </div>
+        )}
       </div>
 
       <MapContainer
