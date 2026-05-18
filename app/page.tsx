@@ -164,7 +164,7 @@ export default function Home() {
           boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
         }}
       >
-        <Mapa rutaSeleccionada={ruta} />
+        <Mapa />
       </section>
 
       <section
