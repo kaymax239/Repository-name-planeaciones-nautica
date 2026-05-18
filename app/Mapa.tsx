@@ -1,47 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+} from "react-leaflet";
+
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { collection, onSnapshot } from "firebase/firestore";
+
+import {
+  collection,
+  onSnapshot,
+  query,
+} from "firebase/firestore";
+
 import { db } from "./firebase";
 
-const iconoBus = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
-  iconSize: [42, 42],
-  iconAnchor: [21, 42],
-  popupAnchor: [0, -40],
+import "leaflet/dist/leaflet.css";
+
+const busIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
+  iconSize: [38, 38],
 });
 
 export default function Mapa() {
   const [reportes, setReportes] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "autobuses"), (snapshot) => {
-      const ahora = Date.now();
+    const q = query(collection(db, "autobuses"));
 
-      const datos = snapshot.docs
-        .map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }))
-        .filter((reporte: any) => {
-          if (!reporte.lat || !reporte.lng) return false;
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const datos: any[] = [];
 
-          const fechaMs = reporte.fecha?.seconds
-            ? reporte.fecha.seconds * 1000
-            : 0;
+      snapshot.forEach((doc) => {
+        const data = doc.data();
 
-          const minutos = (ahora - fechaMs) / 1000 / 60;
-
-          return reporte.estado === "En vivo" || minutos <= 30;
-        })
-        .sort((a: any, b: any) => {
-          const fechaA = a.fecha?.seconds || 0;
-          const fechaB = b.fecha?.seconds || 0;
-          return fechaB - fechaA;
-        });
+        if (data.estado !== "Seguimiento terminado") {
+          datos.push({
+            id: doc.id,
+            ...data,
+          });
+        }
+      });
 
       setReportes(datos);
     });
@@ -52,31 +54,53 @@ export default function Mapa() {
   return (
     <MapContainer
       center={[22.2553, -97.8686]}
-      zoom={12}
-      scrollWheelZoom={true}
+      zoom={11}
       style={{
-        height: "500px",
+        height: "450px",
         width: "100%",
-        borderRadius: "20px",
       }}
     >
-      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <TileLayer
+        attribution="&copy; OpenStreetMap"
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
 
       {reportes.map((reporte: any) => (
         <Marker
-          key={`${reporte.id}-${reporte.lat}-${reporte.lng}`}
+          key={reporte.id}
           position={[reporte.lat, reporte.lng]}
-          icon={iconoBus}
+          icon={busIcon}
         >
           <Popup>
-            🚌 <b>{reporte.nombre}</b>
-            <br />
-            Estado: {reporte.estado || "Reporte"}
-            <br />
-            Última actualización:{" "}
-            {reporte.fecha?.seconds
-              ? new Date(reporte.fecha.seconds * 1000).toLocaleTimeString()
-              : "Sin hora"}
+            <div style={{ minWidth: "220px" }}>
+              <h3>
+                🚌 <b>{reporte.nombre}</b>
+              </h3>
+
+              <p>
+                Estado:
+                {" "}
+                {reporte.estado}
+              </p>
+
+              <p>
+                Ocupación:
+                {" "}
+                <b>{reporte.ocupacion || "Sin dato"}</b>
+              </p>
+
+              <p>
+                Lat:
+                {" "}
+                {reporte.lat}
+              </p>
+
+              <p>
+                Lng:
+                {" "}
+                {reporte.lng}
+              </p>
+            </div>
           </Popup>
         </Marker>
       ))}
