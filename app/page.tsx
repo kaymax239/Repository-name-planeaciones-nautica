@@ -18,6 +18,7 @@ const Mapa = dynamic(() => import("./Mapa"), {
 export default function Home() {
   const [zonaActiva, setZonaActiva] = useState("UAT");
   const [rutaSeleccionada, setRutaSeleccionada] = useState("");
+  const [ocupacion, setOcupacion] = useState("Medio");
   const [seguimientoActivo, setSeguimientoActivo] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
   const [documentoId, setDocumentoId] = useState<string | null>(null);
@@ -36,14 +37,8 @@ export default function Home() {
       "Ruta Tampico",
       "Ruta Circuito Norte",
     ],
-    Madero: [
-      "Ruta Madero",
-    ],
-    Altamira: [
-      "Ruta Altamira UAT",
-      "Ruta Pedrera UAT",
-      "Ruta Azteca UAT",
-    ],
+    Madero: ["Ruta Madero"],
+    Altamira: ["Ruta Altamira UAT", "Ruta Pedrera UAT", "Ruta Azteca UAT"],
   };
 
   const rutasActuales = zonas[zonaActiva];
@@ -61,6 +56,7 @@ export default function Home() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           estado: "Reporte único",
+          ocupacion,
           fecha: serverTimestamp(),
         });
 
@@ -88,6 +84,7 @@ export default function Home() {
       lat: 22.2553,
       lng: -97.8686,
       estado: "En vivo",
+      ocupacion,
       fecha: serverTimestamp(),
     });
 
@@ -99,6 +96,7 @@ export default function Home() {
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           estado: "En vivo",
+          ocupacion,
           fecha: serverTimestamp(),
         });
       },
@@ -137,12 +135,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-100 pb-20">
-      
       <div className="bg-gradient-to-r from-blue-700 to-cyan-500 text-white p-5 rounded-b-3xl shadow-xl">
         <h1 className="text-4xl font-extrabold text-center">
           🚌 Rutas Tampico MAFA
         </h1>
-
         <p className="text-center mt-2 opacity-90">
           Ubicación de autobuses en tiempo real
         </p>
@@ -166,9 +162,9 @@ export default function Home() {
                   setZonaActiva(zona);
                   setRutaSeleccionada("");
                 }}
-                className={`p-4 rounded-2xl font-bold text-lg transition-all ${
+                className={`p-4 rounded-2xl font-bold text-lg ${
                   zonaActiva === zona
-                    ? "bg-blue-600 text-white shadow-lg scale-105"
+                    ? "bg-blue-600 text-white shadow-lg"
                     : "bg-slate-200 text-slate-700"
                 }`}
               >
@@ -189,7 +185,6 @@ export default function Home() {
             className="w-full p-4 border-2 border-slate-300 rounded-2xl mb-4 text-lg"
           >
             <option value="">Selecciona una ruta</option>
-
             {rutasActuales.map((ruta: string) => (
               <option key={ruta} value={ruta}>
                 {ruta}
@@ -197,17 +192,40 @@ export default function Home() {
             ))}
           </select>
 
+          <h3 className="text-lg font-bold mb-2">¿Cómo va el autobús?</h3>
+
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {["Vacío", "Medio", "Lleno"].map((opcion) => (
+              <button
+                key={opcion}
+                onClick={() => setOcupacion(opcion)}
+                className={`p-3 rounded-xl font-bold ${
+                  ocupacion === opcion
+                    ? opcion === "Vacío"
+                      ? "bg-green-600 text-white"
+                      : opcion === "Medio"
+                      ? "bg-yellow-400 text-black"
+                      : "bg-red-600 text-white"
+                    : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                {opcion === "Vacío" ? "🟢" : opcion === "Medio" ? "🟡" : "🔴"}{" "}
+                {opcion}
+              </button>
+            ))}
+          </div>
+
           {!seguimientoActivo ? (
             <button
               onClick={iniciarSeguimiento}
-              className="w-full bg-green-600 hover:bg-green-700 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
+              className="w-full bg-green-600 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
             >
               🟢 Estoy en el autobús
             </button>
           ) : (
             <button
               onClick={detenerSeguimiento}
-              className="w-full bg-red-600 hover:bg-red-700 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
+              className="w-full bg-red-600 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
             >
               🔴 Detener seguimiento
             </button>
@@ -224,7 +242,7 @@ export default function Home() {
               <button
                 key={ruta}
                 onClick={() => reportarUnaVez(ruta)}
-                className="bg-blue-600 hover:bg-blue-700 text-white p-5 rounded-2xl text-lg font-bold shadow-lg"
+                className="bg-blue-600 text-white p-5 rounded-2xl text-lg font-bold shadow-lg"
               >
                 📍 {ruta}
               </button>
