@@ -24,6 +24,7 @@ export default function Home() {
   const [watchId, setWatchId] = useState<number | null>(null);
   const [documentoId, setDocumentoId] = useState<string | null>(null);
   const [reportes, setReportes] = useState<any[]>([]);
+  const [busCercano, setBusCercano] = useState<any | null>(null);
 
   const zonas: any = {
     UAT: [
@@ -75,6 +76,58 @@ export default function Home() {
 
   function contarPorRuta(ruta: string) {
     return reportes.filter((reporte) => reporte.nombre === ruta).length;
+  }
+
+  function calcularDistancia(lat1: number, lng1: number, lat2: number, lng2: number) {
+    const R = 6371;
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+  }
+
+  function buscarBusCercano() {
+    if (!navigator.geolocation) {
+      alert("Tu navegador no soporta GPS");
+      return;
+    }
+
+    if (reportes.length === 0) {
+      alert("No hay autobuses activos en este momento");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const miLat = position.coords.latitude;
+        const miLng = position.coords.longitude;
+
+        const busesConDistancia = reportes.map((bus) => {
+          const distancia = calcularDistancia(miLat, miLng, bus.lat, bus.lng);
+
+          return {
+            ...bus,
+            distancia,
+          };
+        });
+
+        busesConDistancia.sort((a, b) => a.distancia - b.distancia);
+
+        setBusCercano(busesConDistancia[0]);
+      },
+      () => {
+        alert("No se pudo obtener tu ubicación");
+      }
+    );
   }
 
   async function reportarUnaVez(nombreRuta: string) {
@@ -182,6 +235,30 @@ export default function Home() {
       <div className="p-4">
         <div className="overflow-hidden rounded-3xl shadow-2xl border-4 border-white">
           <Mapa />
+        </div>
+
+        <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
+          <h2 className="text-2xl font-bold mb-4">
+            📍 Bus más cercano a mí
+          </h2>
+
+          <button
+            onClick={buscarBusCercano}
+            className="w-full bg-purple-600 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
+          >
+            🔎 Buscar bus más cercano
+          </button>
+
+          {busCercano && (
+            <div className="mt-4 bg-purple-100 p-4 rounded-2xl">
+              <p className="font-bold text-lg">🚌 {busCercano.nombre}</p>
+              <p>Estado: {busCercano.estado}</p>
+              <p>Ocupación: {busCercano.ocupacion || "Sin dato"}</p>
+              <p>
+                Distancia aproximada: {busCercano.distancia.toFixed(2)} km
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
