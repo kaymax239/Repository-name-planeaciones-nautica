@@ -1,60 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  collection,
-  doc,
-  onSnapshot,
-  serverTimestamp,
-  setDoc,
-} from "firebase/firestore";
-import { db } from "./firebase";
+import { useState } from "react";
 import dynamic from "next/dynamic";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { db } from "./firebase";
 
 const Mapa = dynamic(() => import("./Mapa"), {
   ssr: false,
 });
 
-const rutasDisponibles = [
-  "Ruta Haciendas Tampico por UAT",
-  "Ruta Tampico Centro",
-  "Ruta Madero",
-  "Ruta Altamira",
-];
+const rutas = ["Haciendas por Av. Hidalgo"];
 
 export default function Home() {
   const [ruta, setRuta] = useState("");
   const [mensaje, setMensaje] = useState("");
-  const [watchId, setWatchId] = useState<number | null>(null);
-  const [conteoRutas, setConteoRutas] = useState<any>({});
-
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "autobuses"), (snapshot) => {
-      const conteo: any = {};
-
-      rutasDisponibles.forEach((ruta) => {
-        conteo[ruta] = 0;
-      });
-
-      snapshot.forEach((doc) => {
-        const data: any = doc.data();
-
-        if (!data.fecha?.seconds) return;
-
-        const fecha = data.fecha.seconds * 1000;
-        const ahora = Date.now();
-        const minutos = (ahora - fecha) / 1000 / 60;
-
-        if (data.activo === true && minutos <= 30) {
-          conteo[data.nombre] = (conteo[data.nombre] || 0) + 1;
-        }
-      });
-
-      setConteoRutas(conteo);
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const getDeviceId = () => {
     let deviceId = localStorage.getItem("deviceId");
@@ -67,7 +26,7 @@ export default function Home() {
     return deviceId;
   };
 
-  const reportarRuta = async () => {
+  const reportarRuta = () => {
     if (!ruta) {
       setMensaje("Primero selecciona una ruta.");
       return;
@@ -78,205 +37,107 @@ export default function Home() {
       return;
     }
 
-    setMensaje("Enviando ubicación en tiempo real...");
+    setMensaje("Buscando tu ubicación...");
 
-    const deviceId = getDeviceId();
-
-    const id = navigator.geolocation.watchPosition(
+    navigator.geolocation.getCurrentPosition(
       async (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+        const deviceId = getDeviceId();
 
         await setDoc(doc(db, "autobuses", deviceId), {
           nombre: ruta,
-          lat,
-          lng,
-          activo: true,
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
           fecha: serverTimestamp(),
         });
 
-        setMensaje("Bus activo en tiempo real.");
+        setMensaje("✅ Ruta reportada correctamente.");
       },
       () => {
-        setMensaje("No se pudo obtener la ubicación.");
+        setMensaje("No se pudo obtener tu ubicación.");
       },
       {
         enableHighAccuracy: true,
-        maximumAge: 0,
         timeout: 10000,
+        maximumAge: 0,
       }
     );
-
-    setWatchId(id);
-  };
-
-  const detenerReporte = async () => {
-    if (watchId !== null) {
-      navigator.geolocation.clearWatch(watchId);
-      setWatchId(null);
-
-      const deviceId = getDeviceId();
-
-      await setDoc(
-        doc(db, "autobuses", deviceId),
-        {
-          activo: false,
-          fecha: serverTimestamp(),
-        },
-        { merge: true }
-      );
-
-      setMensaje("Reporte detenido.");
-    }
   };
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: "#f1f5f9",
-        padding: "15px",
-        fontFamily: "Arial, sans-serif",
-      }}
-    >
+    <main style={{ minHeight: "100vh", background: "#f4f7fb" }}>
       <section
         style={{
-          background: "linear-gradient(135deg, #1d4ed8, #0f172a)",
+          padding: "24px",
+          background: "linear-gradient(135deg, #1d4ed8, #111827)",
           color: "white",
-          borderRadius: "24px",
-          padding: "20px",
-          marginBottom: "20px",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.18)",
+          borderRadius: "0 0 24px 24px",
         }}
       >
-        <h1 style={{ margin: 0 }}>🚍 Rutas Tampico 2</h1>
-        <p style={{ color: "#dbeafe" }}>
-          Rastreo comunitario de rutas en tiempo real.
-        </p>
+        <h1 style={{ fontSize: "32px", margin: 0 }}>🚌 Rutas Tampico MAFA</h1>
+        <p>Rastreo comunitario de rutas en tiempo real.</p>
       </section>
 
-      <section
-        style={{
-          height: "340px",
-          borderRadius: "22px",
-          overflow: "hidden",
-          marginBottom: "20px",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
-        }}
-      >
-        <Mapa />
-      </section>
+      <section style={{ padding: "16px" }}>
+        <div
+          style={{
+            background: "white",
+            borderRadius: "20px",
+            padding: "16px",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+            marginBottom: "16px",
+          }}
+        >
+          <h2>Selecciona tu ruta</h2>
 
-      <section
-        style={{
-          background: "white",
-          borderRadius: "20px",
-          padding: "15px",
-          marginBottom: "20px",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
-        }}
-      >
-        <h2>🚌 Buses activos por ruta</h2>
-
-        {rutasDisponibles.map((nombreRuta) => (
-          <div
-            key={nombreRuta}
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              padding: "12px",
-              borderRadius: "14px",
-              background: "#f8fafc",
-              marginBottom: "10px",
-              border: "1px solid #e2e8f0",
-            }}
-          >
-            <span style={{ fontWeight: "bold" }}>{nombreRuta}</span>
-
-            <span
+          {rutas.map((r) => (
+            <button
+              key={r}
+              onClick={() => setRuta(r)}
               style={{
-                background:
-                  conteoRutas[nombreRuta] > 0 ? "#16a34a" : "#94a3b8",
-                color: "white",
-                padding: "6px 12px",
-                borderRadius: "999px",
+                width: "100%",
+                padding: "14px",
+                marginBottom: "10px",
+                borderRadius: "14px",
+                border: ruta === r ? "3px solid #2563eb" : "1px solid #ddd",
+                background: ruta === r ? "#dbeafe" : "white",
                 fontWeight: "bold",
+                cursor: "pointer",
               }}
             >
-              {conteoRutas[nombreRuta] || 0} activo
-            </span>
-          </div>
-        ))}
-      </section>
-
-      <section
-        style={{
-          background: "white",
-          borderRadius: "20px",
-          padding: "15px",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.12)",
-        }}
-      >
-        <h2>📍 Selecciona tu ruta</h2>
-
-        <select
-          value={ruta}
-          onChange={(e) => setRuta(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "15px",
-            borderRadius: "12px",
-            border: "1px solid #cbd5e1",
-            fontSize: "16px",
-            marginBottom: "15px",
-          }}
-        >
-          <option value="">Selecciona una ruta</option>
-
-          {rutasDisponibles.map((nombreRuta) => (
-            <option key={nombreRuta} value={nombreRuta}>
-              {nombreRuta}
-            </option>
+              {r}
+            </button>
           ))}
-        </select>
 
-        <button
-          onClick={reportarRuta}
+          <button
+            onClick={reportarRuta}
+            style={{
+              width: "100%",
+              padding: "16px",
+              borderRadius: "16px",
+              border: "none",
+              background: "#16a34a",
+              color: "white",
+              fontSize: "18px",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+          >
+            📍 Me subí a esta ruta
+          </button>
+
+          {mensaje && <p style={{ marginTop: "12px" }}>{mensaje}</p>}
+        </div>
+
+        <div
           style={{
-            width: "100%",
-            padding: "15px",
-            borderRadius: "12px",
-            border: "none",
-            background: "#2563eb",
-            color: "white",
-            fontSize: "17px",
-            fontWeight: "bold",
-            marginBottom: "10px",
+            height: "500px",
+            borderRadius: "20px",
+            overflow: "hidden",
+            boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
           }}
         >
-          🚍 Me subí a esta ruta
-        </button>
-
-        <button
-          onClick={detenerReporte}
-          style={{
-            width: "100%",
-            padding: "15px",
-            borderRadius: "12px",
-            border: "none",
-            background: "#dc2626",
-            color: "white",
-            fontSize: "17px",
-            fontWeight: "bold",
-          }}
-        >
-          🛑 Detener reporte
-        </button>
-
-        {mensaje && (
-          <p style={{ marginTop: "15px", fontWeight: "bold" }}>{mensaje}</p>
-        )}
+          <Mapa />
+        </div>
       </section>
     </main>
   );
