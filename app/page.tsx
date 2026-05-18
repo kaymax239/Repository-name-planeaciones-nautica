@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   collection,
@@ -8,6 +8,7 @@ import {
   updateDoc,
   doc,
   serverTimestamp,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -22,6 +23,7 @@ export default function Home() {
   const [seguimientoActivo, setSeguimientoActivo] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
   const [documentoId, setDocumentoId] = useState<string | null>(null);
+  const [reportes, setReportes] = useState<any[]>([]);
 
   const zonas: any = {
     UAT: [
@@ -42,6 +44,38 @@ export default function Home() {
   };
 
   const rutasActuales = zonas[zonaActiva];
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "autobuses"), (snapshot) => {
+      const ahora = Date.now();
+
+      const datos = snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((reporte: any) => {
+          if (!reporte.lat || !reporte.lng) return false;
+          if (reporte.estado === "Seguimiento terminado") return false;
+
+          const fechaMs = reporte.fecha?.seconds
+            ? reporte.fecha.seconds * 1000
+            : 0;
+
+          const minutos = (ahora - fechaMs) / 1000 / 60;
+
+          return minutos <= 10;
+        });
+
+      setReportes(datos);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  function contarPorRuta(ruta: string) {
+    return reportes.filter((reporte) => reporte.nombre === ruta).length;
+  }
 
   async function reportarUnaVez(nombreRuta: string) {
     if (!navigator.geolocation) {
@@ -140,7 +174,7 @@ export default function Home() {
           🚌 Rutas Tampico MAFA
         </h1>
         <p className="text-center mt-2 opacity-90">
-          Ubicación de autobuses en tiempo real
+          Autobuses activos: {reportes.length}
         </p>
       </div>
 
@@ -150,9 +184,7 @@ export default function Home() {
         </div>
 
         <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4 text-slate-800">
-            📍 Selecciona zona
-          </h2>
+          <h2 className="text-2xl font-bold mb-4">📍 Selecciona zona</h2>
 
           <div className="grid grid-cols-2 gap-3">
             {Object.keys(zonas).map((zona) => (
@@ -175,7 +207,25 @@ export default function Home() {
         </div>
 
         <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4 text-slate-800">
+          <h2 className="text-2xl font-bold mb-4">📊 Buses activos por ruta</h2>
+
+          <div className="flex flex-col gap-2">
+            {rutasActuales.map((ruta: string) => (
+              <div
+                key={ruta}
+                className="flex justify-between items-center bg-slate-100 p-3 rounded-xl"
+              >
+                <span className="font-bold">{ruta}</span>
+                <span className="bg-blue-600 text-white px-3 py-1 rounded-full font-bold">
+                  {contarPorRuta(ruta)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
+          <h2 className="text-2xl font-bold mb-4">
             🟢 Compartir ubicación en vivo
           </h2>
 
@@ -233,7 +283,7 @@ export default function Home() {
         </div>
 
         <div className="mt-5">
-          <h2 className="text-2xl font-bold mb-4 text-slate-800">
+          <h2 className="text-2xl font-bold mb-4">
             🚏 Reportar una vez — {zonaActiva}
           </h2>
 
