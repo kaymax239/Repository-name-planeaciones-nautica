@@ -173,6 +173,7 @@ export default function Home() {
         <h1 className="text-4xl font-extrabold text-center">
           🚌 Rutas Tampico MAFA
         </h1>
+
         <p className="text-center mt-2 opacity-90">
           Autobuses activos: {reportes.length}
         </p>
@@ -184,7 +185,9 @@ export default function Home() {
         </div>
 
         <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4">📍 Selecciona zona</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            📍 Selecciona zona
+          </h2>
 
           <div className="grid grid-cols-2 gap-3">
             {Object.keys(zonas).map((zona) => (
@@ -207,7 +210,9 @@ export default function Home() {
         </div>
 
         <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
-          <h2 className="text-2xl font-bold mb-4">📊 Buses activos por ruta</h2>
+          <h2 className="text-2xl font-bold mb-4">
+            📊 Buses activos por ruta
+          </h2>
 
           <div className="flex flex-col gap-2">
             {rutasActuales.map((ruta: string) => (
@@ -216,6 +221,7 @@ export default function Home() {
                 className="flex justify-between items-center bg-slate-100 p-3 rounded-xl"
               >
                 <span className="font-bold">{ruta}</span>
+
                 <span className="bg-blue-600 text-white px-3 py-1 rounded-full font-bold">
                   {contarPorRuta(ruta)}
                 </span>
@@ -235,6 +241,7 @@ export default function Home() {
             className="w-full p-4 border-2 border-slate-300 rounded-2xl mb-4 text-lg"
           >
             <option value="">Selecciona una ruta</option>
+
             {rutasActuales.map((ruta: string) => (
               <option key={ruta} value={ruta}>
                 {ruta}
@@ -242,7 +249,9 @@ export default function Home() {
             ))}
           </select>
 
-          <h3 className="text-lg font-bold mb-2">¿Cómo va el autobús?</h3>
+          <h3 className="text-lg font-bold mb-2">
+            ¿Cómo va el autobús?
+          </h3>
 
           <div className="grid grid-cols-3 gap-2 mb-4">
             {["Vacío", "Medio", "Lleno"].map((opcion) => (
@@ -259,7 +268,11 @@ export default function Home() {
                     : "bg-slate-200 text-slate-700"
                 }`}
               >
-                {opcion === "Vacío" ? "🟢" : opcion === "Medio" ? "🟡" : "🔴"}{" "}
+                {opcion === "Vacío"
+                  ? "🟢"
+                  : opcion === "Medio"
+                  ? "🟡"
+                  : "🔴"}{" "}
                 {opcion}
               </button>
             ))}
