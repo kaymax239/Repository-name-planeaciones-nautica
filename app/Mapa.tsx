@@ -81,11 +81,23 @@ export default function Mapa({
 }) {
   const [autobuses, setAutobuses] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState("");
+  const [darkMode, setDarkMode] = useState(false);
 
   const [miUbicacion, setMiUbicacion] = useState<{
     lat: number;
     lng: number;
   } | null>(null);
+
+  useEffect(() => {
+    const guardado = localStorage.getItem("darkMode");
+    if (guardado === "true") {
+      setDarkMode(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("darkMode", String(darkMode));
+  }, [darkMode]);
 
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(
@@ -160,6 +172,7 @@ export default function Mapa({
         height: "100vh",
         width: "100%",
         fontFamily: "Arial, sans-serif",
+        background: darkMode ? "#020617" : "white",
       }}
     >
       <div
@@ -169,11 +182,15 @@ export default function Mapa({
           left: "15px",
           right: "15px",
           zIndex: 1000,
-          background: "linear-gradient(135deg, #ffffff, #f3f6ff)",
+          background: darkMode
+            ? "linear-gradient(135deg, #020617, #111827)"
+            : "linear-gradient(135deg, #ffffff, #f3f6ff)",
           borderRadius: "22px",
           padding: "16px",
-          boxShadow: "0 8px 25px rgba(0,0,0,0.25)",
-          border: "1px solid rgba(255,255,255,0.8)",
+          boxShadow: "0 8px 25px rgba(0,0,0,0.35)",
+          border: darkMode
+            ? "1px solid #334155"
+            : "1px solid rgba(255,255,255,0.8)",
         }}
       >
         <div
@@ -181,6 +198,7 @@ export default function Mapa({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            gap: "10px",
           }}
         >
           <div>
@@ -188,7 +206,7 @@ export default function Mapa({
               style={{
                 fontSize: "21px",
                 fontWeight: "bold",
-                color: "#111827",
+                color: darkMode ? "#f8fafc" : "#111827",
               }}
             >
               🚌 Rutas Tampico MAFA
@@ -198,12 +216,27 @@ export default function Mapa({
               style={{
                 fontSize: "14px",
                 marginTop: "4px",
-                color: "#6b7280",
+                color: darkMode ? "#cbd5e1" : "#6b7280",
               }}
             >
               Transporte en tiempo real
             </div>
           </div>
+
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            style={{
+              background: darkMode ? "#facc15" : "#111827",
+              color: darkMode ? "#111827" : "white",
+              border: "none",
+              borderRadius: "14px",
+              padding: "10px 12px",
+              fontSize: "18px",
+              cursor: "pointer",
+            }}
+          >
+            {darkMode ? "☀️" : "🌙"}
+          </button>
 
           <div
             style={{
@@ -232,10 +265,12 @@ export default function Mapa({
             width: "100%",
             padding: "12px",
             borderRadius: "14px",
-            border: "1px solid #d1d5db",
+            border: darkMode ? "1px solid #475569" : "1px solid #d1d5db",
             fontSize: "15px",
             outline: "none",
             boxSizing: "border-box",
+            background: darkMode ? "#0f172a" : "white",
+            color: darkMode ? "#f8fafc" : "#111827",
           }}
         />
 
@@ -245,16 +280,24 @@ export default function Mapa({
               marginTop: "14px",
               padding: "13px",
               borderRadius: "16px",
-              background: haciendasActivo ? "#ecfdf5" : "#f3f4f6",
+              background: haciendasActivo
+                ? darkMode
+                  ? "#064e3b"
+                  : "#ecfdf5"
+                : darkMode
+                ? "#1e293b"
+                : "#f3f4f6",
               border: haciendasActivo
                 ? "1px solid #22c55e"
+                : darkMode
+                ? "1px solid #475569"
                 : "1px solid #d1d5db",
             }}
           >
             <div
               style={{
                 fontWeight: "bold",
-                color: "#111827",
+                color: darkMode ? "#f8fafc" : "#111827",
                 fontSize: "15px",
               }}
             >
@@ -264,7 +307,13 @@ export default function Mapa({
             <div
               style={{
                 marginTop: "4px",
-                color: haciendasActivo ? "#16a34a" : "#6b7280",
+                color: haciendasActivo
+                  ? darkMode
+                    ? "#86efac"
+                    : "#16a34a"
+                  : darkMode
+                  ? "#cbd5e1"
+                  : "#6b7280",
                 fontSize: "14px",
               }}
             >
@@ -277,7 +326,7 @@ export default function Mapa({
               <div
                 style={{
                   marginTop: "6px",
-                  color: "#2563eb",
+                  color: darkMode ? "#93c5fd" : "#2563eb",
                   fontSize: "13px",
                   fontWeight: "bold",
                 }}
@@ -291,7 +340,7 @@ export default function Mapa({
             style={{
               marginTop: "14px",
               fontSize: "14px",
-              color: "#6b7280",
+              color: darkMode ? "#cbd5e1" : "#6b7280",
               textAlign: "center",
             }}
           >
@@ -306,6 +355,7 @@ export default function Mapa({
         style={{
           height: "100vh",
           width: "100%",
+          filter: darkMode ? "brightness(0.75)" : "none",
         }}
       >
         <TileLayer
@@ -319,9 +369,9 @@ export default function Mapa({
           <Polyline
             positions={rutaHaciendas as any}
             pathOptions={{
-              color: "#2563eb",
+              color: darkMode ? "#60a5fa" : "#2563eb",
               weight: 6,
-              opacity: 0.85,
+              opacity: 0.9,
             }}
           />
         )}
