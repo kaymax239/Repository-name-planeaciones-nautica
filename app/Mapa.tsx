@@ -8,8 +8,10 @@ import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 
 const iconoBus = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
-  iconSize: [40, 40],
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
+  iconSize: [42, 42],
+  iconAnchor: [21, 42],
+  popupAnchor: [0, -40],
 });
 
 export default function Mapa() {
