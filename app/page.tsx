@@ -136,81 +136,101 @@ export default function Home() {
   }
 
   return (
-    <main className="p-4 bg-gray-100 min-h-screen">
-      <h1 className="text-3xl font-bold text-center mb-4">
-        Rutas Tampico MAFA
-      </h1>
+    <main className="min-h-screen bg-slate-100 pb-20">
+      
+      <div className="bg-gradient-to-r from-blue-700 to-cyan-500 text-white p-5 rounded-b-3xl shadow-xl">
+        <h1 className="text-4xl font-extrabold text-center">
+          🚌 Rutas Tampico MAFA
+        </h1>
 
-      <Mapa />
-
-      <div className="mt-4 bg-white p-4 rounded-2xl shadow">
-        <h2 className="text-xl font-bold mb-3">Selecciona zona</h2>
-
-        <div className="grid grid-cols-2 gap-2 mb-4">
-          {Object.keys(zonas).map((zona) => (
-            <button
-              key={zona}
-              onClick={() => {
-                setZonaActiva(zona);
-                setRutaSeleccionada("");
-              }}
-              className={`p-3 rounded-xl font-bold ${
-                zonaActiva === zona
-                  ? "bg-blue-700 text-white"
-                  : "bg-gray-200 text-black"
-              }`}
-            >
-              {zona}
-            </button>
-          ))}
-        </div>
-
-        <h2 className="text-xl font-bold mb-3">Compartir ubicación en vivo</h2>
-
-        <select
-          value={rutaSeleccionada}
-          onChange={(e) => setRutaSeleccionada(e.target.value)}
-          className="w-full p-3 border rounded-xl mb-3"
-        >
-          <option value="">Selecciona una ruta</option>
-          {rutasActuales.map((ruta: string) => (
-            <option key={ruta} value={ruta}>
-              {ruta}
-            </option>
-          ))}
-        </select>
-
-        {!seguimientoActivo ? (
-          <button
-            onClick={iniciarSeguimiento}
-            className="w-full bg-green-600 text-white p-4 rounded-xl text-lg"
-          >
-            🟢 Estoy en el autobús / Compartir en vivo
-          </button>
-        ) : (
-          <button
-            onClick={detenerSeguimiento}
-            className="w-full bg-red-600 text-white p-4 rounded-xl text-lg"
-          >
-            🔴 Detener seguimiento
-          </button>
-        )}
+        <p className="text-center mt-2 opacity-90">
+          Ubicación de autobuses en tiempo real
+        </p>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3">
-        <h2 className="text-xl font-bold">
-          Reportar una vez — {zonaActiva}
-        </h2>
+      <div className="p-4">
+        <div className="overflow-hidden rounded-3xl shadow-2xl border-4 border-white">
+          <Mapa />
+        </div>
 
-        {rutasActuales.map((ruta: string) => (
-          <button
-            key={ruta}
-            onClick={() => reportarUnaVez(ruta)}
-            className="bg-blue-600 text-white p-4 rounded-xl text-lg"
+        <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
+          <h2 className="text-2xl font-bold mb-4 text-slate-800">
+            📍 Selecciona zona
+          </h2>
+
+          <div className="grid grid-cols-2 gap-3">
+            {Object.keys(zonas).map((zona) => (
+              <button
+                key={zona}
+                onClick={() => {
+                  setZonaActiva(zona);
+                  setRutaSeleccionada("");
+                }}
+                className={`p-4 rounded-2xl font-bold text-lg transition-all ${
+                  zonaActiva === zona
+                    ? "bg-blue-600 text-white shadow-lg scale-105"
+                    : "bg-slate-200 text-slate-700"
+                }`}
+              >
+                {zona}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-5 bg-white p-5 rounded-3xl shadow-xl">
+          <h2 className="text-2xl font-bold mb-4 text-slate-800">
+            🟢 Compartir ubicación en vivo
+          </h2>
+
+          <select
+            value={rutaSeleccionada}
+            onChange={(e) => setRutaSeleccionada(e.target.value)}
+            className="w-full p-4 border-2 border-slate-300 rounded-2xl mb-4 text-lg"
           >
-            Reportar ubicación: {ruta}
-          </button>
-        ))}
+            <option value="">Selecciona una ruta</option>
+
+            {rutasActuales.map((ruta: string) => (
+              <option key={ruta} value={ruta}>
+                {ruta}
+              </option>
+            ))}
+          </select>
+
+          {!seguimientoActivo ? (
+            <button
+              onClick={iniciarSeguimiento}
+              className="w-full bg-green-600 hover:bg-green-700 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
+            >
+              🟢 Estoy en el autobús
+            </button>
+          ) : (
+            <button
+              onClick={detenerSeguimiento}
+              className="w-full bg-red-600 hover:bg-red-700 text-white p-5 rounded-2xl text-xl font-bold shadow-lg"
+            >
+              🔴 Detener seguimiento
+            </button>
+          )}
+        </div>
+
+        <div className="mt-5">
+          <h2 className="text-2xl font-bold mb-4 text-slate-800">
+            🚏 Reportar una vez — {zonaActiva}
+          </h2>
+
+          <div className="flex flex-col gap-4">
+            {rutasActuales.map((ruta: string) => (
+              <button
+                key={ruta}
+                onClick={() => reportarUnaVez(ruta)}
+                className="bg-blue-600 hover:bg-blue-700 text-white p-5 rounded-2xl text-lg font-bold shadow-lg"
+              >
+                📍 {ruta}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </main>
   );
