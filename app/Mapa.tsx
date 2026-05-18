@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import {
   MapContainer,
   TileLayer,
@@ -19,7 +20,7 @@ import {
   query,
 } from "firebase/firestore";
 
-import { db } from "../firebase";
+import { db } from "./firebase";
 
 const busIcon = new L.Icon({
   iconUrl:
@@ -60,7 +61,7 @@ export default function Mapa() {
         return ahora - tiempoBus < 30 * 60 * 1000;
       });
 
-      // SOLO EL ÚLTIMO POR RUTA
+      // SOLO EL MÁS NUEVO POR RUTA
       const ultimosPorRuta: Record<string, any> = {};
 
       activos.forEach((bus) => {
@@ -82,41 +83,122 @@ export default function Mapa() {
     return () => unsubscribe();
   }, []);
 
+  const haciendasActivo = autobuses.some((bus) =>
+    bus.nombre?.toLowerCase().includes("haciendas")
+  );
+
   return (
-    <MapContainer
-      center={[22.2553, -97.8686]}
-      zoom={12}
+    <div
       style={{
+        position: "relative",
         height: "100vh",
         width: "100%",
       }}
     >
-      <TileLayer
-        attribution="OpenStreetMap"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-
-      {/* LINEA HACIENDAS */}
-      <Polyline
-        positions={rutaHaciendas as any}
-        pathOptions={{
-          color: "blue",
-          weight: 6,
+      {/* TARJETA SUPERIOR */}
+      <div
+        style={{
+          position: "absolute",
+          top: "15px",
+          left: "15px",
+          right: "15px",
+          zIndex: 1000,
+          background: "white",
+          borderRadius: "18px",
+          padding: "14px",
+          boxShadow: "0 4px 15px rgba(0,0,0,0.25)",
+          fontFamily: "Arial, sans-serif",
         }}
-      />
-
-      {/* BUSES */}
-      {autobuses.map((bus: any) => (
-        <Marker
-          key={bus.id}
-          position={[bus.lat, bus.lng]}
-          icon={busIcon}
+      >
+        <div
+          style={{
+            fontSize: "20px",
+            fontWeight: "bold",
+          }}
         >
-          <Popup>
-            🚌 {bus.nombre}
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
+          🚌 Rutas Tampico MAFA
+        </div>
+
+        <div
+          style={{
+            fontSize: "14px",
+            marginTop: "5px",
+            color: "#666",
+          }}
+        >
+          Transporte en tiempo real
+        </div>
+
+        {/* RUTA HACIENDAS */}
+        <div
+          style={{
+            marginTop: "12px",
+            padding: "12px",
+            borderRadius: "12px",
+            background: haciendasActivo
+              ? "#e8f8ee"
+              : "#f2f2f2",
+            border: haciendasActivo
+              ? "1px solid #22c55e"
+              : "1px solid #ccc",
+          }}
+        >
+          <strong>
+            Haciendas por Av. Hidalgo
+          </strong>
+
+          <br />
+
+          <span
+            style={{
+              color: haciendasActivo
+                ? "#16a34a"
+                : "#777",
+              fontSize: "14px",
+            }}
+          >
+            {haciendasActivo
+              ? "🟢 Activa ahora"
+              : "⚪ Sin reportes activos"}
+          </span>
+        </div>
+      </div>
+
+      <MapContainer
+        center={[22.2553, -97.8686]}
+        zoom={12}
+        style={{
+          height: "100vh",
+          width: "100%",
+        }}
+      >
+        <TileLayer
+          attribution="OpenStreetMap"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+
+        {/* LINEA HACIENDAS */}
+        <Polyline
+          positions={rutaHaciendas as any}
+          pathOptions={{
+            color: "blue",
+            weight: 6,
+          }}
+        />
+
+        {/* BUSES */}
+        {autobuses.map((bus: any) => (
+          <Marker
+            key={bus.id}
+            position={[bus.lat, bus.lng]}
+            icon={busIcon}
+          >
+            <Popup>
+              🚌 {bus.nombre}
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+    </div>
   );
 }
