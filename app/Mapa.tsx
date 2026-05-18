@@ -1,49 +1,42 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  MapContainer,
-  TileLayer,
-  Marker,
-  Popup,
-} from "react-leaflet";
-
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
-
-import {
-  collection,
-  onSnapshot,
-  query,
-} from "firebase/firestore";
-
+import "leaflet/dist/leaflet.css";
+import { collection, onSnapshot } from "firebase/firestore";
 import { db } from "./firebase";
 
-import "leaflet/dist/leaflet.css";
-
-const busIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
-  iconSize: [38, 38],
+const iconoBus = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/3448/3448339.png",
+  iconSize: [42, 42],
+  iconAnchor: [21, 42],
+  popupAnchor: [0, -40],
 });
 
 export default function Mapa() {
   const [reportes, setReportes] = useState<any[]>([]);
 
   useEffect(() => {
-    const q = query(collection(db, "autobuses"));
+    const unsubscribe = onSnapshot(collection(db, "autobuses"), (snapshot) => {
+      const ahora = Date.now();
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const datos: any[] = [];
+      const datos = snapshot.docs
+        .map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }))
+        .filter((reporte: any) => {
+          if (!reporte.lat || !reporte.lng) return false;
 
-      snapshot.forEach((doc) => {
-        const data = doc.data();
+          const fechaMs = reporte.fecha?.seconds
+            ? reporte.fecha.seconds * 1000
+            : 0;
 
-        if (data.estado !== "Seguimiento terminado") {
-          datos.push({
-            id: doc.id,
-            ...data,
-          });
-        }
-      });
+          const minutos = (ahora - fechaMs) / 1000 / 60;
+
+          return reporte.estado === "En vivo" || minutos <= 30;
+        });
 
       setReportes(datos);
     });
@@ -54,53 +47,33 @@ export default function Mapa() {
   return (
     <MapContainer
       center={[22.2553, -97.8686]}
-      zoom={11}
+      zoom={12}
+      scrollWheelZoom={true}
       style={{
-        height: "450px",
+        height: "500px",
         width: "100%",
+        borderRadius: "20px",
       }}
     >
-      <TileLayer
-        attribution="&copy; OpenStreetMap"
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
       {reportes.map((reporte: any) => (
         <Marker
-          key={reporte.id}
+          key={`${reporte.id}-${reporte.lat}-${reporte.lng}`}
           position={[reporte.lat, reporte.lng]}
-          icon={busIcon}
+          icon={iconoBus}
         >
           <Popup>
-            <div style={{ minWidth: "220px" }}>
-              <h3>
-                🚌 <b>{reporte.nombre}</b>
-              </h3>
-
-              <p>
-                Estado:
-                {" "}
-                {reporte.estado}
-              </p>
-
-              <p>
-                Ocupación:
-                {" "}
-                <b>{reporte.ocupacion || "Sin dato"}</b>
-              </p>
-
-              <p>
-                Lat:
-                {" "}
-                {reporte.lat}
-              </p>
-
-              <p>
-                Lng:
-                {" "}
-                {reporte.lng}
-              </p>
-            </div>
+            🚌 <b>{reporte.nombre}</b>
+            <br />
+            Estado: {reporte.estado || "Reporte"}
+            <br />
+            Ocupación: {reporte.ocupacion || "Sin dato"}
+            <br />
+            Última actualización:{" "}
+            {reporte.fecha?.seconds
+              ? new Date(reporte.fecha.seconds * 1000).toLocaleTimeString()
+              : "Sin hora"}
           </Popup>
         </Marker>
       ))}
