@@ -1,6 +1,8 @@
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
 
+import ServiceWorker from "./ServiceWorker";
+
 export const metadata = {
   title: "Rutas Tampico MAFA",
   description: "Rutas en tiempo real",
@@ -14,7 +16,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
+      <body>
+        <ServiceWorker />
+        {children}
+      </body>
     </html>
   );
 }
