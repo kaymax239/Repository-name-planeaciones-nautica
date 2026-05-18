@@ -17,12 +17,24 @@ export default function Mapa() {
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "autobuses"), (snapshot) => {
+      const ahora = Date.now();
+
       const datos = snapshot.docs
         .map((doc) => ({
           id: doc.id,
           ...doc.data(),
         }))
-        .filter((reporte: any) => reporte.lat && reporte.lng)
+        .filter((reporte: any) => {
+          if (!reporte.lat || !reporte.lng) return false;
+
+          const fechaMs = reporte.fecha?.seconds
+            ? reporte.fecha.seconds * 1000
+            : 0;
+
+          const minutos = (ahora - fechaMs) / 1000 / 60;
+
+          return reporte.estado === "En vivo" || minutos <= 30;
+        })
         .sort((a: any, b: any) => {
           const fechaA = a.fecha?.seconds || 0;
           const fechaB = b.fecha?.seconds || 0;
@@ -59,9 +71,10 @@ export default function Mapa() {
             <br />
             Estado: {reporte.estado || "Reporte"}
             <br />
-            Lat: {reporte.lat}
-            <br />
-            Lng: {reporte.lng}
+            Última actualización:{" "}
+            {reporte.fecha?.seconds
+              ? new Date(reporte.fecha.seconds * 1000).toLocaleTimeString()
+              : "Sin hora"}
           </Popup>
         </Marker>
       ))}
