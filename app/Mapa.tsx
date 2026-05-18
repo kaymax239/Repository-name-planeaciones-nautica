@@ -7,187 +7,77 @@ import {
   Marker,
   Popup,
   Polyline,
-  useMap,
 } from "react-leaflet";
 
 import L from "leaflet";
 
 import "leaflet/dist/leaflet.css";
 
-import { collection, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  query,
+} from "firebase/firestore";
 
-import { db } from "./firebase";
+import { db } from "../firebase";
 
 const busIcon = new L.Icon({
   iconUrl:
     "https://cdn-icons-png.flaticon.com/512/61/61231.png",
-  iconSize: [40, 40],
+  iconSize: [38, 38],
 });
 
-const userIcon = new L.Icon({
-  iconUrl:
-    "https://cdn-icons-png.flaticon.com/512/149/149060.png",
-  iconSize: [35, 35],
-});
-
-const rutaHaciendasHidalgo: [number, number][] = [
-  [22.3005, -97.8755],
-  [22.2920, -97.8730],
-  [22.2820, -97.8700],
-  [22.2720, -97.8665],
-  [22.2620, -97.8635],
-  [22.2520, -97.8605],
-  [22.2420, -97.8580],
-  [22.2320, -97.8560],
-  [22.2220, -97.8540],
-  [22.2120, -97.8520],
-  [22.2040, -97.8500],
+const rutaHaciendas = [
+  [22.2786, -97.8771],
+  [22.2765, -97.8732],
+  [22.2734, -97.8695],
+  [22.2691, -97.8650],
+  [22.2650, -97.8610],
+  [22.2600, -97.8570],
+  [22.2550, -97.8530],
 ];
 
-function SeguirBus({
-  buses,
-  seguirBus,
-}: any) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (
-      seguirBus &&
-      buses.length > 0
-    ) {
-      const ultimoBus = buses[0];
-
-      map.setView(
-        [ultimoBus.lat, ultimoBus.lng],
-        14
-      );
-    }
-  }, [buses, map, seguirBus]);
-
-  return null;
-}
-
-function BotonMiUbicacion({
-  setMiUbicacion,
-  setSeguirBus,
-}: any) {
-  const map = useMap();
-
-  const irAMiUbicacion = () => {
-    if (!navigator.geolocation) {
-      alert(
-        "Tu dispositivo no permite usar ubicación."
-      );
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat =
-          position.coords.latitude;
-
-        const lng =
-          position.coords.longitude;
-
-        setMiUbicacion({
-          lat,
-          lng,
-        });
-
-        setSeguirBus(false);
-
-        map.setView([lat, lng], 16);
-      },
-      () => {
-        alert(
-          "No se pudo obtener tu ubicación."
-        );
-      }
-    );
-  };
-
-  return (
-    <button
-      onClick={irAMiUbicacion}
-      style={{
-        position: "absolute",
-        bottom: "25px",
-        right: "15px",
-        zIndex: 1000,
-        background: "#ffffff",
-        border: "none",
-        borderRadius: "999px",
-        padding: "12px 16px",
-        fontSize: "15px",
-        fontWeight: "bold",
-        boxShadow:
-          "0 4px 12px rgba(0,0,0,0.3)",
-        cursor: "pointer",
-      }}
-    >
-      📍 Mi ubicación
-    </button>
-  );
-}
-
 export default function Mapa() {
-  const [buses, setBuses] =
-    useState<any[]>([]);
-
-  const [miUbicacion, setMiUbicacion] =
-    useState<any>(null);
-
-  const [seguirBus, setSeguirBus] =
-    useState(true);
+  const [autobuses, setAutobuses] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(
-      collection(db, "autobuses"),
-      (snapshot) => {
-        const rutas: any = {};
+    const q = query(collection(db, "autobuses"));
 
-        snapshot.forEach((doc) => {
-          const data: any = doc.data();
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const ahora = Date.now();
 
-          if (!data.fecha?.seconds)
-            return;
+      const docs = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      })) as any[];
 
-          const fecha =
-            data.fecha.seconds * 1000;
+      // SOLO ACTIVOS
+      const activos = docs.filter((bus) => {
+        if (!bus.fecha?.seconds) return false;
 
-          const ahora = Date.now();
+        const tiempoBus = bus.fecha.seconds * 1000;
 
-          const minutos =
-            (ahora - fecha) /
-            1000 /
-            60;
+        return ahora - tiempoBus < 30 * 60 * 1000;
+      });
 
-          if (
-            data.activo === true &&
-            minutos <= 30
-          ) {
-            const ruta = data.nombre;
+      // SOLO EL ÚLTIMO POR RUTA
+      const ultimosPorRuta: Record<string, any> = {};
 
-            if (
-              !rutas[ruta] ||
-              fecha >
-                rutas[ruta].fecha
-                  .seconds *
-                  1000
-            ) {
-              rutas[ruta] = {
-                id: doc.id,
-                ...data,
-              };
-            }
+      activos.forEach((bus) => {
+        if (!ultimosPorRuta[bus.nombre]) {
+          ultimosPorRuta[bus.nombre] = bus;
+        } else {
+          const actual =
+            ultimosPorRuta[bus.nombre].fecha.seconds;
+
+          if (bus.fecha.seconds > actual) {
+            ultimosPorRuta[bus.nombre] = bus;
           }
-        });
+        }
+      });
 
-        setBuses(
-          Object.values(rutas)
-        );
-      }
-    );
+      setAutobuses(Object.values(ultimosPorRuta));
+    });
 
     return () => unsubscribe();
   }, []);
@@ -197,103 +87,33 @@ export default function Mapa() {
       center={[22.2553, -97.8686]}
       zoom={12}
       style={{
-        height: "100%",
+        height: "100vh",
         width: "100%",
       }}
     >
-      <SeguirBus
-        buses={buses}
-        seguirBus={seguirBus}
-      />
-
-      <BotonMiUbicacion
-        setMiUbicacion={
-          setMiUbicacion
-        }
-        setSeguirBus={
-          setSeguirBus
-        }
-      />
-
       <TileLayer
-        attribution='&copy; OpenStreetMap contributors'
+        attribution="OpenStreetMap"
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      
+      {/* LINEA HACIENDAS */}
+      <Polyline
+        positions={rutaHaciendas as any}
+        pathOptions={{
+          color: "blue",
+          weight: 6,
+        }}
+      />
 
-<Polyline
-  positions={rutaHaciendasHidalgo}
-  pathOptions={{
-    color: "black",
-    weight: 12,
-    opacity: 0.8,
-  }}
-/>
-
-<Polyline
-  positions={rutaHaciendasHidalgo}
-  pathOptions={{
-    color: "#ff1744",
-    weight: 7,
-    opacity: 1,
-  }}
-/>
-
-      {miUbicacion && (
-        <Marker
-          position={[
-            miUbicacion.lat,
-            miUbicacion.lng,
-          ]}
-          icon={userIcon}
-        >
-          <Popup>
-            📍 Tú estás aquí
-          </Popup>
-        </Marker>
-      )}
-
-      {buses.map((bus: any) => (
+      {/* BUSES */}
+      {autobuses.map((bus: any) => (
         <Marker
           key={bus.id}
-          position={[
-            bus.lat,
-            bus.lng,
-          ]}
+          position={[bus.lat, bus.lng]}
           icon={busIcon}
         >
           <Popup>
-            <div
-              style={{
-                minWidth: "170px",
-              }}
-            >
-              <h3
-                style={{
-                  margin: 0,
-                }}
-              >
-                🚌 {bus.nombre}
-              </h3>
-
-              <p
-                style={{
-                  margin: "5px 0",
-                }}
-              >
-                Ruta activa en tiempo real
-              </p>
-
-              <small>
-                Última actualización:
-                <br />
-                {new Date(
-                  bus.fecha.seconds *
-                    1000
-                ).toLocaleTimeString()}
-              </small>
-            </div>
+            🚌 {bus.nombre}
           </Popup>
         </Marker>
       ))}
