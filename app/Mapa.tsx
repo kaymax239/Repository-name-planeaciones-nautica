@@ -22,7 +22,12 @@ export default function Mapa() {
           id: doc.id,
           ...doc.data(),
         }))
-        .filter((reporte: any) => reporte.lat && reporte.lng);
+        .filter((reporte: any) => reporte.lat && reporte.lng)
+        .sort((a: any, b: any) => {
+          const fechaA = a.fecha?.seconds || 0;
+          const fechaB = b.fecha?.seconds || 0;
+          return fechaB - fechaA;
+        });
 
       setReportes(datos);
     });
@@ -38,21 +43,25 @@ export default function Mapa() {
       style={{
         height: "500px",
         width: "100%",
-        borderRadius: "15px",
+        borderRadius: "20px",
       }}
     >
       <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
       {reportes.map((reporte: any) => (
         <Marker
-          key={reporte.id}
+          key={`${reporte.id}-${reporte.lat}-${reporte.lng}`}
           position={[reporte.lat, reporte.lng]}
           icon={iconoBus}
         >
           <Popup>
-            🚌 {reporte.nombre}
+            🚌 <b>{reporte.nombre}</b>
             <br />
             Estado: {reporte.estado || "Reporte"}
+            <br />
+            Lat: {reporte.lat}
+            <br />
+            Lng: {reporte.lng}
           </Popup>
         </Marker>
       ))}
