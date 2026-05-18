@@ -12,26 +12,18 @@ import {
 } from "react-leaflet";
 
 import L from "leaflet";
-
 import "leaflet/dist/leaflet.css";
 
-import {
-  collection,
-  onSnapshot,
-  query,
-} from "firebase/firestore";
-
+import { collection, onSnapshot, query } from "firebase/firestore";
 import { db } from "./firebase";
 
 const busIcon = new L.Icon({
-  iconUrl:
-    "https://cdn-icons-png.flaticon.com/512/61/61231.png",
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
   iconSize: [38, 38],
 });
 
 const userIcon = new L.Icon({
-  iconUrl:
-    "https://cdn-icons-png.flaticon.com/512/447/447031.png",
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/447/447031.png",
   iconSize: [35, 35],
 });
 
@@ -39,19 +31,13 @@ const rutaHaciendas = [
   [22.2786, -97.8771],
   [22.2765, -97.8732],
   [22.2734, -97.8695],
-  [22.2691, -97.8650],
-  [22.2650, -97.8610],
-  [22.2600, -97.8570],
-  [22.2550, -97.8530],
+  [22.2691, -97.865],
+  [22.265, -97.861],
+  [22.26, -97.857],
+  [22.255, -97.853],
 ];
 
-function MoverMapa({
-  lat,
-  lng,
-}: {
-  lat: number;
-  lng: number;
-}) {
+function MoverMapa({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
 
   useEffect(() => {
@@ -67,7 +53,6 @@ export default function Mapa({
   rutaSeleccionada?: string;
 }) {
   const [autobuses, setAutobuses] = useState<any[]>([]);
-
   const [miUbicacion, setMiUbicacion] = useState<{
     lat: number;
     lng: number;
@@ -100,36 +85,36 @@ export default function Mapa({
 
       const activos = docs.filter((bus) => {
         if (!bus.fecha?.seconds) return false;
-
         const tiempoBus = bus.fecha.seconds * 1000;
-
         return ahora - tiempoBus < 30 * 60 * 1000;
       });
 
-      const ultimosPorRuta: Record<string, any> = {};
-
-      activos.forEach((bus) => {
-        if (!ultimosPorRuta[bus.nombre]) {
-          ultimosPorRuta[bus.nombre] = bus;
-        } else {
-          const actual =
-            ultimosPorRuta[bus.nombre].fecha.seconds;
-
-          if (bus.fecha.seconds > actual) {
-            ultimosPorRuta[bus.nombre] = bus;
-          }
-        }
-      });
-
-      setAutobuses(Object.values(ultimosPorRuta));
+      setAutobuses(activos);
     });
 
     return () => unsubscribe();
   }, []);
 
-  const haciendasActivo = autobuses.some((bus) =>
+  const busesHaciendas = autobuses.filter((bus) =>
     bus.nombre?.toLowerCase().includes("haciendas")
   );
+
+  const haciendasActivo = busesHaciendas.length > 0;
+
+  const ultimosPorRuta: Record<string, any> = {};
+
+  autobuses.forEach((bus) => {
+    if (!ultimosPorRuta[bus.nombre]) {
+      ultimosPorRuta[bus.nombre] = bus;
+    } else {
+      const actual = ultimosPorRuta[bus.nombre].fecha.seconds;
+      if (bus.fecha.seconds > actual) {
+        ultimosPorRuta[bus.nombre] = bus;
+      }
+    }
+  });
+
+  const busesMapa = Object.values(ultimosPorRuta);
 
   return (
     <div
@@ -137,9 +122,10 @@ export default function Mapa({
         position: "relative",
         height: "100vh",
         width: "100%",
+        fontFamily: "Arial, sans-serif",
       }}
     >
-      {/* TARJETA SUPERIOR */}
+      {/* PANEL PREMIUM */}
       <div
         style={{
           position: "absolute",
@@ -147,63 +133,105 @@ export default function Mapa({
           left: "15px",
           right: "15px",
           zIndex: 1000,
-          background: "white",
-          borderRadius: "18px",
-          padding: "14px",
-          boxShadow: "0 4px 15px rgba(0,0,0,0.25)",
-          fontFamily: "Arial, sans-serif",
+          background: "linear-gradient(135deg, #ffffff, #f3f6ff)",
+          borderRadius: "22px",
+          padding: "16px",
+          boxShadow: "0 8px 25px rgba(0,0,0,0.25)",
+          border: "1px solid rgba(255,255,255,0.8)",
         }}
       >
         <div
           style={{
-            fontSize: "20px",
-            fontWeight: "bold",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
           }}
         >
-          🚌 Rutas Tampico MAFA
+          <div>
+            <div
+              style={{
+                fontSize: "21px",
+                fontWeight: "bold",
+                color: "#111827",
+              }}
+            >
+              🚌 Rutas Tampico MAFA
+            </div>
+
+            <div
+              style={{
+                fontSize: "14px",
+                marginTop: "4px",
+                color: "#6b7280",
+              }}
+            >
+              Transporte en tiempo real
+            </div>
+          </div>
+
+          <div
+            style={{
+              background: "#2563eb",
+              color: "white",
+              padding: "10px 14px",
+              borderRadius: "16px",
+              textAlign: "center",
+              minWidth: "70px",
+              boxShadow: "0 4px 12px rgba(37,99,235,0.35)",
+            }}
+          >
+            <div style={{ fontSize: "22px", fontWeight: "bold" }}>
+              {autobuses.length}
+            </div>
+            <div style={{ fontSize: "11px" }}>activos</div>
+          </div>
         </div>
 
         <div
           style={{
-            fontSize: "14px",
-            marginTop: "5px",
-            color: "#666",
-          }}
-        >
-          Transporte en tiempo real
-        </div>
-
-        <div
-          style={{
-            marginTop: "12px",
-            padding: "12px",
-            borderRadius: "12px",
-            background: haciendasActivo
-              ? "#e8f8ee"
-              : "#f2f2f2",
+            marginTop: "14px",
+            padding: "13px",
+            borderRadius: "16px",
+            background: haciendasActivo ? "#ecfdf5" : "#f3f4f6",
             border: haciendasActivo
               ? "1px solid #22c55e"
-              : "1px solid #ccc",
+              : "1px solid #d1d5db",
           }}
         >
-          <strong>
-            Haciendas por Av. Hidalgo
-          </strong>
-
-          <br />
-
-          <span
+          <div
             style={{
-              color: haciendasActivo
-                ? "#16a34a"
-                : "#777",
+              fontWeight: "bold",
+              color: "#111827",
+              fontSize: "15px",
+            }}
+          >
+            Haciendas por Av. Hidalgo
+          </div>
+
+          <div
+            style={{
+              marginTop: "4px",
+              color: haciendasActivo ? "#16a34a" : "#6b7280",
               fontSize: "14px",
             }}
           >
             {haciendasActivo
-              ? "🟢 Activa ahora"
+              ? `🟢 ${busesHaciendas.length} bus(es) reportando`
               : "⚪ Sin reportes activos"}
-          </span>
+          </div>
+
+          {rutaSeleccionada && (
+            <div
+              style={{
+                marginTop: "6px",
+                color: "#2563eb",
+                fontSize: "13px",
+                fontWeight: "bold",
+              }}
+            >
+              Ruta seleccionada: {rutaSeleccionada}
+            </div>
+          )}
         </div>
       </div>
 
@@ -220,46 +248,31 @@ export default function Mapa({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* MOVER MAPA */}
         {miUbicacion && (
-          <MoverMapa
-            lat={miUbicacion.lat}
-            lng={miUbicacion.lng}
-          />
+          <MoverMapa lat={miUbicacion.lat} lng={miUbicacion.lng} />
         )}
 
-        {/* LINEA HACIENDAS */}
         <Polyline
           positions={rutaHaciendas as any}
           pathOptions={{
-            color: "blue",
+            color: "#2563eb",
             weight: 6,
+            opacity: 0.85,
           }}
         />
 
-        {/* MI UBICACION */}
         {miUbicacion && (
           <Marker
-            position={[
-              miUbicacion.lat,
-              miUbicacion.lng,
-            ]}
+            position={[miUbicacion.lat, miUbicacion.lng]}
             icon={userIcon}
           >
             <Popup>📍 Tú estás aquí</Popup>
           </Marker>
         )}
 
-        {/* BUSES */}
-        {autobuses.map((bus: any) => (
-          <Marker
-            key={bus.id}
-            position={[bus.lat, bus.lng]}
-            icon={busIcon}
-          >
-            <Popup>
-              🚌 {bus.nombre}
-            </Popup>
+        {busesMapa.map((bus: any) => (
+          <Marker key={bus.id} position={[bus.lat, bus.lng]} icon={busIcon}>
+            <Popup>🚌 {bus.nombre}</Popup>
           </Marker>
         ))}
       </MapContainer>
