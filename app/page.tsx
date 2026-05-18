@@ -16,23 +16,37 @@ const Mapa = dynamic(() => import("./Mapa"), {
 });
 
 export default function Home() {
+  const [zonaActiva, setZonaActiva] = useState("UAT");
   const [rutaSeleccionada, setRutaSeleccionada] = useState("");
   const [seguimientoActivo, setSeguimientoActivo] = useState(false);
   const [watchId, setWatchId] = useState<number | null>(null);
   const [documentoId, setDocumentoId] = useState<string | null>(null);
 
-  const rutas = [
-    "Ruta Haciendas Tampico por UAT",
-    "Ruta Haciendas Tampico por Avenida Hidalgo",
-    "Ruta Altamira UAT",
-    "Ruta Pedrera UAT",
-    "Ruta Azteca UAT",
-    "Ruta Niños Héroes",
-    "Ruta Circuito Norte",
-    "Ruta Centro",
-    "Ruta Madero",
-    "Ruta Tampico",
-  ];
+  const zonas: any = {
+    UAT: [
+      "Ruta Haciendas Tampico por UAT",
+      "Ruta Altamira UAT",
+      "Ruta Pedrera UAT",
+      "Ruta Azteca UAT",
+      "Ruta Niños Héroes",
+    ],
+    Tampico: [
+      "Ruta Haciendas Tampico por Avenida Hidalgo",
+      "Ruta Centro",
+      "Ruta Tampico",
+      "Ruta Circuito Norte",
+    ],
+    Madero: [
+      "Ruta Madero",
+    ],
+    Altamira: [
+      "Ruta Altamira UAT",
+      "Ruta Pedrera UAT",
+      "Ruta Azteca UAT",
+    ],
+  };
+
+  const rutasActuales = zonas[zonaActiva];
 
   async function reportarUnaVez(nombreRuta: string) {
     if (!navigator.geolocation) {
@@ -50,7 +64,7 @@ export default function Home() {
           fecha: serverTimestamp(),
         });
 
-        alert("✅ Reporte guardado en Firebase con tu ubicación");
+        alert("✅ Reporte guardado");
       },
       () => {
         alert("❌ No se pudo obtener tu ubicación");
@@ -130,6 +144,27 @@ export default function Home() {
       <Mapa />
 
       <div className="mt-4 bg-white p-4 rounded-2xl shadow">
+        <h2 className="text-xl font-bold mb-3">Selecciona zona</h2>
+
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {Object.keys(zonas).map((zona) => (
+            <button
+              key={zona}
+              onClick={() => {
+                setZonaActiva(zona);
+                setRutaSeleccionada("");
+              }}
+              className={`p-3 rounded-xl font-bold ${
+                zonaActiva === zona
+                  ? "bg-blue-700 text-white"
+                  : "bg-gray-200 text-black"
+              }`}
+            >
+              {zona}
+            </button>
+          ))}
+        </div>
+
         <h2 className="text-xl font-bold mb-3">Compartir ubicación en vivo</h2>
 
         <select
@@ -138,7 +173,7 @@ export default function Home() {
           className="w-full p-3 border rounded-xl mb-3"
         >
           <option value="">Selecciona una ruta</option>
-          {rutas.map((ruta) => (
+          {rutasActuales.map((ruta: string) => (
             <option key={ruta} value={ruta}>
               {ruta}
             </option>
@@ -163,9 +198,11 @@ export default function Home() {
       </div>
 
       <div className="mt-4 flex flex-col gap-3">
-        <h2 className="text-xl font-bold">Reportar una vez</h2>
+        <h2 className="text-xl font-bold">
+          Reportar una vez — {zonaActiva}
+        </h2>
 
-        {rutas.map((ruta) => (
+        {rutasActuales.map((ruta: string) => (
           <button
             key={ruta}
             onClick={() => reportarUnaVez(ruta)}
