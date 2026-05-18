@@ -16,7 +16,7 @@ import "leaflet/dist/leaflet.css";
 
 import { collection, onSnapshot } from "firebase/firestore";
 
-import { db } from "../firebase";
+import { db } from "./firebase";
 
 const busIcon = new L.Icon({
   iconUrl:
