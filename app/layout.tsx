@@ -3,7 +3,8 @@ import "leaflet/dist/leaflet.css";
 
 export const metadata = {
   title: "Rutas Tampico MAFA",
-  description: "Rastreo en tiempo real de rutas de autobuses",
+  description: "Rutas en tiempo real",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
