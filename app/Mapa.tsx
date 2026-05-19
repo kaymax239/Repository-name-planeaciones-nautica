@@ -26,14 +26,79 @@ const userIcon = new L.Icon({
   iconSize: [35, 35],
 });
 
-const rutaHaciendas = [
-  [22.2786, -97.8771],
-  [22.2765, -97.8732],
-  [22.2734, -97.8695],
-  [22.2691, -97.865],
-  [22.265, -97.861],
-  [22.26, -97.857],
-  [22.255, -97.853],
+const rutasMapa = [
+  {
+    nombre: "Haciendas por Av. Hidalgo",
+    color: "#2563eb",
+    puntos: [
+      [22.2786, -97.8771],
+      [22.2765, -97.8732],
+      [22.2734, -97.8695],
+      [22.2691, -97.865],
+      [22.265, -97.861],
+      [22.26, -97.857],
+      [22.255, -97.853],
+    ],
+  },
+  {
+    nombre: "Tancol - Centro",
+    color: "#16a34a",
+    puntos: [
+      [22.2908, -97.8908],
+      [22.2822, -97.8834],
+      [22.2722, -97.8755],
+      [22.2621, -97.869],
+      [22.2535, -97.862],
+      [22.2458, -97.858],
+    ],
+  },
+  {
+    nombre: "Borreguera - Centro",
+    color: "#dc2626",
+    puntos: [
+      [22.302, -97.896],
+      [22.292, -97.889],
+      [22.282, -97.881],
+      [22.271, -97.873],
+      [22.258, -97.864],
+      [22.2458, -97.858],
+    ],
+  },
+  {
+    nombre: "Echeverría - Centro",
+    color: "#9333ea",
+    puntos: [
+      [22.292, -97.903],
+      [22.284, -97.893],
+      [22.275, -97.884],
+      [22.265, -97.873],
+      [22.254, -97.864],
+      [22.2458, -97.858],
+    ],
+  },
+  {
+    nombre: "Madero - Tampico",
+    color: "#f97316",
+    puntos: [
+      [22.2475, -97.836],
+      [22.25, -97.845],
+      [22.2515, -97.853],
+      [22.2485, -97.858],
+      [22.2458, -97.858],
+    ],
+  },
+  {
+    nombre: "Altamira - Tampico",
+    color: "#0891b2",
+    puntos: [
+      [22.3922, -97.938],
+      [22.36, -97.921],
+      [22.328, -97.905],
+      [22.295, -97.887],
+      [22.265, -97.87],
+      [22.2458, -97.858],
+    ],
+  },
 ];
 
 function BotonMiUbicacion({
@@ -191,7 +256,7 @@ export default function Mapa() {
     <div
       style={{
         position: "relative",
-        height: "520px",
+        height: "540px",
         width: "100%",
         background: darkMode ? "#020617" : "white",
       }}
@@ -216,11 +281,28 @@ export default function Mapa() {
         {darkMode ? "☀️" : "🌙"}
       </button>
 
+      <div
+        style={{
+          position: "absolute",
+          left: "12px",
+          top: "12px",
+          zIndex: 1000,
+          background: "rgba(255,255,255,0.95)",
+          borderRadius: "16px",
+          padding: "10px 12px",
+          boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+          fontSize: "13px",
+          fontWeight: "bold",
+        }}
+      >
+        🟢 {autobuses.length} reportes activos
+      </div>
+
       <MapContainer
         center={[22.2553, -97.8686]}
         zoom={12}
         style={{
-          height: "520px",
+          height: "540px",
           width: "100%",
           filter: darkMode ? "brightness(0.75)" : "none",
         }}
@@ -232,13 +314,17 @@ export default function Mapa() {
 
         <BotonMiUbicacion miUbicacion={miUbicacion} />
 
-        <Polyline
-          positions={rutaHaciendas as any}
-          pathOptions={{
-            color: darkMode ? "#60a5fa" : "#2563eb",
-            weight: 6,
-          }}
-        />
+        {rutasMapa.map((ruta) => (
+          <Polyline
+            key={ruta.nombre}
+            positions={ruta.puntos as any}
+            pathOptions={{
+              color: ruta.color,
+              weight: 5,
+              opacity: 0.85,
+            }}
+          />
+        ))}
 
         {miUbicacion && (
           <Marker
