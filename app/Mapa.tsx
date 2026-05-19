@@ -73,11 +73,7 @@ function BotonMiUbicacion({
   );
 }
 
-function MarkerAnimado({
-  bus,
-}: {
-  bus: any;
-}) {
+function MarkerAnimado({ bus }: { bus: any }) {
   const [posicion, setPosicion] = useState<[number, number]>([
     bus.lat,
     bus.lng,
@@ -92,14 +88,10 @@ function MarkerAnimado({
 
     const animar = () => {
       frame++;
-
       const progreso = frame / totalFrames;
 
-      const lat =
-        inicio[0] + (fin[0] - inicio[0]) * progreso;
-
-      const lng =
-        inicio[1] + (fin[1] - inicio[1]) * progreso;
+      const lat = inicio[0] + (fin[0] - inicio[0]) * progreso;
+      const lng = inicio[1] + (fin[1] - inicio[1]) * progreso;
 
       setPosicion([lat, lng]);
 
@@ -113,14 +105,17 @@ function MarkerAnimado({
 
   return (
     <Marker position={posicion} icon={busIcon}>
-      <Popup>🚌 {bus.nombre}</Popup>
+      <Popup>
+        🚌 {bus.nombre}
+        <br />
+        Tipo: {bus.tipoUsuario || "Usuario"}
+      </Popup>
     </Marker>
   );
 }
 
 export default function Mapa() {
   const [autobuses, setAutobuses] = useState<any[]>([]);
-  const [busqueda, setBusqueda] = useState("");
   const [darkMode, setDarkMode] = useState(false);
 
   const [miUbicacion, setMiUbicacion] = useState<{
@@ -130,7 +125,6 @@ export default function Mapa() {
 
   useEffect(() => {
     const guardado = localStorage.getItem("darkMode");
-
     if (guardado === "true") {
       setDarkMode(true);
     }
@@ -167,9 +161,7 @@ export default function Mapa() {
 
       const activos = docs.filter((bus) => {
         if (!bus.fecha?.seconds) return false;
-
         const tiempoBus = bus.fecha.seconds * 1000;
-
         return ahora - tiempoBus < 30 * 60 * 1000;
       });
 
@@ -178,18 +170,6 @@ export default function Mapa() {
 
     return () => unsubscribe();
   }, []);
-
-  const busesHaciendas = autobuses.filter((bus) =>
-    bus.nombre?.toLowerCase().includes("haciendas")
-  );
-
-  const haciendasActivo = busesHaciendas.length > 0;
-
-  const mostrarHaciendas =
-    busqueda.trim() === "" ||
-    "haciendas por av. hidalgo"
-      .toLowerCase()
-      .includes(busqueda.toLowerCase());
 
   const ultimosPorRuta: Record<string, any> = {};
 
@@ -207,176 +187,40 @@ export default function Mapa() {
 
   const busesMapa = Object.values(ultimosPorRuta);
 
-  const ultimoBusHaciendas = busesHaciendas.sort(
-    (a, b) => b.fecha.seconds - a.fecha.seconds
-  )[0];
-
-  let tiempoTexto = "Sin reportes";
-
-  if (ultimoBusHaciendas?.fecha?.seconds) {
-    const ahora = Date.now();
-    const tiempoBus =
-      ultimoBusHaciendas.fecha.seconds * 1000;
-
-    const minutos = Math.floor(
-      (ahora - tiempoBus) / 1000 / 60
-    );
-
-    if (minutos <= 0) {
-      tiempoTexto = "Hace unos segundos";
-    } else if (minutos === 1) {
-      tiempoTexto = "Hace 1 minuto";
-    } else {
-      tiempoTexto = `Hace ${minutos} minutos`;
-    }
-  }
-
   return (
     <div
       style={{
         position: "relative",
-        height: "500px",
+        height: "520px",
         width: "100%",
-        fontFamily: "Arial, sans-serif",
         background: darkMode ? "#020617" : "white",
       }}
     >
-      <div
+      <button
+        onClick={() => setDarkMode(!darkMode)}
         style={{
           position: "absolute",
           top: "15px",
-          left: "15px",
           right: "15px",
           zIndex: 1000,
-          background: darkMode
-            ? "linear-gradient(135deg, #020617, #111827)"
-            : "linear-gradient(135deg, #ffffff, #f3f6ff)",
-          borderRadius: "22px",
-          padding: "16px",
-          boxShadow: "0 8px 25px rgba(0,0,0,0.35)",
+          background: darkMode ? "#facc15" : "#111827",
+          color: darkMode ? "#111827" : "white",
+          border: "none",
+          borderRadius: "14px",
+          padding: "10px 12px",
+          fontSize: "18px",
+          boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
+          cursor: "pointer",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: "10px",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                fontSize: "21px",
-                fontWeight: "bold",
-                color: darkMode ? "#f8fafc" : "#111827",
-              }}
-            >
-              🚌 Rutas Tampico MAFA
-            </div>
-
-            <div
-              style={{
-                fontSize: "14px",
-                marginTop: "4px",
-                color: darkMode ? "#cbd5e1" : "#6b7280",
-              }}
-            >
-              Reportes ciudadanos en tiempo real
-            </div>
-          </div>
-
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            style={{
-              background: darkMode ? "#facc15" : "#111827",
-              color: darkMode ? "#111827" : "white",
-              border: "none",
-              borderRadius: "14px",
-              padding: "10px 12px",
-              fontSize: "18px",
-              cursor: "pointer",
-            }}
-          >
-            {darkMode ? "☀️" : "🌙"}
-          </button>
-        </div>
-
-        <input
-          value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
-          placeholder="Buscar ruta..."
-          style={{
-            marginTop: "14px",
-            width: "100%",
-            padding: "12px",
-            borderRadius: "14px",
-            border: "none",
-            fontSize: "15px",
-            outline: "none",
-            boxSizing: "border-box",
-            background: darkMode ? "#0f172a" : "white",
-            color: darkMode ? "#f8fafc" : "#111827",
-          }}
-        />
-
-        {mostrarHaciendas && (
-          <div
-            style={{
-              marginTop: "14px",
-              padding: "14px",
-              borderRadius: "16px",
-              background: haciendasActivo
-                ? darkMode
-                  ? "#064e3b"
-                  : "#ecfdf5"
-                : darkMode
-                ? "#1e293b"
-                : "#f3f4f6",
-            }}
-          >
-            <div
-              style={{
-                fontWeight: "bold",
-                color: darkMode ? "#f8fafc" : "#111827",
-                fontSize: "16px",
-              }}
-            >
-              Haciendas por Av. Hidalgo
-            </div>
-
-            <div
-              style={{
-                marginTop: "5px",
-                fontSize: "14px",
-                color: haciendasActivo
-                  ? "#22c55e"
-                  : "#6b7280",
-              }}
-            >
-              {haciendasActivo
-                ? `🟢 ${busesHaciendas.length} bus(es) activos`
-                : "⚪ Sin buses activos"}
-            </div>
-
-            <div
-              style={{
-                marginTop: "6px",
-                fontSize: "13px",
-                color: darkMode ? "#cbd5e1" : "#475569",
-              }}
-            >
-              Último reporte: {tiempoTexto}
-            </div>
-          </div>
-        )}
-      </div>
+        {darkMode ? "☀️" : "🌙"}
+      </button>
 
       <MapContainer
         center={[22.2553, -97.8686]}
         zoom={12}
         style={{
-          height: "500px",
+          height: "520px",
           width: "100%",
           filter: darkMode ? "brightness(0.75)" : "none",
         }}
@@ -388,15 +232,13 @@ export default function Mapa() {
 
         <BotonMiUbicacion miUbicacion={miUbicacion} />
 
-        {mostrarHaciendas && (
-          <Polyline
-            positions={rutaHaciendas as any}
-            pathOptions={{
-              color: darkMode ? "#60a5fa" : "#2563eb",
-              weight: 6,
-            }}
-          />
-        )}
+        <Polyline
+          positions={rutaHaciendas as any}
+          pathOptions={{
+            color: darkMode ? "#60a5fa" : "#2563eb",
+            weight: 6,
+          }}
+        />
 
         {miUbicacion && (
           <Marker
