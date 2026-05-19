@@ -190,9 +190,7 @@ export default function Mapa() {
 
   useEffect(() => {
     const guardado = localStorage.getItem("darkMode");
-    if (guardado === "true") {
-      setDarkMode(true);
-    }
+    if (guardado === "true") setDarkMode(true);
   }, []);
 
   useEffect(() => {
@@ -207,9 +205,7 @@ export default function Mapa() {
           lng: position.coords.longitude,
         });
       },
-      (error) => {
-        console.log(error);
-      }
+      (error) => console.log(error)
     );
   }, []);
 
@@ -236,6 +232,25 @@ export default function Mapa() {
     return () => unsubscribe();
   }, []);
 
+  const choferes = autobuses.filter((bus) => bus.tipoUsuario === "chofer");
+  const pasajeros = autobuses.filter((bus) => bus.tipoUsuario === "pasajero");
+
+  const ultimoReporte = autobuses
+    .filter((bus) => bus.fecha?.seconds)
+    .sort((a, b) => b.fecha.seconds - a.fecha.seconds)[0];
+
+  let ultimoTexto = "Sin reportes";
+
+  if (ultimoReporte?.fecha?.seconds) {
+    const minutos = Math.floor(
+      (Date.now() - ultimoReporte.fecha.seconds * 1000) / 1000 / 60
+    );
+
+    if (minutos <= 0) ultimoTexto = "Hace segundos";
+    else if (minutos === 1) ultimoTexto = "Hace 1 minuto";
+    else ultimoTexto = `Hace ${minutos} minutos`;
+  }
+
   const ultimosPorRuta: Record<string, any> = {};
 
   autobuses.forEach((bus) => {
@@ -243,7 +258,6 @@ export default function Mapa() {
       ultimosPorRuta[bus.nombre] = bus;
     } else {
       const actual = ultimosPorRuta[bus.nombre].fecha.seconds;
-
       if (bus.fecha.seconds > actual) {
         ultimosPorRuta[bus.nombre] = bus;
       }
@@ -261,41 +275,78 @@ export default function Mapa() {
         background: darkMode ? "#020617" : "white",
       }}
     >
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        style={{
-          position: "absolute",
-          top: "15px",
-          right: "15px",
-          zIndex: 1000,
-          background: darkMode ? "#facc15" : "#111827",
-          color: darkMode ? "#111827" : "white",
-          border: "none",
-          borderRadius: "14px",
-          padding: "10px 12px",
-          fontSize: "18px",
-          boxShadow: "0 6px 18px rgba(0,0,0,0.35)",
-          cursor: "pointer",
-        }}
-      >
-        {darkMode ? "☀️" : "🌙"}
-      </button>
-
       <div
         style={{
           position: "absolute",
-          left: "12px",
-          top: "12px",
+          top: "14px",
+          left: "14px",
+          right: "14px",
           zIndex: 1000,
-          background: "rgba(255,255,255,0.95)",
-          borderRadius: "16px",
-          padding: "10px 12px",
-          boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
-          fontSize: "13px",
-          fontWeight: "bold",
+          background: darkMode ? "rgba(15,23,42,0.94)" : "rgba(255,255,255,0.96)",
+          borderRadius: "22px",
+          padding: "14px",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.30)",
+          color: darkMode ? "white" : "#111827",
         }}
       >
-        🟢 {autobuses.length} reportes activos
+        <div style={{ display: "flex", justifyContent: "space-between", gap: "10px" }}>
+          <div>
+            <div style={{ fontSize: "18px", fontWeight: "bold" }}>
+              🚍 Panel en vivo
+            </div>
+            <div style={{ fontSize: "13px", color: darkMode ? "#cbd5e1" : "#64748b" }}>
+              Último reporte: {ultimoTexto}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            style={{
+              background: darkMode ? "#facc15" : "#111827",
+              color: darkMode ? "#111827" : "white",
+              border: "none",
+              borderRadius: "14px",
+              padding: "10px 12px",
+              fontSize: "18px",
+              cursor: "pointer",
+            }}
+          >
+            {darkMode ? "☀️" : "🌙"}
+          </button>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: "8px",
+            marginTop: "12px",
+          }}
+        >
+          <div style={boxStyle(darkMode)}>
+            🟢
+            <br />
+            <b>{autobuses.length}</b>
+            <br />
+            activos
+          </div>
+
+          <div style={boxStyle(darkMode)}>
+            🚍
+            <br />
+            <b>{choferes.length}</b>
+            <br />
+            choferes
+          </div>
+
+          <div style={boxStyle(darkMode)}>
+            🧍
+            <br />
+            <b>{pasajeros.length}</b>
+            <br />
+            pasajeros
+          </div>
+        </div>
       </div>
 
       <MapContainer
@@ -327,10 +378,7 @@ export default function Mapa() {
         ))}
 
         {miUbicacion && (
-          <Marker
-            position={[miUbicacion.lat, miUbicacion.lng]}
-            icon={userIcon}
-          >
+          <Marker position={[miUbicacion.lat, miUbicacion.lng]} icon={userIcon}>
             <Popup>📍 Tú estás aquí</Popup>
           </Marker>
         )}
@@ -341,4 +389,15 @@ export default function Mapa() {
       </MapContainer>
     </div>
   );
+}
+
+function boxStyle(darkMode: boolean) {
+  return {
+    textAlign: "center" as const,
+    background: darkMode ? "#1e293b" : "#f1f5f9",
+    borderRadius: "16px",
+    padding: "10px 6px",
+    fontSize: "12px",
+    lineHeight: "18px",
+  };
 }
