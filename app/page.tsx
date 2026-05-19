@@ -9,7 +9,18 @@ const Mapa = dynamic(() => import("./Mapa"), {
   ssr: false,
 });
 
-const rutas = ["Haciendas por Av. Hidalgo"];
+const rutas = [
+  "Haciendas por Av. Hidalgo",
+  "Tancol - Centro",
+  "Borreguera - Centro",
+  "Echeverría - Centro",
+  "Madero - Tampico",
+  "Altamira - Tampico",
+  "Morelos - Centro",
+  "Germinal - Centro",
+  "Enrique Cárdenas - Centro",
+  "Niños Héroes - Centro",
+];
 
 export default function Home() {
   const [tipoUsuario, setTipoUsuario] = useState("");
@@ -95,12 +106,7 @@ export default function Home() {
         </p>
       </section>
 
-      <section
-        style={{
-          padding: "16px",
-          marginTop: "-20px",
-        }}
-      >
+      <section style={{ padding: "16px", marginTop: "-20px" }}>
         <div
           style={{
             background: "white",
@@ -205,26 +211,32 @@ export default function Home() {
             marginBottom: "16px",
           }}
         >
-          <h2 style={{ marginTop: 0, fontSize: "22px" }}>Escoge tu ruta</h2>
+          <h2 style={{ marginTop: 0, fontSize: "22px" }}>
+            Escoge tu ruta
+          </h2>
 
-          {rutas.map((r) => (
-            <button
-              key={r}
-              onClick={() => setRuta(r)}
-              style={{
-                width: "100%",
-                padding: "16px",
-                borderRadius: "18px",
-                border: ruta === r ? "3px solid #2563eb" : "1px solid #d1d5db",
-                background: ruta === r ? "#dbeafe" : "#ffffff",
-                fontWeight: "bold",
-                fontSize: "15px",
-                cursor: "pointer",
-              }}
-            >
-              🛣️ {r}
-            </button>
-          ))}
+          <div style={{ display: "grid", gap: "10px" }}>
+            {rutas.map((r) => (
+              <button
+                key={r}
+                onClick={() => setRuta(r)}
+                style={{
+                  width: "100%",
+                  padding: "15px",
+                  borderRadius: "18px",
+                  border:
+                    ruta === r ? "3px solid #2563eb" : "1px solid #d1d5db",
+                  background: ruta === r ? "#dbeafe" : "#ffffff",
+                  fontWeight: "bold",
+                  fontSize: "15px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                }}
+              >
+                🛣️ {r}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div
