@@ -51,7 +51,7 @@ export default function Home() {
 
         await setDoc(doc(db, "autobuses", deviceId), {
           nombre: ruta,
-          tipoUsuario: tipoUsuario,
+          tipoUsuario,
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           fecha: serverTimestamp(),
@@ -71,74 +71,141 @@ export default function Home() {
   };
 
   return (
-    <main style={{ minHeight: "100vh", background: "#f4f7fb" }}>
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#eef3f8",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
       <section
         style={{
-          padding: "22px",
-          background: "linear-gradient(135deg, #1d4ed8, #111827)",
+          padding: "26px 18px 34px",
+          background: "linear-gradient(135deg, #1d4ed8, #020617)",
           color: "white",
-          borderRadius: "0 0 24px 24px",
+          borderRadius: "0 0 32px 32px",
+          boxShadow: "0 10px 24px rgba(0,0,0,0.25)",
         }}
       >
-        <h1 style={{ fontSize: "30px", margin: 0 }}>🚌 Rutas Tampico MAFA</h1>
-        <p style={{ marginBottom: 0 }}>
+        <h1 style={{ fontSize: "30px", margin: 0 }}>
+          🚌 Rutas Tampico MAFA
+        </h1>
+        <p style={{ margin: "8px 0 0", fontSize: "15px", opacity: 0.9 }}>
           Rastreo comunitario de rutas en tiempo real.
         </p>
       </section>
 
-      <section style={{ padding: "14px" }}>
+      <section
+        style={{
+          padding: "16px",
+          marginTop: "-20px",
+        }}
+      >
         <div
           style={{
             background: "white",
-            borderRadius: "20px",
-            padding: "16px",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
-            marginBottom: "14px",
+            borderRadius: "26px",
+            padding: "18px",
+            boxShadow: "0 12px 28px rgba(0,0,0,0.14)",
+            marginBottom: "16px",
           }}
         >
-          <h2 style={{ marginTop: 0 }}>¿Cómo usarás la app?</h2>
+          <h2 style={{ marginTop: 0, fontSize: "22px" }}>
+            ¿Cómo usarás la app?
+          </h2>
 
-          <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "10px",
+              marginBottom: "18px",
+            }}
+          >
             <button
               onClick={() => setTipoUsuario("chofer")}
               style={{
-                flex: 1,
-                padding: "16px",
-                borderRadius: "16px",
+                padding: "18px 10px",
+                borderRadius: "18px",
                 border:
                   tipoUsuario === "chofer"
                     ? "3px solid #2563eb"
-                    : "1px solid #ddd",
-                background: tipoUsuario === "chofer" ? "#dbeafe" : "white",
+                    : "1px solid #d1d5db",
+                background: tipoUsuario === "chofer" ? "#dbeafe" : "#ffffff",
                 fontWeight: "bold",
                 fontSize: "16px",
                 cursor: "pointer",
               }}
             >
-              🚍 Soy chofer
+              🚍<br />
+              Soy chofer
             </button>
 
             <button
               onClick={() => setTipoUsuario("pasajero")}
               style={{
-                flex: 1,
-                padding: "16px",
-                borderRadius: "16px",
+                padding: "18px 10px",
+                borderRadius: "18px",
                 border:
                   tipoUsuario === "pasajero"
                     ? "3px solid #2563eb"
-                    : "1px solid #ddd",
-                background: tipoUsuario === "pasajero" ? "#dbeafe" : "white",
+                    : "1px solid #d1d5db",
+                background:
+                  tipoUsuario === "pasajero" ? "#dbeafe" : "#ffffff",
                 fontWeight: "bold",
                 fontSize: "16px",
                 cursor: "pointer",
               }}
             >
-              🧍 Soy pasajero
+              🧍<br />
+              Soy pasajero
             </button>
           </div>
 
-          <h2>Escoge tu ruta</h2>
+          <button
+            onClick={compartirUbicacion}
+            style={{
+              width: "100%",
+              padding: "18px",
+              borderRadius: "20px",
+              border: "none",
+              background: "#16a34a",
+              color: "white",
+              fontSize: "18px",
+              fontWeight: "bold",
+              cursor: "pointer",
+              boxShadow: "0 8px 20px rgba(22,163,74,0.35)",
+            }}
+          >
+            📍 Compartir mi ubicación
+          </button>
+
+          {mensaje && (
+            <p
+              style={{
+                marginTop: "14px",
+                padding: "12px",
+                borderRadius: "14px",
+                background: "#f1f5f9",
+                color: "#111827",
+                fontWeight: "bold",
+              }}
+            >
+              {mensaje}
+            </p>
+          )}
+        </div>
+
+        <div
+          style={{
+            background: "white",
+            borderRadius: "26px",
+            padding: "18px",
+            boxShadow: "0 12px 28px rgba(0,0,0,0.14)",
+            marginBottom: "16px",
+          }}
+        >
+          <h2 style={{ marginTop: 0, fontSize: "22px" }}>Escoge tu ruta</h2>
 
           {rutas.map((r) => (
             <button
@@ -146,45 +213,27 @@ export default function Home() {
               onClick={() => setRuta(r)}
               style={{
                 width: "100%",
-                padding: "14px",
-                marginBottom: "12px",
-                borderRadius: "14px",
-                border: ruta === r ? "3px solid #2563eb" : "1px solid #ddd",
-                background: ruta === r ? "#dbeafe" : "white",
+                padding: "16px",
+                borderRadius: "18px",
+                border: ruta === r ? "3px solid #2563eb" : "1px solid #d1d5db",
+                background: ruta === r ? "#dbeafe" : "#ffffff",
                 fontWeight: "bold",
+                fontSize: "15px",
                 cursor: "pointer",
               }}
             >
-              {r}
+              🛣️ {r}
             </button>
           ))}
-
-          <button
-            onClick={compartirUbicacion}
-            style={{
-              width: "100%",
-              padding: "16px",
-              borderRadius: "16px",
-              border: "none",
-              background: "#16a34a",
-              color: "white",
-              fontSize: "18px",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-          >
-            📍 Compartir mi ubicación
-          </button>
-
-          {mensaje && <p style={{ marginTop: "12px" }}>{mensaje}</p>}
         </div>
 
         <div
           style={{
-            height: "520px",
-            borderRadius: "20px",
+            height: "540px",
+            borderRadius: "26px",
             overflow: "hidden",
-            boxShadow: "0 10px 25px rgba(0,0,0,0.12)",
+            boxShadow: "0 12px 28px rgba(0,0,0,0.18)",
+            marginBottom: "24px",
           }}
         >
           <Mapa />
