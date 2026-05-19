@@ -251,6 +251,27 @@ export default function Home() {
           <Mapa />
         </div>
       </section>
+      <div className="mt-6 bg-white/10 p-4 rounded-2xl">
+  <h2 className="text-lg font-bold mb-2">
+    🚍 ¿No encuentras tu ruta?
+  </h2>
+
+  <p className="text-sm opacity-80 mb-3">
+    Escríbela aquí para agregarla próximamente.
+  </p>
+
+  <input
+    type="text"
+    placeholder="Ejemplo: Tampico Playa"
+    className="w-full p-3 rounded-xl text-black"
+  />
+
+  <button
+    className="mt-3 w-full bg-green-500 p-3 rounded-xl font-bold"
+  >
+    Enviar ruta
+  </button>
+</div>
     </main>
   );
 }
