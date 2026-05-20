@@ -1,12 +1,9 @@
-import "./globals.css";
-import "leaflet/dist/leaflet.css";
-
-import PWARegister from "./PWARegister";
-
 export const metadata = {
   title: "Rutas Tampico MAFA",
   description: "Rutas en tiempo real",
-  manifest: "/manifest.webmanifest",
+  verification: {
+    google: "YADlmA3i_pMhMYYWXJ5AxQWZWW6WRSaeNpKGW2tbS54",
+  },
 };
 
 export default function RootLayout({
@@ -16,10 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>
-        <PWARegister />
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
