@@ -1,4 +1,4 @@
-import { Analytics } from "@vercel/analytics/react";
+import { Analytics } from "@vercel/analytics/next";
 export const metadata = {
   title: "Rutas Tampico MAFA",
   description: "Rutas en tiempo real",
