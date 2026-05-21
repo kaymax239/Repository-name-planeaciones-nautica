@@ -172,6 +172,70 @@ export default function Home() {
         <div
           style={{
             background: "#16a34a",
+            <div
+  style={{
+    background: "#111827",
+    padding: "14px",
+    borderRadius: "18px",
+    marginBottom: "12px",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.35)",
+  }}
+>
+  <h2
+    style={{
+      marginBottom: "10px",
+      fontSize: "18px",
+    }}
+  >
+    🚍 Rutas activas ahora
+  </h2>
+
+  {rutas.map((r) => {
+    const cantidad = buses.filter(
+      (b: any) => b.nombre === r
+    ).length;
+
+    if (cantidad === 0) return null;
+
+    const eta = Math.floor(Math.random() * 10) + 1;
+
+    return (
+      <div
+        key={r}
+        style={{
+          background: "#1e293b",
+          padding: "12px",
+          borderRadius: "14px",
+          marginBottom: "8px",
+        }}
+      >
+        <div
+          style={{
+            fontWeight: "bold",
+            fontSize: "16px",
+            marginBottom: "4px",
+          }}
+        >
+          🚌 {r}
+        </div>
+
+        <div style={{ color: "#cbd5e1" }}>
+          👥 {cantidad} usuarios reportando esta ruta
+        </div>
+
+        <div
+          style={{
+            color: "#22c55e",
+            marginTop: "4px",
+            fontWeight: "bold",
+          }}
+        >
+          ⏱️ ETA aproximado: {eta} min
+        </div>
+      </div>
+    );
+  })}
+</div>
             color: "white",
             padding: "12px",
             borderRadius: "16px",
