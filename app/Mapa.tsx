@@ -178,55 +178,6 @@ export default function Mapa() {
           ))}
         </MapContainer>
 
-        <div className="absolute top-4 left-4 right-4 z-[999]">
-          <div className="rounded-3xl bg-black/70 backdrop-blur-xl px-5 py-4 shadow-2xl border border-white/10">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-black text-white">
-                  🚍 Rutas Tampico
-                </h1>
-
-                <p className="text-green-400 text-sm mt-1">
-                  🟢 {busesConETA.length} rutas activas
-                </p>
-              </div>
-
-              <div className="bg-white/10 px-3 py-2 rounded-2xl text-white text-sm">
-                MAFA
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="absolute bottom-4 left-4 right-4 z-[999] flex gap-3 overflow-x-auto pb-2">
-
-          {busesConETA.map((bus, index) => (
-            <div
-              key={index}
-              className="min-w-[190px] rounded-3xl bg-white/90 backdrop-blur-xl p-4 shadow-2xl"
-            >
-              <h2 className="font-bold text-gray-900 text-lg">
-                🚌 {bus.nombre}
-              </h2>
-
-              <p className="text-gray-600 text-sm mt-1">
-                {bus.eta
-                  ? `Llega aprox. en ${bus.eta} min`
-                  : "Calculando ETA"}
-              </p>
-
-              <p className="text-xs text-gray-500 mt-1">
-                {bus.km
-                  ? `${bus.km.toFixed(1)} km de distancia`
-                  : "Ubicación pendiente"}
-              </p>
-
-              <div className="mt-3 rounded-full bg-green-100 py-2 text-center text-xs font-bold text-green-700">
-                En movimiento
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
