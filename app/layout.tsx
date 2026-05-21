@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 export const metadata = {
   title: "Rutas Tampico MAFA",
   description: "Rutas en tiempo real",
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>{children}</body>
-    </html>
+<body>
+  {children}
+  <Analytics />
+</body>
   );
 }
