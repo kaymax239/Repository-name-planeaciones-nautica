@@ -27,7 +27,11 @@ export default function Mapa() {
           ...doc.data(),
         }))
         .filter((bus: any) => {
+          if (typeof bus.lat !== "number") return false;
+          if (typeof bus.lng !== "number") return false;
+
           if (!bus.fecha?.toDate) return true;
+
           const tiempo = bus.fecha.toDate().getTime();
           return ahora - tiempo < 30 * 60 * 1000;
         });
@@ -56,7 +60,7 @@ export default function Mapa() {
       {buses.map((bus: any) => (
         <Marker key={bus.id} position={[bus.lat, bus.lng]} icon={busIcon}>
           <Popup>
-            <b>{bus.nombre}</b>
+            <b>{bus.nombre || "Ruta sin nombre"}</b>
             <br />
             Autobús reportado en tiempo real
           </Popup>
