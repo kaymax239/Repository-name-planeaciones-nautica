@@ -179,16 +179,22 @@ export default function Mapa() {
         </MapContainer>
 
         <div className="absolute top-4 left-4 right-4 z-[999]">
-          <div className="rounded-3xl bg-[#0f172acc] backdrop-blur-xl p-5 shadow-2xl border border-white/10">
-            <h1 className="text-4xl font-black text-white">
-              Rutas Tampico MAFA
-            </h1>
+          <div className="rounded-3xl bg-black/70 backdrop-blur-xl px-5 py-4 shadow-2xl border border-white/10">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-black text-white">
+                  🚍 Rutas Tampico
+                </h1>
 
-            <p className="text-gray-300 mt-2 text-sm">
-              Comparte tu ubicación cuando vayas
-              en una ruta para ayudar a otros
-              usuarios.
-            </p>
+                <p className="text-green-400 text-sm mt-1">
+                  🟢 {busesConETA.length} rutas activas
+                </p>
+              </div>
+
+              <div className="bg-white/10 px-3 py-2 rounded-2xl text-white text-sm">
+                MAFA
+              </div>
+            </div>
           </div>
         </div>
 
