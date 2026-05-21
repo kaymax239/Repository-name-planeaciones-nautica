@@ -120,10 +120,11 @@ export default function Home() {
     <main
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #0f172a, #020617)",
+        background:
+          "linear-gradient(180deg, #020617 0%, #0f172a 40%, #111827 100%)",
         color: "white",
         padding: "16px",
-        fontFamily: "Arial",
+        fontFamily: "system-ui",
       }}
     >
       <div
@@ -134,7 +135,7 @@ export default function Home() {
       >
         <h1
           style={{
-            fontSize: "32px",
+            fontSize: "34px",
             fontWeight: "bold",
             marginBottom: "5px",
           }}
@@ -146,6 +147,7 @@ export default function Home() {
           style={{
             color: "#cbd5e1",
             marginBottom: "15px",
+            fontSize: "16px",
           }}
         >
           Consulta rutas en tiempo real
@@ -155,12 +157,13 @@ export default function Home() {
           style={{
             background: "#16a34a",
             color: "white",
-            padding: "12px",
-            borderRadius: "16px",
+            padding: "14px",
+            borderRadius: "18px",
             textAlign: "center",
-            marginBottom: "12px",
+            marginBottom: "14px",
             fontWeight: "bold",
-            fontSize: "18px",
+            fontSize: "20px",
+            boxShadow: "0 8px 25px rgba(0,0,0,0.35)",
           }}
         >
           🟢 Buses activos ahora: {buses.length}
@@ -168,16 +171,18 @@ export default function Home() {
 
         <div
           style={{
-            background: "#111827",
-            padding: "14px",
-            borderRadius: "18px",
-            marginBottom: "12px",
+            background: "#0f172a",
+            padding: "16px",
+            borderRadius: "22px",
+            marginBottom: "14px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+            border: "1px solid #1e293b",
           }}
         >
           <h2
             style={{
-              marginBottom: "10px",
-              fontSize: "18px",
+              marginBottom: "12px",
+              fontSize: "20px",
             }}
           >
             🚍 Rutas activas ahora
@@ -197,16 +202,16 @@ export default function Home() {
                 key={r}
                 style={{
                   background: "#1e293b",
-                  padding: "12px",
-                  borderRadius: "14px",
-                  marginBottom: "8px",
+                  padding: "14px",
+                  borderRadius: "16px",
+                  marginBottom: "10px",
                 }}
               >
                 <div
                   style={{
                     fontWeight: "bold",
-                    fontSize: "16px",
-                    marginBottom: "4px",
+                    fontSize: "17px",
+                    marginBottom: "5px",
                   }}
                 >
                   🚌 {r}
@@ -215,6 +220,7 @@ export default function Home() {
                 <div
                   style={{
                     color: "#cbd5e1",
+                    marginBottom: "4px",
                   }}
                 >
                   👥 {cantidad} usuarios reportando esta ruta
@@ -223,7 +229,6 @@ export default function Home() {
                 <div
                   style={{
                     color: "#22c55e",
-                    marginTop: "4px",
                     fontWeight: "bold",
                   }}
                 >
@@ -236,10 +241,12 @@ export default function Home() {
 
         <div
           style={{
-            background: "#111827",
-            padding: "14px",
-            borderRadius: "18px",
-            marginBottom: "12px",
+            background: "#0f172a",
+            padding: "18px",
+            borderRadius: "22px",
+            marginBottom: "14px",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.35)",
+            border: "1px solid #1e293b",
           }}
         >
           <select
@@ -247,11 +254,12 @@ export default function Home() {
             onChange={(e) => setRuta(e.target.value)}
             style={{
               width: "100%",
-              padding: "12px",
-              borderRadius: "12px",
+              padding: "14px",
+              borderRadius: "16px",
               border: "none",
-              marginBottom: "10px",
+              marginBottom: "12px",
               fontSize: "16px",
+              background: "#f8fafc",
             }}
           >
             <option value="">Selecciona una ruta</option>
@@ -267,14 +275,15 @@ export default function Home() {
             onClick={reportarRuta}
             style={{
               width: "100%",
-              padding: "14px",
-              borderRadius: "14px",
+              padding: "15px",
+              borderRadius: "16px",
               border: "none",
               background: "#2563eb",
               color: "white",
               fontWeight: "bold",
-              fontSize: "16px",
-              marginBottom: "10px",
+              fontSize: "17px",
+              marginBottom: "12px",
+              cursor: "pointer",
             }}
           >
             📍 Me subí a esta ruta
@@ -284,13 +293,14 @@ export default function Home() {
             onClick={detenerRuta}
             style={{
               width: "100%",
-              padding: "14px",
-              borderRadius: "14px",
+              padding: "15px",
+              borderRadius: "16px",
               border: "none",
               background: "#dc2626",
               color: "white",
               fontWeight: "bold",
-              fontSize: "16px",
+              fontSize: "17px",
+              cursor: "pointer",
             }}
           >
             🛑 Dejar de compartir ubicación
@@ -299,10 +309,11 @@ export default function Home() {
           {mensaje && (
             <div
               style={{
-                marginTop: "12px",
+                marginTop: "14px",
                 background: "#020617",
-                padding: "10px",
-                borderRadius: "12px",
+                padding: "12px",
+                borderRadius: "14px",
+                color: "#e2e8f0",
               }}
             >
               {mensaje}
@@ -312,10 +323,11 @@ export default function Home() {
 
         <div
           style={{
-            height: "450px",
-            borderRadius: "20px",
+            height: "500px",
+            borderRadius: "24px",
             overflow: "hidden",
             border: "2px solid #1e293b",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.45)",
           }}
         >
           <Mapa />
