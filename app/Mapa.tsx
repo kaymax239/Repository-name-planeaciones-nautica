@@ -18,11 +18,19 @@ import { collection, onSnapshot } from "firebase/firestore";
 
 import { db } from "./firebase";
 
-const busIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
-  iconSize: [34, 34],
-  iconAnchor: [17, 34],
-  popupAnchor: [0, -34],
+const busIcon = new L.DivIcon({
+  html: `
+    <div style="
+      background: white;
+      width: 22px;
+      height: 22px;
+      border-radius: 999px;
+      border: 3px solid #22c55e;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+    "></div>
+  `,
+  className: "",
+  iconSize: [22, 22],
 });
 
 const haciendasRoute = [
