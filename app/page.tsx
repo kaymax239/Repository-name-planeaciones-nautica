@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import { doc, setDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  serverTimestamp,
+  collection,
+  addDoc,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 const Mapa = dynamic(() => import("./Mapa"), {
@@ -16,13 +22,9 @@ export default function Home() {
 
   useEffect(() => {
     const registrarUsuario = async () => {
-      try {
-        await addDoc(collection(db, "usuarios_activos"), {
-          fecha: serverTimestamp(),
-        });
-      } catch (error) {
-        console.log(error);
-      }
+      await addDoc(collection(db, "usuarios_activos"), {
+        fecha: serverTimestamp(),
+      });
     };
 
     registrarUsuario();
@@ -51,7 +53,6 @@ export default function Home() {
     }
 
     const deviceId = getDeviceId();
-
     const idRuta = ruta.replaceAll(" ", "_").toLowerCase();
 
     setMensaje("Compartiendo ubicación en vivo...");
@@ -89,21 +90,19 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-md px-4 py-4">
-        <h1 className="text-3xl font-bold">Rutas Tampico MAFA</h1>
+    <main className="min-h-screen bg-[#020617] text-white">
+      <div className="mx-auto max-w-md px-4 py-5">
+        <div className="rounded-3xl bg-slate-900/90 p-5 shadow-2xl border border-slate-700">
+          <h1 className="text-3xl font-black">Rutas Tampico MAFA</h1>
 
-        <p className="mt-2 text-sm text-slate-300">
-          Comparte tu ubicación cuando vayas en una ruta para ayudar a otros usuarios.
-        </p>
-
-        <div className="mt-4 rounded-2xl bg-slate-900 p-4 shadow-lg">
-          <label className="text-sm font-bold">Selecciona tu ruta</label>
+          <p className="mt-2 text-sm text-slate-300">
+            Comparte tu ubicación cuando vayas en una ruta para ayudar a otros usuarios.
+          </p>
 
           <select
             value={ruta}
             onChange={(e) => setRuta(e.target.value)}
-            className="mt-2 w-full rounded-xl bg-white p-3 text-black"
+            className="mt-4 w-full rounded-2xl bg-white p-4 text-black font-bold"
           >
             <option value="">Selecciona una ruta</option>
             <option value="Haciendas por Av. Hidalgo">Haciendas por Av. Hidalgo</option>
@@ -121,26 +120,26 @@ export default function Home() {
 
           <button
             onClick={reportarRuta}
-            className="mt-4 w-full rounded-xl bg-green-600 p-3 font-bold text-white"
+            className="mt-4 w-full rounded-2xl bg-green-500 p-4 font-black text-white shadow-lg"
           >
             🚌 Compartir ubicación
           </button>
 
           <button
             onClick={detenerRuta}
-            className="mt-3 w-full rounded-xl bg-red-600 p-3 font-bold text-white"
+            className="mt-3 w-full rounded-2xl bg-red-600 p-4 font-black text-white shadow-lg"
           >
             🛑 Dejar de compartir ubicación
           </button>
 
           {mensaje && (
-            <p className="mt-3 rounded-xl bg-slate-800 p-3 text-center text-sm">
+            <p className="mt-3 rounded-2xl bg-slate-800 p-3 text-center text-sm">
               {mensaje}
             </p>
           )}
         </div>
 
-        <div className="mt-4 h-[650px] overflow-hidden rounded-2xl">
+        <div className="mt-5 h-[680px] overflow-hidden rounded-3xl border border-slate-700 shadow-2xl">
           <Mapa />
         </div>
       </div>
