@@ -15,10 +15,26 @@ const Mapa = dynamic(() => import("./Mapa"), {
   ssr: false,
 });
 
+const rutas = [
+  "Haciendas por Av. Hidalgo",
+  "Ruta Niños Héroes",
+  "Tampico Madero",
+  "Tampico Altamira",
+  "Morelos",
+  "Borreguera",
+  "Echeverría",
+  "Madero Centro",
+  "Altamira Centro",
+  "Germinal",
+  "Enrique Cárdenas",
+];
+
 export default function Home() {
-  const [ruta, setRuta] = useState("");
+  const [ruta, setRuta] = useState("Haciendas por Av. Hidalgo");
   const [mensaje, setMensaje] = useState("");
   const [watchId, setWatchId] = useState<number | null>(null);
+  const [modo, setModo] = useState<"chofer" | "pasajero">("pasajero");
+  const [ocupacion, setOcupacion] = useState("Medio");
 
   useEffect(() => {
     const registrarUsuario = async () => {
@@ -55,18 +71,20 @@ export default function Home() {
     const deviceId = getDeviceId();
     const idRuta = ruta.replaceAll(" ", "_").toLowerCase();
 
-    setMensaje("Compartiendo ubicación en vivo...");
+    setMensaje("🟢 Ubicación en vivo activada");
 
     const id = navigator.geolocation.watchPosition(
       async (position) => {
         await setDoc(doc(db, "autobuses", `${idRuta}_${deviceId}`), {
           nombre: ruta,
+          tipo: modo,
+          ocupacion,
           lat: position.coords.latitude,
           lng: position.coords.longitude,
           fecha: serverTimestamp(),
         });
 
-        setMensaje(`Compartiendo ubicación: ${ruta}`);
+        setMensaje("✅ Ubicación compartida correctamente.");
       },
       () => {
         setMensaje("No se pudo obtener tu ubicación.");
@@ -90,59 +108,124 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#020617] text-white">
-      <div className="mx-auto max-w-md px-4 py-5">
-        <div className="rounded-3xl bg-slate-900/90 p-5 shadow-2xl border border-slate-700">
-          <h1 className="text-3xl font-black">Rutas Tampico MAFA</h1>
-
-          <p className="mt-2 text-sm text-slate-300">
-            Comparte tu ubicación cuando vayas en una ruta para ayudar a otros usuarios.
+    <main className="min-h-screen bg-[#eef3f8] text-slate-950">
+      <section className="mx-auto max-w-md pb-10">
+        <div className="rounded-b-[42px] bg-gradient-to-br from-blue-700 via-blue-900 to-slate-950 px-7 pb-14 pt-10 text-white shadow-2xl">
+          <h1 className="text-4xl font-black leading-tight">
+            🚌 Rutas Tampico MAFA
+          </h1>
+          <p className="mt-4 text-lg text-blue-100">
+            Rastreo comunitario de rutas en tiempo real.
           </p>
+        </div>
 
-          <select
-            value={ruta}
-            onChange={(e) => setRuta(e.target.value)}
-            className="mt-4 w-full rounded-2xl bg-white p-4 text-black font-bold"
-          >
-            <option value="">Selecciona una ruta</option>
-            <option value="Haciendas por Av. Hidalgo">Haciendas por Av. Hidalgo</option>
-            <option value="Ruta Niños Héroes">Ruta Niños Héroes</option>
-            <option value="Tampico Madero">Tampico Madero</option>
-            <option value="Tampico Altamira">Tampico Altamira</option>
-            <option value="Morelos">Morelos</option>
-            <option value="Borreguera">Borreguera</option>
-            <option value="Echeverría">Echeverría</option>
-            <option value="Madero Centro">Madero Centro</option>
-            <option value="Altamira Centro">Altamira Centro</option>
-            <option value="Germinal">Germinal</option>
-            <option value="Enrique Cárdenas">Enrique Cárdenas</option>
-          </select>
+        <div className="-mt-8 mx-4 rounded-[30px] bg-white p-5 shadow-2xl">
+          <h2 className="text-2xl font-black">¿Cómo usarás la app?</h2>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setModo("chofer")}
+              className={`rounded-2xl border-2 p-4 text-lg font-black ${
+                modo === "chofer"
+                  ? "border-blue-600 bg-blue-100 text-blue-700"
+                  : "border-slate-200 bg-white text-slate-700"
+              }`}
+            >
+              🚌 Soy chofer
+            </button>
+
+            <button
+              onClick={() => setModo("pasajero")}
+              className={`rounded-2xl border-2 p-4 text-lg font-black ${
+                modo === "pasajero"
+                  ? "border-blue-600 bg-blue-100 text-blue-700"
+                  : "border-slate-200 bg-white text-slate-700"
+              }`}
+            >
+              🚶 Soy pasajero
+            </button>
+          </div>
 
           <button
             onClick={reportarRuta}
-            className="mt-4 w-full rounded-2xl bg-green-500 p-4 font-black text-white shadow-lg"
+            className="mt-6 w-full rounded-2xl bg-green-600 p-5 text-xl font-black text-white shadow-xl shadow-green-200"
           >
-            🚌 Compartir ubicación
+            📍 Compartir mi ubicación
           </button>
 
           <button
             onClick={detenerRuta}
-            className="mt-3 w-full rounded-2xl bg-red-600 p-4 font-black text-white shadow-lg"
+            className="mt-3 w-full rounded-2xl bg-red-600 p-4 text-lg font-black text-white shadow-lg"
           >
-            🛑 Dejar de compartir ubicación
+            🛑 Dejar de compartir
           </button>
 
           {mensaje && (
-            <p className="mt-3 rounded-2xl bg-slate-800 p-3 text-center text-sm">
+            <div className="mt-5 rounded-2xl bg-slate-100 p-4 text-lg font-black text-slate-900">
               {mensaje}
-            </p>
+            </div>
           )}
         </div>
 
-        <div className="mt-5 h-[680px] overflow-hidden rounded-3xl border border-slate-700 shadow-2xl">
+        <div className="mx-4 mt-6 rounded-[30px] bg-white p-5 shadow-2xl">
+          <h2 className="text-2xl font-black">Escoge tu ruta</h2>
+
+          <select
+            value={ruta}
+            onChange={(e) => setRuta(e.target.value)}
+            className="mt-5 w-full rounded-2xl border-4 border-blue-600 bg-blue-100 p-4 text-lg font-black text-blue-700"
+          >
+            {rutas.map((r) => (
+              <option key={r} value={r}>
+                🛣️ {r}
+              </option>
+            ))}
+          </select>
+
+          <h2 className="mt-6 text-2xl font-black">¿Cómo va el autobús?</h2>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {["Vacío", "Medio", "Lleno"].map((estado) => (
+              <button
+                key={estado}
+                onClick={() => setOcupacion(estado)}
+                className={`rounded-2xl p-3 text-base font-black ${
+                  ocupacion === estado
+                    ? "bg-yellow-400 text-black"
+                    : "bg-slate-100 text-slate-700"
+                }`}
+              >
+                {estado === "Vacío" && "🟢 "}
+                {estado === "Medio" && "🟡 "}
+                {estado === "Lleno" && "🔴 "}
+                {estado}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="mx-4 mt-6 h-[520px] overflow-hidden rounded-[30px] border border-slate-200 bg-white shadow-2xl">
           <Mapa />
         </div>
-      </div>
+
+        <div className="mx-4 mt-6 rounded-[30px] bg-white p-5 shadow-2xl">
+          <h2 className="text-2xl font-black">🚌 Buses activos por ruta</h2>
+
+          <div className="mt-4 space-y-3">
+            {rutas.slice(0, 6).map((r) => (
+              <div
+                key={r}
+                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4"
+              >
+                <p className="text-lg font-black">{r}</p>
+                <span className="rounded-full bg-blue-700 px-4 py-3 text-lg font-black text-white">
+                  0
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
   );
 }
