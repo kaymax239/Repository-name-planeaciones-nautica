@@ -8,6 +8,7 @@ import {
   serverTimestamp,
   collection,
   addDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { db } from "./firebase";
 
@@ -35,6 +36,8 @@ export default function Home() {
   const [watchId, setWatchId] = useState<number | null>(null);
   const [modo, setModo] = useState<"chofer" | "pasajero">("pasajero");
   const [ocupacion, setOcupacion] = useState("Medio");
+  const [busesActivos, setBusesActivos] = useState<any>({});
+  const [usuariosActivos, setUsuariosActivos] = useState(0);
 
   useEffect(() => {
     const registrarUsuario = async () => {
@@ -44,6 +47,41 @@ export default function Home() {
     };
 
     registrarUsuario();
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
+      const conteo: any = {};
+      const now = Date.now();
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+
+        if (!data.nombre) return;
+
+        const fechaMs = data.fecha?.toDate
+          ? data.fecha.toDate().getTime()
+          : now;
+
+        const ageMinutes = (now - fechaMs) / 60000;
+
+        if (ageMinutes > 30) return;
+
+        conteo[data.nombre] = (conteo[data.nombre] || 0) + 1;
+      });
+
+      setBusesActivos(conteo);
+    });
+
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, "usuarios_activos"), (snapshot) => {
+      setUsuariosActivos(snapshot.size);
+    });
+
+    return () => unsub();
   }, []);
 
   const getDeviceId = () => {
@@ -117,6 +155,11 @@ export default function Home() {
           <p className="mt-4 text-lg text-blue-100">
             Rastreo comunitario de rutas en tiempo real.
           </p>
+
+          <div className="mt-5 rounded-2xl bg-white/15 p-4 backdrop-blur">
+            <p className="text-sm text-blue-100">Usuarios usando la app</p>
+            <p className="text-3xl font-black">{usuariosActivos}</p>
+          </div>
         </div>
 
         <div className="-mt-8 mx-4 rounded-[30px] bg-white p-5 shadow-2xl">
@@ -212,17 +255,31 @@ export default function Home() {
           <h2 className="text-2xl font-black">🚌 Buses activos por ruta</h2>
 
           <div className="mt-4 space-y-3">
-            {rutas.slice(0, 6).map((r) => (
-              <div
-                key={r}
-                className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4"
-              >
-                <p className="text-lg font-black">{r}</p>
-                <span className="rounded-full bg-blue-700 px-4 py-3 text-lg font-black text-white">
-                  0
-                </span>
-              </div>
-            ))}
+            {rutas.map((r) => {
+              const activos = busesActivos[r] || 0;
+
+              return (
+                <div
+                  key={r}
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                >
+                  <div>
+                    <p className="text-lg font-black">{r}</p>
+                    <p className="text-sm text-slate-500">
+                      {activos > 0 ? "Bus reportado recientemente" : "Sin actividad"}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`rounded-full px-4 py-3 text-lg font-black text-white ${
+                      activos > 0 ? "bg-green-600" : "bg-slate-400"
+                    }`}
+                  >
+                    {activos}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
