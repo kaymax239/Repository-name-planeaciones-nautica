@@ -61,6 +61,15 @@ const ninosHeroesRoute: [number, number][] = [
   [22.2605, -97.858],
 ];
 
+const aviacionAmericasRoute: [number, number][] = [
+  [22.2785, -97.8730],
+  [22.2740, -97.8695],
+  [22.2690, -97.8650],
+  [22.2645, -97.8615],
+  [22.2595, -97.8575],
+  [22.2550, -97.8530],
+];
+
 function getDateFromFecha(fecha: any): Date | null {
   if (!fecha) return null;
   if (fecha?.toDate) return fecha.toDate();
@@ -391,6 +400,15 @@ export default function Mapa() {
           positions={ninosHeroesRoute}
           pathOptions={{
             color: darkMode ? "#60a5fa" : "#2563eb",
+            weight: 6,
+            opacity: 0.9,
+          }}
+        />
+
+        <Polyline
+          positions={aviacionAmericasRoute}
+          pathOptions={{
+            color: darkMode ? "#f59e0b" : "#d97706",
             weight: 6,
             opacity: 0.9,
           }}
