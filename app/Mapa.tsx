@@ -102,7 +102,6 @@ function SmoothMarker({ bus }: { bus: Bus }) {
     const animate = () => {
       frame++;
       const progress = frame / totalFrames;
-
       const smoothProgress = 1 - Math.pow(1 - progress, 3);
 
       const lat = start[0] + (end[0] - start[0]) * smoothProgress;
@@ -198,6 +197,7 @@ function AutoFollowBus({ bus }: { bus?: Bus }) {
 export default function Mapa() {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [followLive, setFollowLive] = useState(true);
+  const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
@@ -249,8 +249,19 @@ export default function Mapa() {
     tiempo: getMinutesAgo(bus.fecha),
   }));
 
+  const mapUrl = darkMode
+    ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+    : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+
   return (
-    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100vh",
+        position: "relative",
+        background: darkMode ? "#020617" : "#f8fafc",
+      }}
+    >
       <div
         style={{
           position: "absolute",
@@ -258,11 +269,16 @@ export default function Mapa() {
           left: 16,
           right: 16,
           zIndex: 1000,
-          background: "rgba(17,24,39,.92)",
-          color: "white",
+          background: darkMode
+            ? "rgba(2,6,23,.94)"
+            : "rgba(255,255,255,.94)",
+          color: darkMode ? "white" : "#111827",
           borderRadius: 22,
           padding: 16,
           boxShadow: "0 15px 35px rgba(0,0,0,.35)",
+          border: darkMode
+            ? "1px solid rgba(255,255,255,.12)"
+            : "1px solid rgba(0,0,0,.08)",
         }}
       >
         <div style={{ fontSize: 22, fontWeight: 900 }}>
@@ -292,13 +308,19 @@ export default function Mapa() {
             key={e.id}
             style={{
               minWidth: 170,
-              background: "rgba(255,255,255,.95)",
+              background: darkMode
+                ? "rgba(15,23,42,.94)"
+                : "rgba(255,255,255,.95)",
+              color: darkMode ? "white" : "#111827",
               borderRadius: 18,
               padding: "10px 14px",
-              boxShadow: "0 8px 20px rgba(0,0,0,.15)",
+              boxShadow: "0 8px 20px rgba(0,0,0,.22)",
               fontSize: 13,
               fontWeight: 700,
               backdropFilter: "blur(10px)",
+              border: darkMode
+                ? "1px solid rgba(255,255,255,.12)"
+                : "1px solid rgba(0,0,0,.06)",
             }}
           >
             🚌 {e.nombre}
@@ -309,6 +331,25 @@ export default function Mapa() {
           </div>
         ))}
       </div>
+
+      <button
+        onClick={() => setDarkMode(!darkMode)}
+        style={{
+          position: "absolute",
+          bottom: 144,
+          right: 16,
+          zIndex: 1000,
+          border: "none",
+          borderRadius: 999,
+          padding: "12px 16px",
+          background: darkMode ? "#f8fafc" : "#020617",
+          color: darkMode ? "#020617" : "white",
+          fontWeight: 900,
+          boxShadow: "0 10px 25px rgba(0,0,0,.35)",
+        }}
+      >
+        {darkMode ? "☀️ Claro" : "🌙 Oscuro"}
+      </button>
 
       <button
         onClick={() => setFollowLive(!followLive)}
@@ -335,19 +376,24 @@ export default function Mapa() {
         style={{ width: "100%", height: "100%" }}
         zoomControl={false}
       >
-        <TileLayer
-          attribution="&copy; OpenStreetMap"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer attribution="&copy; OpenStreetMap & Carto" url={mapUrl} />
 
         <Polyline
           positions={haciendasRoute}
-          pathOptions={{ color: "#22c55e", weight: 6, opacity: 0.8 }}
+          pathOptions={{
+            color: darkMode ? "#22c55e" : "#16a34a",
+            weight: 6,
+            opacity: 0.9,
+          }}
         />
 
         <Polyline
           positions={ninosHeroesRoute}
-          pathOptions={{ color: "#3b82f6", weight: 6, opacity: 0.8 }}
+          pathOptions={{
+            color: darkMode ? "#60a5fa" : "#2563eb",
+            weight: 6,
+            opacity: 0.9,
+          }}
         />
 
         {busesActivos.map((bus) => (
