@@ -11,11 +11,9 @@ import {
 } from "react-leaflet";
 
 import L from "leaflet";
-
 import "leaflet/dist/leaflet.css";
 
 import { collection, onSnapshot } from "firebase/firestore";
-
 import { db } from "./firebase";
 
 type Bus = {
@@ -30,24 +28,22 @@ type Bus = {
 const busIcon = new L.DivIcon({
   html: `
     <div style="
-      width: 38px;
-      height: 38px;
+      width: 42px;
+      height: 42px;
       border-radius: 999px;
       background: linear-gradient(135deg, #16a34a, #22c55e);
       border: 3px solid white;
-      box-shadow: 0 8px 25px rgba(0,0,0,.35);
+      box-shadow: 0 10px 30px rgba(0,0,0,.4);
       display:flex;
       align-items:center;
       justify-content:center;
-      font-size:20px;
-    ">
-      🚌
-    </div>
+      font-size:21px;
+    ">🚌</div>
   `,
   className: "",
-  iconSize: [38, 38],
-  iconAnchor: [19, 19],
-  popupAnchor: [0, -18],
+  iconSize: [42, 42],
+  iconAnchor: [21, 21],
+  popupAnchor: [0, -20],
 });
 
 const haciendasRoute: [number, number][] = [
@@ -65,62 +61,52 @@ const ninosHeroesRoute: [number, number][] = [
   [22.2605, -97.858],
 ];
 
+function getDateFromFecha(fecha: any): Date | null {
+  if (!fecha) return null;
+  if (fecha?.toDate) return fecha.toDate();
+  if (fecha?.seconds) return new Date(fecha.seconds * 1000);
+  return new Date(fecha);
+}
+
 function getMinutesAgo(fecha: any) {
-  if (!fecha) return "ahorita";
-
-  let date: Date;
-
-  if (fecha?.toDate) {
-    date = fecha.toDate();
-  } else if (fecha?.seconds) {
-    date = new Date(fecha.seconds * 1000);
-  } else {
-    date = new Date(fecha);
-  }
+  const date = getDateFromFecha(fecha);
+  if (!date) return "ahorita";
 
   const diff = Math.floor((Date.now() - date.getTime()) / 60000);
 
   if (diff < 1) return "ahorita";
   if (diff === 1) return "hace 1 min";
-
   return `hace ${diff} min`;
 }
 
 function calculateEta(bus: Bus) {
-  const randomEta = Math.max(
-    2,
-    Math.min(12, Math.round(5 + Math.random() * 5))
-  );
-
-  return `${randomEta} min`;
+  const base = Math.abs(bus.lat + bus.lng) % 8;
+  const eta = Math.max(2, Math.round(base + 3));
+  return `${eta} min`;
 }
 
 function SmoothMarker({ bus }: { bus: Bus }) {
   const markerRef = useRef<L.Marker | null>(null);
-
   const lastPos = useRef<[number, number]>([bus.lat, bus.lng]);
 
   useEffect(() => {
     const marker = markerRef.current;
-
     if (!marker) return;
 
     const start = lastPos.current;
-
     const end: [number, number] = [bus.lat, bus.lng];
 
     let frame = 0;
-
-    const totalFrames = 30;
+    const totalFrames = 45;
 
     const animate = () => {
       frame++;
-
       const progress = frame / totalFrames;
 
-      const lat = start[0] + (end[0] - start[0]) * progress;
+      const smoothProgress = 1 - Math.pow(1 - progress, 3);
 
-      const lng = start[1] + (end[1] - start[1]) * progress;
+      const lat = start[0] + (end[0] - start[0]) * smoothProgress;
+      const lng = start[1] + (end[1] - start[1]) * smoothProgress;
 
       marker.setLatLng([lat, lng]);
 
@@ -143,17 +129,11 @@ function SmoothMarker({ bus }: { bus: Bus }) {
       <Popup>
         <div style={{ minWidth: 190 }}>
           <strong>{bus.nombre || bus.ruta || "Ruta Tampico"}</strong>
-
           <br />
-
           🟢 En movimiento
-
           <br />
-
           ⏱ ETA: {calculateEta(bus)}
-
           <br />
-
           📍 Último reporte: {getMinutesAgo(bus.fecha)}
         </div>
       </Popup>
@@ -167,7 +147,10 @@ function MiUbicacionButton() {
   const irAMiUbicacion = () => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        map.flyTo([pos.coords.latitude, pos.coords.longitude], 16);
+        map.flyTo([pos.coords.latitude, pos.coords.longitude], 16, {
+          animate: true,
+          duration: 1.5,
+        });
       },
       () => {
         alert("No se pudo obtener tu ubicación.");
@@ -188,7 +171,7 @@ function MiUbicacionButton() {
         padding: "12px 16px",
         background: "#111827",
         color: "white",
-        fontWeight: 700,
+        fontWeight: 800,
         boxShadow: "0 10px 25px rgba(0,0,0,.35)",
       }}
     >
@@ -197,8 +180,24 @@ function MiUbicacionButton() {
   );
 }
 
+function AutoFollowBus({ bus }: { bus?: Bus }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!bus) return;
+
+    map.flyTo([bus.lat, bus.lng], 15, {
+      animate: true,
+      duration: 1.8,
+    });
+  }, [bus?.id, bus?.lat, bus?.lng, map]);
+
+  return null;
+}
+
 export default function Mapa() {
   const [buses, setBuses] = useState<Bus[]>([]);
+  const [followLive, setFollowLive] = useState(true);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
@@ -225,23 +224,23 @@ export default function Mapa() {
 
   const busesActivos = useMemo(() => {
     return buses.filter((bus) => {
-      if (!bus.fecha) return true;
-
-      let date: Date;
-
-      if (bus.fecha?.toDate) {
-        date = bus.fecha.toDate();
-      } else if (bus.fecha?.seconds) {
-        date = new Date(bus.fecha.seconds * 1000);
-      } else {
-        date = new Date(bus.fecha);
-      }
+      const date = getDateFromFecha(bus.fecha);
+      if (!date) return true;
 
       const diffMin = (Date.now() - date.getTime()) / 60000;
-
       return diffMin <= 30;
     });
   }, [buses]);
+
+  const busMasReciente = useMemo(() => {
+    if (busesActivos.length === 0) return undefined;
+
+    return [...busesActivos].sort((a, b) => {
+      const da = getDateFromFecha(a.fecha)?.getTime() || 0;
+      const db = getDateFromFecha(b.fecha)?.getTime() || 0;
+      return db - da;
+    })[0];
+  }, [busesActivos]);
 
   const etiquetas = busesActivos.map((bus) => ({
     id: bus.id,
@@ -251,13 +250,7 @@ export default function Mapa() {
   }));
 
   return (
-    <div
-      style={{
-        width: "100%",
-        height: "100vh",
-        position: "relative",
-      }}
-    >
+    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
       <div
         style={{
           position: "absolute",
@@ -272,21 +265,11 @@ export default function Mapa() {
           boxShadow: "0 15px 35px rgba(0,0,0,.35)",
         }}
       >
-        <div
-          style={{
-            fontSize: 22,
-            fontWeight: 900,
-          }}
-        >
+        <div style={{ fontSize: 22, fontWeight: 900 }}>
           Rutas Tampico MAFA
         </div>
 
-        <div
-          style={{
-            fontSize: 14,
-            opacity: 0.85,
-          }}
-        >
+        <div style={{ fontSize: 14, opacity: 0.85 }}>
           🟢 {busesActivos.length} buses activos en vivo
         </div>
       </div>
@@ -319,25 +302,37 @@ export default function Mapa() {
             }}
           >
             🚌 {e.nombre}
-
             <br />
-
             ⏱ ETA {e.eta}
-
             <br />
-
             🟢 {e.tiempo}
           </div>
         ))}
       </div>
 
+      <button
+        onClick={() => setFollowLive(!followLive)}
+        style={{
+          position: "absolute",
+          bottom: 84,
+          right: 16,
+          zIndex: 1000,
+          border: "none",
+          borderRadius: 999,
+          padding: "12px 16px",
+          background: followLive ? "#16a34a" : "#6b7280",
+          color: "white",
+          fontWeight: 800,
+          boxShadow: "0 10px 25px rgba(0,0,0,.35)",
+        }}
+      >
+        {followLive ? "🟢 Siguiendo bus" : "⚪ Seguir bus"}
+      </button>
+
       <MapContainer
         center={[22.2553, -97.8686]}
         zoom={13}
-        style={{
-          width: "100%",
-          height: "100%",
-        }}
+        style={{ width: "100%", height: "100%" }}
         zoomControl={false}
       >
         <TileLayer
@@ -347,25 +342,19 @@ export default function Mapa() {
 
         <Polyline
           positions={haciendasRoute}
-          pathOptions={{
-            color: "#22c55e",
-            weight: 6,
-            opacity: 0.8,
-          }}
+          pathOptions={{ color: "#22c55e", weight: 6, opacity: 0.8 }}
         />
 
         <Polyline
           positions={ninosHeroesRoute}
-          pathOptions={{
-            color: "#3b82f6",
-            weight: 6,
-            opacity: 0.8,
-          }}
+          pathOptions={{ color: "#3b82f6", weight: 6, opacity: 0.8 }}
         />
 
         {busesActivos.map((bus) => (
           <SmoothMarker key={bus.id} bus={bus} />
         ))}
+
+        {followLive && <AutoFollowBus bus={busMasReciente} />}
 
         <MiUbicacionButton />
       </MapContainer>
