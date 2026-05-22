@@ -9,9 +9,13 @@ import {
   Polyline,
   useMap,
 } from "react-leaflet";
+
 import L from "leaflet";
+
 import "leaflet/dist/leaflet.css";
+
 import { collection, onSnapshot } from "firebase/firestore";
+
 import { db } from "./firebase";
 
 type Bus = {
@@ -36,7 +40,9 @@ const busIcon = new L.DivIcon({
       align-items:center;
       justify-content:center;
       font-size:20px;
-    ">🚌</div>
+    ">
+      🚌
+    </div>
   `,
   className: "",
   iconSize: [38, 38],
@@ -60,7 +66,7 @@ const ninosHeroesRoute: [number, number][] = [
 ];
 
 function getMinutesAgo(fecha: any) {
-  if (!fecha) return "sin tiempo";
+  if (!fecha) return "ahorita";
 
   let date: Date;
 
@@ -76,33 +82,44 @@ function getMinutesAgo(fecha: any) {
 
   if (diff < 1) return "ahorita";
   if (diff === 1) return "hace 1 min";
+
   return `hace ${diff} min`;
 }
 
 function calculateEta(bus: Bus) {
-  const randomEta = Math.max(2, Math.min(12, Math.round(5 + Math.random() * 5)));
+  const randomEta = Math.max(
+    2,
+    Math.min(12, Math.round(5 + Math.random() * 5))
+  );
+
   return `${randomEta} min`;
 }
 
 function SmoothMarker({ bus }: { bus: Bus }) {
   const markerRef = useRef<L.Marker | null>(null);
+
   const lastPos = useRef<[number, number]>([bus.lat, bus.lng]);
 
   useEffect(() => {
     const marker = markerRef.current;
+
     if (!marker) return;
 
     const start = lastPos.current;
+
     const end: [number, number] = [bus.lat, bus.lng];
 
     let frame = 0;
+
     const totalFrames = 30;
 
     const animate = () => {
       frame++;
+
       const progress = frame / totalFrames;
 
       const lat = start[0] + (end[0] - start[0]) * progress;
+
       const lng = start[1] + (end[1] - start[1]) * progress;
 
       marker.setLatLng([lat, lng]);
@@ -118,15 +135,25 @@ function SmoothMarker({ bus }: { bus: Bus }) {
   }, [bus.lat, bus.lng]);
 
   return (
-    <Marker ref={markerRef as any} position={[bus.lat, bus.lng]} icon={busIcon}>
+    <Marker
+      ref={markerRef as any}
+      position={[bus.lat, bus.lng]}
+      icon={busIcon}
+    >
       <Popup>
         <div style={{ minWidth: 190 }}>
           <strong>{bus.nombre || bus.ruta || "Ruta Tampico"}</strong>
+
           <br />
+
           🟢 En movimiento
+
           <br />
+
           ⏱ ETA: {calculateEta(bus)}
+
           <br />
+
           📍 Último reporte: {getMinutesAgo(bus.fecha)}
         </div>
       </Popup>
@@ -178,6 +205,7 @@ export default function Mapa() {
       const data: Bus[] = snapshot.docs
         .map((doc) => {
           const d = doc.data() as any;
+
           return {
             id: doc.id,
             nombre: d.nombre || d.ruta || "Ruta Tampico",
@@ -210,12 +238,26 @@ export default function Mapa() {
       }
 
       const diffMin = (Date.now() - date.getTime()) / 60000;
+
       return diffMin <= 30;
     });
   }, [buses]);
 
+  const etiquetas = busesActivos.map((bus) => ({
+    id: bus.id,
+    nombre: bus.nombre || "Ruta",
+    eta: calculateEta(bus),
+    tiempo: getMinutesAgo(bus.fecha),
+  }));
+
   return (
-    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100vh",
+        position: "relative",
+      }}
+    >
       <div
         style={{
           position: "absolute",
@@ -230,16 +272,72 @@ export default function Mapa() {
           boxShadow: "0 15px 35px rgba(0,0,0,.35)",
         }}
       >
-        <div style={{ fontSize: 22, fontWeight: 900 }}>Rutas Tampico MAFA</div>
-        <div style={{ fontSize: 14, opacity: 0.85 }}>
+        <div
+          style={{
+            fontSize: 22,
+            fontWeight: 900,
+          }}
+        >
+          Rutas Tampico MAFA
+        </div>
+
+        <div
+          style={{
+            fontSize: 14,
+            opacity: 0.85,
+          }}
+        >
           🟢 {busesActivos.length} buses activos en vivo
         </div>
+      </div>
+
+      <div
+        style={{
+          position: "absolute",
+          top: 95,
+          left: 12,
+          right: 12,
+          zIndex: 999,
+          display: "flex",
+          gap: 10,
+          overflowX: "auto",
+          paddingBottom: 4,
+        }}
+      >
+        {etiquetas.map((e) => (
+          <div
+            key={e.id}
+            style={{
+              minWidth: 170,
+              background: "rgba(255,255,255,.95)",
+              borderRadius: 18,
+              padding: "10px 14px",
+              boxShadow: "0 8px 20px rgba(0,0,0,.15)",
+              fontSize: 13,
+              fontWeight: 700,
+              backdropFilter: "blur(10px)",
+            }}
+          >
+            🚌 {e.nombre}
+
+            <br />
+
+            ⏱ ETA {e.eta}
+
+            <br />
+
+            🟢 {e.tiempo}
+          </div>
+        ))}
       </div>
 
       <MapContainer
         center={[22.2553, -97.8686]}
         zoom={13}
-        style={{ width: "100%", height: "100%" }}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
         zoomControl={false}
       >
         <TileLayer
@@ -249,12 +347,20 @@ export default function Mapa() {
 
         <Polyline
           positions={haciendasRoute}
-          pathOptions={{ color: "#22c55e", weight: 6, opacity: 0.8 }}
+          pathOptions={{
+            color: "#22c55e",
+            weight: 6,
+            opacity: 0.8,
+          }}
         />
 
         <Polyline
           positions={ninosHeroesRoute}
-          pathOptions={{ color: "#3b82f6", weight: 6, opacity: 0.8 }}
+          pathOptions={{
+            color: "#3b82f6",
+            weight: 6,
+            opacity: 0.8,
+          }}
         />
 
         {busesActivos.map((bus) => (
