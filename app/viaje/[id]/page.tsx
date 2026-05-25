@@ -24,7 +24,6 @@ const Marker = dynamic(
 export default function ViajePage() {
   const params = useParams();
   const id = params.id as string;
-
   const [pos, setPos] = useState<[number, number] | null>(null);
 
   useEffect(() => {
