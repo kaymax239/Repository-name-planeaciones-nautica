@@ -24,6 +24,8 @@ type Bus = {
   fecha?: any;
 };
 
+type Zona = "Tampico / Madero" | "Zona Norte / Altamira";
+
 const busIcon = new L.DivIcon({
   html: `
     <div style="
@@ -59,6 +61,7 @@ const miUbicacionIcon = new L.DivIcon({
 
 const rutas = [
   {
+    zona: "Tampico / Madero",
     nombre: "Haciendas",
     color: "#22c55e",
     puntos: [
@@ -69,6 +72,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Niños Héroes",
     color: "#3b82f6",
     puntos: [
@@ -79,6 +83,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Circuito Norte",
     color: "#f97316",
     puntos: [
@@ -89,6 +94,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Tampico - Madero",
     color: "#a855f7",
     puntos: [
@@ -99,6 +105,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Borreguera",
     color: "#eab308",
     puntos: [
@@ -109,6 +116,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Tancol",
     color: "#06b6d4",
     puntos: [
@@ -119,6 +127,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Playa Norte",
     color: "#0ea5e9",
     puntos: [
@@ -130,6 +139,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Águila - Madero",
     color: "#84cc16",
     puntos: [
@@ -140,6 +150,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Madero - Borreguera",
     color: "#f43f5e",
     puntos: [
@@ -150,6 +161,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Tampico - Fovissste - Playa",
     color: "#6366f1",
     puntos: [
@@ -161,6 +173,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Germinal - Boulevard",
     color: "#ec4899",
     puntos: [
@@ -171,6 +184,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Bosque - Boulevard",
     color: "#10b981",
     puntos: [
@@ -181,6 +195,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Tampico - Valle",
     color: "#f59e0b",
     puntos: [
@@ -191,6 +206,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Tampico - Niños Héroes - Isleta",
     color: "#14b8a6",
     puntos: [
@@ -202,6 +218,7 @@ const rutas = [
     ],
   },
   {
+    zona: "Tampico / Madero",
     nombre: "Madero - Ganadera - Niños Héroes",
     color: "#8b5cf6",
     puntos: [
@@ -210,6 +227,62 @@ const rutas = [
       [22.26, -97.85],
       [22.268, -97.865],
       [22.276, -97.878],
+    ],
+  },
+
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Tampico",
+    color: "#ef4444",
+    puntos: [
+      [22.392, -97.92],
+      [22.35, -97.9],
+      [22.31, -97.88],
+      [22.2553, -97.8686],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Nuevo Tampico",
+    color: "#f97316",
+    puntos: [
+      [22.392, -97.92],
+      [22.37, -97.9],
+      [22.34, -97.885],
+      [22.31, -97.875],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Borreguera",
+    color: "#eab308",
+    puntos: [
+      [22.392, -97.92],
+      [22.35, -97.9],
+      [22.31, -97.885],
+      [22.276, -97.889],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Centro",
+    color: "#22c55e",
+    puntos: [
+      [22.392, -97.92],
+      [22.385, -97.91],
+      [22.376, -97.9],
+      [22.365, -97.89],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Guadalupe Victoria",
+    color: "#3b82f6",
+    puntos: [
+      [22.392, -97.92],
+      [22.405, -97.91],
+      [22.42, -97.9],
+      [22.435, -97.89],
     ],
   },
 ];
@@ -229,6 +302,8 @@ function AjustarMapa({ ubicacion }: { ubicacion: [number, number] | null }) {
 export default function Mapa() {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
+  const [zonaSeleccionada, setZonaSeleccionada] =
+    useState<Zona>("Tampico / Madero");
   const [rutaSeleccionada, setRutaSeleccionada] = useState<string>("Todas");
 
   useEffect(() => {
@@ -254,6 +329,10 @@ export default function Mapa() {
     return () => unsub();
   }, []);
 
+  const rutasDeZona = useMemo(() => {
+    return rutas.filter((ruta) => ruta.zona === zonaSeleccionada);
+  }, [zonaSeleccionada]);
+
   const busesFiltrados = useMemo(() => {
     if (rutaSeleccionada === "Todas") return buses;
 
@@ -263,6 +342,11 @@ export default function Mapa() {
         b.ruta?.toLowerCase().includes(rutaSeleccionada.toLowerCase())
     );
   }, [buses, rutaSeleccionada]);
+
+  const cambiarZona = (zona: Zona) => {
+    setZonaSeleccionada(zona);
+    setRutaSeleccionada("Todas");
+  };
 
   const obtenerMiUbicacion = () => {
     if (!navigator.geolocation) {
@@ -302,6 +386,48 @@ export default function Mapa() {
           Autobuses activos: {busesFiltrados.length}
         </div>
 
+        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+          <button
+            onClick={() => cambiarZona("Tampico / Madero")}
+            style={{
+              flex: 1,
+              padding: "10px 12px",
+              borderRadius: 999,
+              border: "none",
+              background:
+                zonaSeleccionada === "Tampico / Madero" ? "#22c55e" : "white",
+              color:
+                zonaSeleccionada === "Tampico / Madero" ? "white" : "#111827",
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            Tampico / Madero
+          </button>
+
+          <button
+            onClick={() => cambiarZona("Zona Norte / Altamira")}
+            style={{
+              flex: 1,
+              padding: "10px 12px",
+              borderRadius: 999,
+              border: "none",
+              background:
+                zonaSeleccionada === "Zona Norte / Altamira"
+                  ? "#ef4444"
+                  : "white",
+              color:
+                zonaSeleccionada === "Zona Norte / Altamira"
+                  ? "white"
+                  : "#111827",
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            Zona Norte
+          </button>
+        </div>
+
         <div
           style={{
             display: "flex",
@@ -317,7 +443,7 @@ export default function Mapa() {
               padding: "8px 12px",
               borderRadius: 999,
               border: "none",
-              background: rutaSeleccionada === "Todas" ? "#22c55e" : "white",
+              background: rutaSeleccionada === "Todas" ? "#2563eb" : "white",
               color: rutaSeleccionada === "Todas" ? "white" : "#111827",
               fontWeight: 700,
               whiteSpace: "nowrap",
@@ -327,7 +453,7 @@ export default function Mapa() {
             Todas
           </button>
 
-          {rutas.map((ruta) => (
+          {rutasDeZona.map((ruta) => (
             <button
               key={ruta.nombre}
               onClick={() => setRutaSeleccionada(ruta.nombre)}
@@ -382,7 +508,7 @@ export default function Mapa() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {rutas.map((ruta) => (
+        {rutasDeZona.map((ruta) => (
           <Polyline
             key={ruta.nombre}
             positions={ruta.puntos as [number, number][]}
