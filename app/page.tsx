@@ -10,6 +10,17 @@ const Mapa = dynamic(() => import("./Mapa"), {
 export default function Home() {
   const [modo, setModo] = useState<"inicio" | "chofer" | "pasajero">("inicio");
 
+  const abrirWhatsAppViajeSeguro = () => {
+    const mensaje =
+      "Estoy usando Rutas Tampico. Te comparto mi viaje por seguridad. Por favor mantente pendiente.";
+    const url = `https://wa.me/?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, "_blank");
+  };
+
+  const llamarEmergencias = () => {
+    window.location.href = "tel:911";
+  };
+
   if (modo === "inicio") {
     return (
       <main
@@ -33,14 +44,7 @@ export default function Home() {
             boxShadow: "0 10px 30px rgba(0,0,0,.45)",
           }}
         >
-          <h1
-            style={{
-              color: "white",
-              fontSize: 30,
-              fontWeight: 800,
-              marginBottom: 10,
-            }}
-          >
+          <h1 style={{ color: "white", fontSize: 30, fontWeight: 800 }}>
             🚍 Rutas Tampico
           </h1>
 
@@ -111,41 +115,62 @@ export default function Home() {
         ← Inicio
       </button>
 
-      {modo === "chofer" && (
+      <div
+        style={{
+          position: "absolute",
+          left: 12,
+          bottom: 90,
+          zIndex: 9999,
+          display: "flex",
+          flexDirection: "column",
+          gap: 10,
+        }}
+      >
         <div
           style={{
-            position: "absolute",
-            bottom: 90,
-            left: 12,
-            zIndex: 9999,
-            background: "#22c55e",
+            background: modo === "chofer" ? "#22c55e" : "#2563eb",
             color: "white",
-            padding: 14,
+            padding: 12,
             borderRadius: 16,
             fontWeight: 700,
+            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
           }}
         >
-          🚌 Modo Chofer activo
+          {modo === "chofer" ? "🚌 Modo Chofer activo" : "👤 Modo Pasajero activo"}
         </div>
-      )}
 
-      {modo === "pasajero" && (
-        <div
+        <button
+          onClick={abrirWhatsAppViajeSeguro}
           style={{
-            position: "absolute",
-            bottom: 90,
-            left: 12,
-            zIndex: 9999,
-            background: "#2563eb",
+            background: "#16a34a",
             color: "white",
-            padding: 14,
+            border: "none",
+            padding: "12px 14px",
             borderRadius: 16,
-            fontWeight: 700,
+            fontWeight: 800,
+            cursor: "pointer",
+            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
           }}
         >
-          👤 Modo Pasajero activo
-        </div>
-      )}
+          🛡️ Viaje Seguro WhatsApp
+        </button>
+
+        <button
+          onClick={llamarEmergencias}
+          style={{
+            background: "#dc2626",
+            color: "white",
+            border: "none",
+            padding: "12px 14px",
+            borderRadius: 16,
+            fontWeight: 800,
+            cursor: "pointer",
+            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
+          }}
+        >
+          🚨 Emergencia 911
+        </button>
+      </div>
     </div>
   );
 }
