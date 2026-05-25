@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../../../firebase";
 
 const MapContainer = dynamic(
   () => import("react-leaflet").then((m) => m.MapContainer),
@@ -30,16 +30,13 @@ export default function ViajePage() {
   useEffect(() => {
     if (!id) return;
 
-    const unsub = onSnapshot(
-      doc(db, "viajesSeguros", id),
-      (snap) => {
-        const data = snap.data();
+    const unsub = onSnapshot(doc(db, "viajesSeguros", id), (snap) => {
+      const data = snap.data();
 
-        if (data?.lat && data?.lng) {
-          setPos([data.lat, data.lng]);
-        }
+      if (data?.lat && data?.lng) {
+        setPos([data.lat, data.lng]);
       }
-    );
+    });
 
     return () => unsub();
   }, [id]);
@@ -59,9 +56,7 @@ export default function ViajePage() {
         zoom={16}
         style={{ width: "100%", height: "100%" }}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Marker position={pos} />
       </MapContainer>
     </main>
