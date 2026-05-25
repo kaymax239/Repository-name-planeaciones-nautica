@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Mapa from "./Mapa";
+import dynamic from "next/dynamic";
+
+const Mapa = dynamic(() => import("./Mapa"), {
+  ssr: false,
+});
 
 export default function Home() {
   const [modo, setModo] = useState<"inicio" | "chofer" | "pasajero">("inicio");
@@ -40,12 +44,7 @@ export default function Home() {
             🚍 Rutas Tampico
           </h1>
 
-          <p
-            style={{
-              color: "#cbd5e1",
-              marginBottom: 28,
-            }}
-          >
+          <p style={{ color: "#cbd5e1", marginBottom: 28 }}>
             Transporte en vivo para Tampico, Madero y Altamira
           </p>
 
@@ -89,7 +88,7 @@ export default function Home() {
   }
 
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", width: "100%", height: "100vh" }}>
       <Mapa />
 
       <button
@@ -124,7 +123,6 @@ export default function Home() {
             padding: 14,
             borderRadius: 16,
             fontWeight: 700,
-            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
           }}
         >
           🚌 Modo Chofer activo
@@ -143,7 +141,6 @@ export default function Home() {
             padding: 14,
             borderRadius: 16,
             fontWeight: 700,
-            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
           }}
         >
           👤 Modo Pasajero activo
