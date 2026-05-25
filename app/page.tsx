@@ -10,7 +10,7 @@ const Mapa = dynamic(() => import("./Mapa"), {
 
 export default function Home() {
   return (
-    <main className="relative w-screen h-screen overflow-hidden">
+    <main className="relative min-h-screen w-full overflow-y-auto pb-40">
       <PWARegister />
       <Mapa />
       <ViajeSeguro />
