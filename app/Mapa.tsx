@@ -24,11 +24,21 @@ type Bus = {
   fecha?: any;
 };
 
-const busIcon = new L.Icon({
-  iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
-  iconSize: [34, 34],
-  iconAnchor: [17, 34],
-  popupAnchor: [0, -34],
+const busIcon = new L.DivIcon({
+  html: `
+    <div style="
+      width:22px;
+      height:22px;
+      background:white;
+      border:4px solid #22c55e;
+      border-radius:999px;
+      box-shadow:0 4px 12px rgba(0,0,0,.45);
+    "></div>
+  `,
+  className: "",
+  iconSize: [22, 22],
+  iconAnchor: [11, 11],
+  popupAnchor: [0, -12],
 });
 
 const miUbicacionIcon = new L.DivIcon({
