@@ -42,20 +42,22 @@ const busIcon = new L.DivIcon({
 });
 
 const miUbicacionIcon = new L.DivIcon({
-  html: `<div style="
-    width:18px;
-    height:18px;
-    background:#2563eb;
-    border:3px solid white;
-    border-radius:999px;
-    box-shadow:0 0 12px rgba(37,99,235,.8);
-  "></div>`,
+  html: `
+    <div style="
+      width:18px;
+      height:18px;
+      background:#2563eb;
+      border:3px solid white;
+      border-radius:999px;
+      box-shadow:0 0 12px rgba(37,99,235,.8);
+    "></div>
+  `,
   className: "",
   iconSize: [18, 18],
   iconAnchor: [9, 9],
 });
 
-  const rutas = [
+const rutas = [
   {
     nombre: "Haciendas",
     color: "#22c55e",
@@ -210,80 +212,6 @@ const miUbicacionIcon = new L.DivIcon({
       [22.276, -97.878],
     ],
   },
-},
-{
- {
-  nombre: "Niños Héroes",
-  color: "#3b82f6",
-  puntos: [
-    [22.243, -97.865],
-    [22.2505, -97.858],
-    [22.257, -97.849],
-    [22.265, -97.841],
-  ],
-},
-    ],
-  },
-  {
-    nombre: "Circuito Norte",
-    color: "#f97316",
-    puntos: [
-      [22.275, -97.895],
-      [22.282, -97.881],
-      [22.287, -97.865],
-      [22.292, -97.849],
-    ],
-  },
-  {
-    nombre: "Tampico - Madero",
-    color: "#a855f7",
-    puntos: [
-      [22.2553, -97.8686],
-      [22.244, -97.849],
-      [22.236, -97.836],
-      [22.225, -97.821],
-    ],
-  },
-  {
-    nombre: "Altamira",
-    color: "#ef4444",
-    puntos: [
-      [22.2553, -97.8686],
-      [22.295, -97.875],
-      [22.335, -97.884],
-      [22.392, -97.92],
-    ],
-  },
-  {
-    nombre: "Centro Tampico",
-    color: "#14b8a6",
-    puntos: [
-      [22.216, -97.858],
-      [22.224, -97.862],
-      [22.234, -97.866],
-      [22.245, -97.87],
-    ],
-  },
-  {
-    nombre: "Borreguera",
-    color: "#eab308",
-    puntos: [
-      [22.255, -97.868],
-      [22.264, -97.878],
-      [22.274, -97.888],
-      [22.283, -97.899],
-    ],
-  },
-  {
-    nombre: "Tancol",
-    color: "#06b6d4",
-    puntos: [
-      [22.255, -97.868],
-      [22.27, -97.86],
-      [22.285, -97.852],
-      [22.302, -97.845],
-    ],
-  },
 ];
 
 function AjustarMapa({ ubicacion }: { ubicacion: [number, number] | null }) {
@@ -308,6 +236,7 @@ export default function Mapa() {
       const data: Bus[] = snapshot.docs
         .map((doc) => {
           const d = doc.data() as any;
+
           return {
             id: doc.id,
             nombre: d.nombre || d.ruta || "Autobús",
@@ -327,6 +256,7 @@ export default function Mapa() {
 
   const busesFiltrados = useMemo(() => {
     if (rutaSeleccionada === "Todas") return buses;
+
     return buses.filter(
       (b) =>
         b.nombre?.toLowerCase().includes(rutaSeleccionada.toLowerCase()) ||
@@ -367,6 +297,7 @@ export default function Mapa() {
         }}
       >
         <div style={{ fontSize: 18, fontWeight: 800 }}>Rutas Tampico</div>
+
         <div style={{ fontSize: 13, opacity: 0.85 }}>
           Autobuses activos: {busesFiltrados.length}
         </div>
@@ -390,6 +321,7 @@ export default function Mapa() {
               color: rutaSeleccionada === "Todas" ? "white" : "#111827",
               fontWeight: 700,
               whiteSpace: "nowrap",
+              cursor: "pointer",
             }}
           >
             Todas
@@ -408,6 +340,7 @@ export default function Mapa() {
                 color: rutaSeleccionada === ruta.nombre ? "white" : "#111827",
                 fontWeight: 700,
                 whiteSpace: "nowrap",
+                cursor: "pointer",
               }}
             >
               {ruta.nombre}
@@ -429,6 +362,7 @@ export default function Mapa() {
           padding: "12px 16px",
           borderRadius: 999,
           fontWeight: 800,
+          cursor: "pointer",
           boxShadow: "0 8px 20px rgba(0,0,0,.35)",
         }}
       >
@@ -459,7 +393,7 @@ export default function Mapa() {
                 rutaSeleccionada === "Todas" ||
                 rutaSeleccionada === ruta.nombre
                   ? 0.85
-                  : 0.15,
+                  : 0.12,
             }}
           />
         ))}
