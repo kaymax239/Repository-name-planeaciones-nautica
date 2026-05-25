@@ -1,10 +1,13 @@
 "use client";
 
+import "leaflet/dist/leaflet.css";
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
+import L from "leaflet";
 
 const MapContainer = dynamic(
   () => import("react-leaflet").then((m) => m.MapContainer),
@@ -21,9 +24,16 @@ const Marker = dynamic(
   { ssr: false }
 );
 
+const busIcon = new L.Icon({
+  iconUrl: "https://cdn-icons-png.flaticon.com/512/61/61231.png",
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+});
+
 export default function ViajePage() {
   const params = useParams();
   const id = params.id as string;
+
   const [pos, setPos] = useState<[number, number] | null>(null);
 
   useEffect(() => {
@@ -45,7 +55,7 @@ export default function ViajePage() {
 
   if (!pos) {
     return (
-      <main className="flex h-screen items-center justify-center text-xl font-bold">
+      <main className="flex h-screen items-center justify-center bg-black text-white text-xl font-bold">
         Esperando ubicación del viaje...
       </main>
     );
@@ -61,7 +71,7 @@ export default function ViajePage() {
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <Marker position={pos} />
+        <Marker position={pos} icon={busIcon} />
       </MapContainer>
     </main>
   );
