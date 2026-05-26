@@ -12,7 +12,13 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { collection, onSnapshot } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  setDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import { db } from "./firebase";
 
 type Bus = {
@@ -229,7 +235,6 @@ const rutas = [
       [22.276, -97.878],
     ],
   },
-
   {
     zona: "Zona Norte / Altamira",
     nombre: "Altamira - Tampico",
@@ -302,6 +307,7 @@ function AjustarMapa({ ubicacion }: { ubicacion: [number, number] | null }) {
 export default function Mapa() {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
+  const [pasajeroActivo, setPasajeroActivo] = useState(false);
   const [zonaSeleccionada, setZonaSeleccionada] =
     useState<Zona>("Tampico / Madero");
   const [rutaSeleccionada, setRutaSeleccionada] = useState<string>("Todas");
@@ -309,11 +315,11 @@ export default function Mapa() {
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
       const data: Bus[] = snapshot.docs
-        .map((doc) => {
-          const d = doc.data() as any;
+        .map((docSnap) => {
+          const d = docSnap.data() as any;
 
           return {
-            id: doc.id,
+            id: docSnap.id,
             nombre: d.nombre || d.ruta || "Autobús",
             ruta: d.ruta || d.nombre || "Sin ruta",
             lat: Number(d.lat),
@@ -328,6 +334,52 @@ export default function Mapa() {
 
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    if (!pasajeroActivo) return;
+
+    if (!navigator.geolocation) {
+      alert("Tu navegador no permite ubicación.");
+      setPasajeroActivo(false);
+      return;
+    }
+
+    const pasajeroId =
+      localStorage.getItem("pasajeroId") ||
+      `pasajero-${Math.random().toString(36).substring(2, 12)}`;
+
+    localStorage.setItem("pasajeroId", pasajeroId);
+
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+
+        setUbicacion([lat, lng]);
+
+        await setDoc(doc(db, "autobuses", pasajeroId), {
+          nombre: rutaSeleccionada === "Todas" ? "Pasajero activo" : rutaSeleccionada,
+          ruta: rutaSeleccionada === "Todas" ? "Pasajero activo" : rutaSeleccionada,
+          lat,
+          lng,
+          tipo: "pasajero",
+          activo: true,
+          fecha: serverTimestamp(),
+        });
+      },
+      () => {
+        alert("No se pudo activar la ubicación del pasajero.");
+        setPasajeroActivo(false);
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 10000,
+      }
+    );
+
+    return () => navigator.geolocation.clearWatch(watchId);
+  }, [pasajeroActivo, rutaSeleccionada]);
 
   const rutasDeZona = useMemo(() => {
     return rutas.filter((ruta) => ruta.zona === zonaSeleccionada);
@@ -364,6 +416,10 @@ export default function Mapa() {
     );
   };
 
+  const activarPasajero = () => {
+    setPasajeroActivo((prev) => !prev);
+  };
+
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
       <div
@@ -385,6 +441,24 @@ export default function Mapa() {
         <div style={{ fontSize: 13, opacity: 0.85 }}>
           Autobuses activos: {busesFiltrados.length}
         </div>
+
+        <button
+          onClick={activarPasajero}
+          style={{
+            width: "100%",
+            marginTop: 10,
+            padding: "11px 14px",
+            borderRadius: 999,
+            border: "none",
+            background: pasajeroActivo ? "#22c55e" : "#facc15",
+            color: pasajeroActivo ? "white" : "#111827",
+            fontWeight: 900,
+            cursor: "pointer",
+            boxShadow: "0 6px 16px rgba(0,0,0,.25)",
+          }}
+        >
+          {pasajeroActivo ? "Pasajero activo: compartiendo ubicación" : "Activar modo pasajero"}
+        </button>
 
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
           <button
