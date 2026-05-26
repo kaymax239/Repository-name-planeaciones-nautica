@@ -421,11 +421,9 @@ export default function Mapa() {
       }
     );
   };
-
-  const activarPasajero = () => {
-    alert("Botón pasajero recibió click");
-    setPasajeroActivo((prev) => !prev);
-  };
+const activarPasajero = () => {
+  setPasajeroActivo((prev) => !prev);
+};
 
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
@@ -452,6 +450,7 @@ export default function Mapa() {
         </div>
 
         <button
+  id="activar-pasajero"
           type="button"
           onClick={activarPasajero}
           onTouchStart={(e) => {

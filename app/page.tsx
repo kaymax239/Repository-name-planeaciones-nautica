@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 
 const Mapa = dynamic(() => import("./Mapa"), {
@@ -9,6 +9,17 @@ const Mapa = dynamic(() => import("./Mapa"), {
 
 export default function Home() {
   const [modo, setModo] = useState<"inicio" | "chofer" | "pasajero">("inicio");
+
+  useEffect(() => {
+    if (modo === "pasajero") {
+      setTimeout(() => {
+        const boton = document.getElementById("activar-pasajero");
+        if (boton) {
+          (boton as HTMLButtonElement).click();
+        }
+      }, 1200);
+    }
+  }, [modo]);
 
   const abrirWhatsAppViajeSeguro = () => {
     if (!navigator.geolocation) {
@@ -36,7 +47,9 @@ export default function Home() {
         window.location.href = url;
       },
       () => {
-        alert("No se pudo obtener tu ubicación. Activa el GPS y permite ubicación.");
+        alert(
+          "No se pudo obtener tu ubicación. Activa el GPS y permite ubicación."
+        );
       },
       {
         enableHighAccuracy: true,
@@ -165,7 +178,9 @@ export default function Home() {
             boxShadow: "0 6px 20px rgba(0,0,0,.35)",
           }}
         >
-          {modo === "chofer" ? "🚌 Modo Chofer activo" : "👤 Modo Pasajero activo"}
+          {modo === "chofer"
+            ? "🚌 Modo Chofer activo"
+            : "👤 Modo Pasajero activo"}
         </div>
 
         <button
