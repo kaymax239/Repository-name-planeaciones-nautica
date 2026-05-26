@@ -358,8 +358,14 @@ export default function Mapa() {
         setUbicacion([lat, lng]);
 
         await setDoc(doc(db, "autobuses", pasajeroId), {
-          nombre: rutaSeleccionada === "Todas" ? "Pasajero activo" : rutaSeleccionada,
-          ruta: rutaSeleccionada === "Todas" ? "Pasajero activo" : rutaSeleccionada,
+          nombre:
+            rutaSeleccionada === "Todas"
+              ? "Pasajero activo"
+              : rutaSeleccionada,
+          ruta:
+            rutaSeleccionada === "Todas"
+              ? "Pasajero activo"
+              : rutaSeleccionada,
           lat,
           lng,
           tipo: "pasajero",
@@ -417,6 +423,7 @@ export default function Mapa() {
   };
 
   const activarPasajero = () => {
+    alert("Botón pasajero recibió click");
     setPasajeroActivo((prev) => !prev);
   };
 
@@ -428,12 +435,14 @@ export default function Mapa() {
           top: 12,
           left: 12,
           right: 12,
-          zIndex: 1000,
+          zIndex: 99999,
           background: "rgba(15,23,42,.92)",
           color: "white",
           borderRadius: 18,
           padding: 12,
           boxShadow: "0 10px 30px rgba(0,0,0,.35)",
+          pointerEvents: "auto",
+          touchAction: "manipulation",
         }}
       >
         <div style={{ fontSize: 18, fontWeight: 800 }}>Rutas Tampico</div>
@@ -443,7 +452,11 @@ export default function Mapa() {
         </div>
 
         <button
+          type="button"
           onClick={activarPasajero}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+          }}
           style={{
             width: "100%",
             marginTop: 10,
@@ -455,13 +468,20 @@ export default function Mapa() {
             fontWeight: 900,
             cursor: "pointer",
             boxShadow: "0 6px 16px rgba(0,0,0,.25)",
+            position: "relative",
+            zIndex: 100000,
+            pointerEvents: "auto",
+            touchAction: "manipulation",
           }}
         >
-          {pasajeroActivo ? "Pasajero activo: compartiendo ubicación" : "Activar modo pasajero"}
+          {pasajeroActivo
+            ? "Pasajero activo: compartiendo ubicación"
+            : "Activar modo pasajero"}
         </button>
 
         <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
           <button
+            type="button"
             onClick={() => cambiarZona("Tampico / Madero")}
             style={{
               flex: 1,
@@ -480,6 +500,7 @@ export default function Mapa() {
           </button>
 
           <button
+            type="button"
             onClick={() => cambiarZona("Zona Norte / Altamira")}
             style={{
               flex: 1,
@@ -512,6 +533,7 @@ export default function Mapa() {
           }}
         >
           <button
+            type="button"
             onClick={() => setRutaSeleccionada("Todas")}
             style={{
               padding: "8px 12px",
@@ -529,6 +551,7 @@ export default function Mapa() {
 
           {rutasDeZona.map((ruta) => (
             <button
+              type="button"
               key={ruta.nombre}
               onClick={() => setRutaSeleccionada(ruta.nombre)}
               style={{
@@ -550,12 +573,13 @@ export default function Mapa() {
       </div>
 
       <button
+        type="button"
         onClick={obtenerMiUbicacion}
         style={{
           position: "absolute",
           right: 14,
           bottom: 24,
-          zIndex: 1000,
+          zIndex: 99999,
           background: "#2563eb",
           color: "white",
           border: "none",
@@ -564,6 +588,8 @@ export default function Mapa() {
           fontWeight: 800,
           cursor: "pointer",
           boxShadow: "0 8px 20px rgba(0,0,0,.35)",
+          pointerEvents: "auto",
+          touchAction: "manipulation",
         }}
       >
         Mi ubicación
