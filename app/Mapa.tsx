@@ -32,6 +32,13 @@ type Bus = {
 
 type Zona = "Tampico / Madero" | "Zona Norte / Altamira";
 
+type Ruta = {
+  zona: Zona;
+  nombre: string;
+  color: string;
+  puntos: [number, number][];
+};
+
 const busIcon = new L.DivIcon({
   html: `
     <div style="
@@ -65,7 +72,29 @@ const miUbicacionIcon = new L.DivIcon({
   iconAnchor: [9, 9],
 });
 
-const rutas = [
+const rutas: Ruta[] = [
+  {
+    zona: "Tampico / Madero",
+    nombre: "Candelario Garza",
+    color: "#f59e0b",
+    puntos: [
+      [22.2553, -97.8686],
+      [22.263, -97.857],
+      [22.272, -97.846],
+      [22.281, -97.836],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Serapio Venegas",
+    color: "#a855f7",
+    puntos: [
+      [22.244, -97.862],
+      [22.251, -97.851],
+      [22.259, -97.839],
+      [22.268, -97.828],
+    ],
+  },
   {
     zona: "Tampico / Madero",
     nombre: "Haciendas",
@@ -359,13 +388,9 @@ export default function Mapa() {
 
         await setDoc(doc(db, "autobuses", pasajeroId), {
           nombre:
-            rutaSeleccionada === "Todas"
-              ? "Pasajero activo"
-              : rutaSeleccionada,
+            rutaSeleccionada === "Todas" ? "Pasajero activo" : rutaSeleccionada,
           ruta:
-            rutaSeleccionada === "Todas"
-              ? "Pasajero activo"
-              : rutaSeleccionada,
+            rutaSeleccionada === "Todas" ? "Pasajero activo" : rutaSeleccionada,
           lat,
           lng,
           tipo: "pasajero",
@@ -421,9 +446,26 @@ export default function Mapa() {
       }
     );
   };
-const activarPasajero = () => {
-  setPasajeroActivo((prev) => !prev);
-};
+
+  const activarPasajero = () => {
+    if (!navigator.geolocation) {
+      alert("Tu navegador no permite ubicación");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      () => {
+        setPasajeroActivo((prev) => !prev);
+      },
+      () => {
+        alert("Debes permitir ubicación para activar modo pasajero");
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+      }
+    );
+  };
 
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
@@ -450,7 +492,7 @@ const activarPasajero = () => {
         </div>
 
         <button
-  id="activar-pasajero"
+          id="activar-pasajero"
           type="button"
           onClick={activarPasajero}
           onTouchStart={(e) => {
@@ -610,7 +652,7 @@ const activarPasajero = () => {
         {rutasDeZona.map((ruta) => (
           <Polyline
             key={ruta.nombre}
-            positions={ruta.puntos as [number, number][]}
+            positions={ruta.puntos}
             pathOptions={{
               color: ruta.color,
               weight: 5,
