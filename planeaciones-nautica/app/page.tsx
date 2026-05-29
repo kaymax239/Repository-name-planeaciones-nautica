@@ -30,7 +30,7 @@ export default function Home() {
       });
 
       const datosMateria =
-        contenidosMaterias[materiaSeleccionada];
+  contenidosMaterias[materiaSeleccionada as keyof typeof contenidosMaterias];
 
       const semanas = (datosMateria?.semanas || []).map(
         (s: any) => ({
