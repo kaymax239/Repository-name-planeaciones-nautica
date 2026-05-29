@@ -49,7 +49,6 @@ export const materiasPorSemestre = {
     "OMI",
     "Familiarización con Buques Tanque",
     "FBTR",
-    "FBPTR",
     "Laboratorio de Máquinas",
     "Automática",
     "Refrigeración II",

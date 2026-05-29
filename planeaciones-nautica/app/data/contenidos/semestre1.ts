@@ -1,6 +1,11 @@
 export const contenidosSemestre1 = {
      "Álgebra I": {
     unidad: "I",
+    objetivoGeneral:
+  "Desarrollar habilidades lógico-matemáticas mediante el análisis, planteamiento y resolución de problemas algebraicos, favoreciendo el pensamiento crítico, la precisión en el cálculo y la aplicación de procedimientos matemáticos en contextos académicos y profesionales.",
+
+fuentes:
+  "Baldor, A. (2019). Álgebra. Grupo Editorial Patria. Sullivan, M. (2016). Álgebra y trigonometría. Pearson Educación. Stewart, J., Redlin, L., & Watson, S. (2017). Precálculo: Matemáticas para el cálculo. Cengage Learning.",
     objetivoEspecifico:
       "Aplicar los fundamentos del álgebra elemental en la resolución de problemas académicos y profesionales.",
     estrategia:
@@ -102,11 +107,21 @@ export const contenidosSemestre1 = {
 
   "Física I": {
     unidad: "I",
+
+    objetivoGeneral:
+      "Comprender y aplicar los principios fundamentales de la física mediante el análisis de fenómenos naturales y la resolución de problemas, desarrollando habilidades científicas, pensamiento crítico y bases teóricas útiles para el ámbito académico y profesional marítimo.",
+
+    fuentes:
+      "Serway, R. A., & Jewett, J. W. (2018). Física para ciencias e ingeniería. Cengage Learning. Tippens, P. E. (2011). Física: conceptos y aplicaciones. McGraw-Hill. Hewitt, P. G. (2014). Física conceptual. Pearson Educación.",
+
     objetivoEspecifico:
       "Aplicar los conceptos fundamentales de la física en la interpretación y solución de problemas relacionados con magnitudes, movimiento, fuerzas, energía y fenómenos básicos.",
+
     estrategia:
       "Aprendizaje guiado, explicación docente, resolución de problemas, prácticas demostrativas y actividades colaborativas.",
+
     semanas: [
+
       {
         semana: "Semana 1",
         tema:
@@ -203,10 +218,19 @@ export const contenidosSemestre1 = {
 
     "Electricidad I": {
     unidad: "I",
+
+    objetivoGeneral:
+      "Comprender y aplicar los principios básicos de la electricidad mediante el análisis de circuitos, magnitudes eléctricas y fenómenos electromagnéticos, desarrollando habilidades técnicas y científicas útiles en el ámbito académico y profesional marítimo.",
+
+    fuentes:
+      "Boylestad, R. L. (2016). Introducción al análisis de circuitos. Pearson Educación. Floyd, T. L. (2015). Principios de circuitos eléctricos. Pearson Educación. Nilsson, J. W., & Riedel, S. A. (2014). Circuitos eléctricos. Pearson.",
+
     objetivoEspecifico:
       "Aplicar los principios fundamentales de la electricidad en el análisis y solución de circuitos y fenómenos eléctricos básicos.",
+
     estrategia:
       "Aprendizaje guiado, explicación docente, resolución de problemas y actividades prácticas demostrativas.",
+
     semanas: [
       {
         semana: "Semana 1",
