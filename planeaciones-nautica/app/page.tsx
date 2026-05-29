@@ -29,7 +29,7 @@ export default function Home() {
         linebreaks: true,
       });
 
-      const datosMateria =
+      const datosMateria: any =
   contenidosMaterias[materiaSeleccionada as keyof typeof contenidosMaterias];
 
       const semanas = (datosMateria?.semanas || []).map(
