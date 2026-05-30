@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -42,18 +42,25 @@ type Ruta = {
 const busIcon = new L.DivIcon({
   html: `
     <div style="
-      width:22px;
-      height:22px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:42px;
+      height:42px;
       background:white;
-      border:4px solid #22c55e;
-      border-radius:999px;
-      box-shadow:0 4px 12px rgba(0,0,0,.45);
-    "></div>
+      border-radius:14px;
+      box-shadow:0 8px 22px rgba(0,0,0,.35);
+      border:3px solid #22c55e;
+      font-size:24px;
+      transform: rotate(-8deg);
+    ">
+      🚌
+    </div>
   `,
   className: "",
-  iconSize: [22, 22],
-  iconAnchor: [11, 11],
-  popupAnchor: [0, -12],
+  iconSize: [42, 42],
+  iconAnchor: [21, 21],
+  popupAnchor: [0, -18],
 });
 
 const miUbicacionIcon = new L.DivIcon({
@@ -320,7 +327,33 @@ const rutas: Ruta[] = [
     ],
   },
 ];
+function BusAnimado({ bus }: { bus: Bus }) {
+  const markerRef = useRef<L.Marker | null>(null);
 
+  useEffect(() => {
+    if (markerRef.current) {
+     markerRef.current.flyTo?.([bus.lat, bus.lng], 15);
+markerRef.current.setLatLng([bus.lat, bus.lng]); 
+    }
+  }, [bus.lat, bus.lng]);
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[bus.lat, bus.lng]}
+      icon={busIcon}
+      riseOnHover={true}
+    >
+      <Popup>
+        <b>{bus.nombre}</b>
+        <br />
+        Ruta: {bus.ruta}
+        <br />
+        Ubicación reportada en vivo
+      </Popup>
+    </Marker>
+  );
+}
 function AjustarMapa({ ubicacion }: { ubicacion: [number, number] | null }) {
   const map = useMap();
 
@@ -339,7 +372,8 @@ export default function Mapa() {
   const [pasajeroActivo, setPasajeroActivo] = useState(false);
   const [zonaSeleccionada, setZonaSeleccionada] =
     useState<Zona>("Tampico / Madero");
-  const [rutaSeleccionada, setRutaSeleccionada] = useState<string>("Todas");
+  const [rutaSeleccionada, setRutaSeleccionada] = useState<string>("");
+const [pantallaPasajero, setPantallaPasajero] = useState<"zonas" | "rutas" | "mapa">("zonas");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
@@ -356,10 +390,19 @@ export default function Mapa() {
             fecha: d.fecha,
           };
         })
-        .filter((b) => !isNaN(b.lat) && !isNaN(b.lng));
+.filter((b) => {
+  if (isNaN(b.lat) || isNaN(b.lng)) return false;
 
-      setBuses(data);
-    });
+  if (!b.fecha?.toDate) return false;
+
+  const minutos =
+    (Date.now() - b.fecha.toDate().getTime()) / 1000 / 60;
+
+  return minutos <= 30;
+});
+
+setBuses(data);
+   }); 
 
     return () => unsub();
   }, []);
@@ -417,7 +460,7 @@ export default function Mapa() {
   }, [zonaSeleccionada]);
 
   const busesFiltrados = useMemo(() => {
-    if (rutaSeleccionada === "Todas") return buses;
+  if (!rutaSeleccionada) return [];
 
     return buses.filter(
       (b) =>
@@ -427,9 +470,10 @@ export default function Mapa() {
   }, [buses, rutaSeleccionada]);
 
   const cambiarZona = (zona: Zona) => {
-    setZonaSeleccionada(zona);
-    setRutaSeleccionada("Todas");
-  };
+  setZonaSeleccionada(zona);
+  setRutaSeleccionada("");
+  setPantallaPasajero("rutas");
+};
 
   const obtenerMiUbicacion = () => {
     if (!navigator.geolocation) {
@@ -447,7 +491,7 @@ export default function Mapa() {
     );
   };
 
-  const activarPasajero = () => {
+    const activarPasajero = () => {
     if (!navigator.geolocation) {
       alert("Tu navegador no permite ubicación");
       return;
@@ -467,6 +511,117 @@ export default function Mapa() {
     );
   };
 
+  if (pantallaPasajero === "zonas") {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          background: "#0f172a",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          padding: 24,
+          gap: 18,
+        }}
+      >
+        <h1 style={{ color: "white", textAlign: "center", fontSize: 28, fontWeight: 800 }}>
+          Selecciona tu zona
+        </h1>
+
+        <button
+          onClick={() => cambiarZona("Tampico / Madero")}
+          style={{
+            padding: 22,
+            borderRadius: 20,
+            border: "none",
+            background: "#22c55e",
+            color: "white",
+            fontSize: 22,
+            fontWeight: 800,
+          }}
+        >
+          📍 Tampico / Madero
+        </button>
+
+        <button
+          onClick={() => cambiarZona("Zona Norte / Altamira")}
+          style={{
+            padding: 22,
+            borderRadius: 20,
+            border: "none",
+            background: "#2563eb",
+            color: "white",
+            fontSize: 22,
+            fontWeight: 800,
+          }}
+        >
+          📍 Zona Norte / Altamira
+        </button>
+      </div>
+    );
+  }
+
+  if (pantallaPasajero === "rutas") {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          background: "#0f172a",
+          padding: 24,
+          color: "white",
+        }}
+      >
+        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
+          Selecciona tu ruta
+        </h1>
+
+        <p style={{ color: "#cbd5e1", marginBottom: 20 }}>
+          Zona: {zonaSeleccionada}
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {rutasDeZona.map((ruta) => (
+            <button
+              key={ruta.nombre}
+              onClick={() => {
+                setRutaSeleccionada(ruta.nombre);
+                setPantallaPasajero("mapa");
+              }}
+              style={{
+                padding: 18,
+                borderRadius: 18,
+                border: "none",
+                background: ruta.color,
+                color: "white",
+                fontSize: 18,
+                fontWeight: 800,
+                textAlign: "left",
+              }}
+            >
+              🚍 {ruta.nombre}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => setPantallaPasajero("zonas")}
+          style={{
+            marginTop: 20,
+            padding: 14,
+            borderRadius: 999,
+            border: "none",
+            background: "white",
+            color: "#111827",
+            fontWeight: 800,
+            width: "100%",
+          }}
+        >
+          ← Regresar a zonas
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: "100%", height: "100vh", position: "relative" }}>
       <div
@@ -481,23 +636,18 @@ export default function Mapa() {
           borderRadius: 18,
           padding: 12,
           boxShadow: "0 10px 30px rgba(0,0,0,.35)",
-          pointerEvents: "auto",
-          touchAction: "manipulation",
         }}
       >
         <div style={{ fontSize: 18, fontWeight: 800 }}>Rutas Tampico</div>
 
         <div style={{ fontSize: 13, opacity: 0.85 }}>
-          Autobuses activos: {busesFiltrados.length}
+          🚍 Usuarios en esta ruta: {busesFiltrados.length}
         </div>
 
         <button
           id="activar-pasajero"
           type="button"
           onClick={activarPasajero}
-          onTouchStart={(e) => {
-            e.stopPropagation();
-          }}
           style={{
             width: "100%",
             marginTop: 10,
@@ -507,110 +657,28 @@ export default function Mapa() {
             background: pasajeroActivo ? "#22c55e" : "#facc15",
             color: pasajeroActivo ? "white" : "#111827",
             fontWeight: 900,
-            cursor: "pointer",
-            boxShadow: "0 6px 16px rgba(0,0,0,.25)",
-            position: "relative",
-            zIndex: 100000,
-            pointerEvents: "auto",
-            touchAction: "manipulation",
           }}
         >
           {pasajeroActivo
             ? "Pasajero activo: compartiendo ubicación"
-            : "Activar modo pasajero"}
+            : "Compartir ubicación"}
         </button>
 
-        <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-          <button
-            type="button"
-            onClick={() => cambiarZona("Tampico / Madero")}
-            style={{
-              flex: 1,
-              padding: "10px 12px",
-              borderRadius: 999,
-              border: "none",
-              background:
-                zonaSeleccionada === "Tampico / Madero" ? "#22c55e" : "white",
-              color:
-                zonaSeleccionada === "Tampico / Madero" ? "white" : "#111827",
-              fontWeight: 800,
-              cursor: "pointer",
-            }}
-          >
-            Tampico / Madero
-          </button>
-
-          <button
-            type="button"
-            onClick={() => cambiarZona("Zona Norte / Altamira")}
-            style={{
-              flex: 1,
-              padding: "10px 12px",
-              borderRadius: 999,
-              border: "none",
-              background:
-                zonaSeleccionada === "Zona Norte / Altamira"
-                  ? "#ef4444"
-                  : "white",
-              color:
-                zonaSeleccionada === "Zona Norte / Altamira"
-                  ? "white"
-                  : "#111827",
-              fontWeight: 800,
-              cursor: "pointer",
-            }}
-          >
-            Zona Norte
-          </button>
-        </div>
-
-        <div
+        <button
+          onClick={() => setPantallaPasajero("rutas")}
           style={{
-            display: "flex",
-            gap: 8,
-            overflowX: "auto",
-            marginTop: 10,
-            paddingBottom: 4,
+            width: "100%",
+            marginTop: 8,
+            padding: "10px 14px",
+            borderRadius: 999,
+            border: "none",
+            background: "white",
+            color: "#111827",
+            fontWeight: 800,
           }}
         >
-          <button
-            type="button"
-            onClick={() => setRutaSeleccionada("Todas")}
-            style={{
-              padding: "8px 12px",
-              borderRadius: 999,
-              border: "none",
-              background: rutaSeleccionada === "Todas" ? "#2563eb" : "white",
-              color: rutaSeleccionada === "Todas" ? "white" : "#111827",
-              fontWeight: 700,
-              whiteSpace: "nowrap",
-              cursor: "pointer",
-            }}
-          >
-            Todas
-          </button>
-
-          {rutasDeZona.map((ruta) => (
-            <button
-              type="button"
-              key={ruta.nombre}
-              onClick={() => setRutaSeleccionada(ruta.nombre)}
-              style={{
-                padding: "8px 12px",
-                borderRadius: 999,
-                border: "none",
-                background:
-                  rutaSeleccionada === ruta.nombre ? ruta.color : "white",
-                color: rutaSeleccionada === ruta.nombre ? "white" : "#111827",
-                fontWeight: 700,
-                whiteSpace: "nowrap",
-                cursor: "pointer",
-              }}
-            >
-              {ruta.nombre}
-            </button>
-          ))}
-        </div>
+          Cambiar ruta
+        </button>
       </div>
 
       <button
@@ -627,10 +695,6 @@ export default function Mapa() {
           padding: "12px 16px",
           borderRadius: 999,
           fontWeight: 800,
-          cursor: "pointer",
-          boxShadow: "0 8px 20px rgba(0,0,0,.35)",
-          pointerEvents: "auto",
-          touchAction: "manipulation",
         }}
       >
         Mi ubicación
@@ -649,21 +713,19 @@ export default function Mapa() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {rutasDeZona.map((ruta) => (
-          <Polyline
-            key={ruta.nombre}
-            positions={ruta.puntos}
-            pathOptions={{
-              color: ruta.color,
-              weight: 5,
-              opacity:
-                rutaSeleccionada === "Todas" ||
-                rutaSeleccionada === ruta.nombre
-                  ? 0.85
-                  : 0.12,
-            }}
-          />
-        ))}
+        {rutasDeZona
+          .filter((ruta) => ruta.nombre === rutaSeleccionada)
+          .map((ruta) => (
+            <Polyline
+              key={ruta.nombre}
+              positions={ruta.puntos}
+              pathOptions={{
+                color: ruta.color,
+                weight: 6,
+                opacity: 0.9,
+              }}
+            />
+          ))}
 
         {ubicacion && (
           <Marker position={ubicacion} icon={miUbicacionIcon}>
@@ -672,15 +734,7 @@ export default function Mapa() {
         )}
 
         {busesFiltrados.map((bus) => (
-          <Marker key={bus.id} position={[bus.lat, bus.lng]} icon={busIcon}>
-            <Popup>
-              <b>{bus.nombre}</b>
-              <br />
-              Ruta: {bus.ruta}
-              <br />
-              Ubicación reportada en vivo
-            </Popup>
-          </Marker>
+          <BusAnimado key={bus.id} bus={bus} />
         ))}
       </MapContainer>
     </div>
