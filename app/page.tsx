@@ -52,6 +52,10 @@ export default function Home() {
     );
   };
 
+  const llamarEmergencias = () => {
+    window.location.href = "tel:911";
+  };
+
   if (modo === "inicio") {
     return (
       <main
@@ -150,6 +154,23 @@ export default function Home() {
             }}
           >
             🛡️ Pasajero Seguro WhatsApp
+          </button>
+
+          <button
+            onClick={llamarEmergencias}
+            style={{
+              width: "100%",
+              background: "#dc2626",
+              color: "white",
+              border: "none",
+              padding: 14,
+              borderRadius: 16,
+              fontSize: 16,
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            🚨 Emergencia 911
           </button>
         </div>
       </main>
