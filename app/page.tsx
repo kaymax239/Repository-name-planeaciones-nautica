@@ -2,6 +2,8 @@
 
 import { useCallback, useState } from "react";
 import dynamic from "next/dynamic";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { db } from "./firebase";
 import { useOnlineUsers, useUserPresence } from "./useUserPresence";
 
 const Mapa = dynamic(() => import("./Mapa"), {
@@ -11,6 +13,11 @@ const Mapa = dynamic(() => import("./Mapa"), {
 export default function Home() {
   const [modo, setModo] = useState<"inicio" | "chofer" | "pasajero">("inicio");
   const [rutaActiva, setRutaActiva] = useState<string | null>(null);
+  const [mostrarSugerencia, setMostrarSugerencia] = useState(false);
+  const [rutaSugerida, setRutaSugerida] = useState("");
+  const [zonaSugerida, setZonaSugerida] = useState("");
+  const [comentarioSugerido, setComentarioSugerido] = useState("");
+  const [enviandoSugerencia, setEnviandoSugerencia] = useState(false);
   const usuariosEnLinea = useOnlineUsers();
 
   useUserPresence(modo === "inicio" ? null : rutaActiva);
@@ -54,6 +61,36 @@ export default function Home() {
 
   const llamarEmergencias = () => {
     window.location.href = "tel:911";
+  };
+
+  const enviarSugerencia = async () => {
+    const ruta = rutaSugerida.trim();
+
+    if (!ruta) {
+      alert("Escribe el nombre de la ruta que quieres sugerir.");
+      return;
+    }
+
+    setEnviandoSugerencia(true);
+
+    try {
+      await addDoc(collection(db, "sugerencias"), {
+        ruta,
+        zona: zonaSugerida.trim(),
+        comentario: comentarioSugerido.trim(),
+        fecha: serverTimestamp(),
+      });
+
+      setRutaSugerida("");
+      setZonaSugerida("");
+      setComentarioSugerido("");
+      setMostrarSugerencia(false);
+      alert("Gracias. Tu sugerencia fue enviada.");
+    } catch {
+      alert("No se pudo enviar la sugerencia. Intenta otra vez.");
+    } finally {
+      setEnviandoSugerencia(false);
+    }
   };
 
   if (modo === "inicio") {
@@ -172,6 +209,115 @@ export default function Home() {
           >
             🚨 Emergencia 911
           </button>
+
+          <button
+            onClick={() => setMostrarSugerencia((prev) => !prev)}
+            style={{
+              width: "100%",
+              background: "#f59e0b",
+              color: "#111827",
+              border: "none",
+              padding: 14,
+              borderRadius: 16,
+              fontSize: 16,
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            💡 Sugerir una ruta
+          </button>
+
+          {mostrarSugerencia && (
+            <div
+              style={{
+                background: "rgba(15,23,42,.95)",
+                border: "1px solid rgba(148,163,184,.35)",
+                borderRadius: 18,
+                padding: 14,
+                display: "flex",
+                flexDirection: "column",
+                gap: 10,
+                textAlign: "left",
+              }}
+            >
+              <label style={{ color: "#e5e7eb", fontWeight: 800 }}>
+                Ruta sugerida
+                <input
+                  value={rutaSugerida}
+                  onChange={(event) => setRutaSugerida(event.target.value)}
+                  placeholder="Ej. Blanco Kinder"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    marginTop: 6,
+                    padding: 12,
+                    borderRadius: 12,
+                    border: "1px solid #334155",
+                    background: "#020617",
+                    color: "white",
+                  }}
+                />
+              </label>
+
+              <label style={{ color: "#e5e7eb", fontWeight: 800 }}>
+                Zona
+                <input
+                  value={zonaSugerida}
+                  onChange={(event) => setZonaSugerida(event.target.value)}
+                  placeholder="Ej. Tampico, Madero o Altamira"
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    marginTop: 6,
+                    padding: 12,
+                    borderRadius: 12,
+                    border: "1px solid #334155",
+                    background: "#020617",
+                    color: "white",
+                  }}
+                />
+              </label>
+
+              <label style={{ color: "#e5e7eb", fontWeight: 800 }}>
+                Comentario
+                <textarea
+                  value={comentarioSugerido}
+                  onChange={(event) => setComentarioSugerido(event.target.value)}
+                  placeholder="Opcional: por dónde pasa o por qué hace falta"
+                  rows={3}
+                  style={{
+                    width: "100%",
+                    boxSizing: "border-box",
+                    marginTop: 6,
+                    padding: 12,
+                    borderRadius: 12,
+                    border: "1px solid #334155",
+                    background: "#020617",
+                    color: "white",
+                    resize: "vertical",
+                  }}
+                />
+              </label>
+
+              <button
+                onClick={enviarSugerencia}
+                disabled={enviandoSugerencia}
+                style={{
+                  width: "100%",
+                  background: enviandoSugerencia ? "#64748b" : "#22c55e",
+                  color: "white",
+                  border: "none",
+                  padding: 12,
+                  borderRadius: 14,
+                  fontSize: 15,
+                  fontWeight: 800,
+                  cursor: enviandoSugerencia ? "not-allowed" : "pointer",
+                }}
+              >
+                {enviandoSugerencia ? "Enviando..." : "Enviar sugerencia"}
+              </button>
+            </div>
+          )}
         </div>
       </main>
     );
