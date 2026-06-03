@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 const escenas = [
   ["🚍", "¿Esperando el camión?", "Rutas Tampico MAFA te ayuda a ubicar rutas de forma más fácil."],
-  ["📍", "Busca tu ruta", "Encuentra rutas disponibles en Tampico, Madero y Altamira."],
+  ["📍", "Busca tu ruta", "Encuentra rutas disponibles en Tampico y Madero."],
   ["🚌", "Reporta tu camión", "Cuando te subas, ayuda a otros usuarios reportando la ruta."],
   ["🗺️", "Ve el mapa", "Entre más personas la usen, mejor funcionará para todos."],
   ["📲", "Comparte la app", "Mándala por WhatsApp o Facebook a quien use transporte público."],
