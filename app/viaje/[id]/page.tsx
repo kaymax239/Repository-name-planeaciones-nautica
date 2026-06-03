@@ -1,12 +1,10 @@
 "use client";
 
-import "leaflet/dist/leaflet.css";
-
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "../../firebase";
+import { db } from "../../../firebase";
 
 const MapContainer = dynamic(
   () => import("react-leaflet").then((m) => m.MapContainer),
@@ -23,49 +21,89 @@ const Marker = dynamic(
   { ssr: false }
 );
 
+const Popup = dynamic(
+  () => import("react-leaflet").then((m) => m.Popup),
+  { ssr: false }
+);
+
 export default function ViajePage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
 
-  const [pos, setPos] = useState<[number, number] | null>(null);
+  const [viaje, setViaje] = useState<any>(null);
 
   useEffect(() => {
     if (!id) return;
 
-    const unsub = onSnapshot(
-      doc(db, "viajesSeguros", id),
-      (snap) => {
-        const data = snap.data();
+    const ref = doc(db, "autobuses", id);
 
-        if (data?.lat && data?.lng) {
-          setPos([data.lat, data.lng]);
-        }
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        setViaje({
+          id: snap.id,
+          ...snap.data(),
+        });
       }
-    );
+    });
 
     return () => unsub();
   }, [id]);
 
-  if (!pos) {
+  if (!viaje) {
     return (
-      <main className="flex h-screen items-center justify-center text-xl font-bold bg-slate-900 text-white">
-        Esperando ubicación del viaje...
-      </main>
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          fontSize: "20px",
+        }}
+      >
+        Cargando viaje...
+      </div>
     );
   }
 
   return (
-    <main className="h-screen w-screen">
-      <MapContainer
-        center={pos}
-        zoom={16}
-        style={{ width: "100%", height: "100%" }}
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#0f172a",
+        color: "white",
+      }}
+    >
+      <div
+        style={{
+          padding: 15,
+          textAlign: "center",
+          fontSize: 24,
+          fontWeight: "bold",
+        }}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        <Marker position={pos} />
-      </MapContainer>
+        Ruta {viaje.nombre || "Sin nombre"}
+      </div>
+
+      <div style={{ height: "85vh", width: "100%" }}>
+        <MapContainer
+          center={[viaje.lat, viaje.lng]}
+          zoom={15}
+          style={{ height: "100%", width: "100%" }}
+        >
+          <TileLayer
+            attribution='&copy; OpenStreetMap'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+
+          <Marker position={[viaje.lat, viaje.lng]}>
+            <Popup>
+              {viaje.nombre}
+              <br />
+              Bus en vivo
+            </Popup>
+          </Marker>
+        </MapContainer>
+      </div>
     </main>
   );
 }
