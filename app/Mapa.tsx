@@ -332,9 +332,9 @@ function BusAnimado({ bus }: { bus: Bus }) {
 
   useEffect(() => {
     if (markerRef.current) {
-     markerRef.current.flyTo?.([bus.lat, bus.lng], 15);
-markerRef.current.setLatLng([bus.lat, bus.lng]); 
-    }
+     markerRef.current.setLatLng([bus.lat, bus.lng]);
+
+    
   }, [bus.lat, bus.lng]);
 
   return (
