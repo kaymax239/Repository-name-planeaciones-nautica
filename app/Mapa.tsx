@@ -37,6 +37,11 @@ type Ruta = {
   puntos: [number, number][];
 };
 
+type MapaProps = {
+  conteoUsuariosPorRuta?: Record<string, number>;
+  onRutaSeleccionada?: (ruta: string | null) => void;
+};
+
 const busIcon = new L.DivIcon({
   html: `
     <div style="
@@ -439,7 +444,10 @@ function AjustarMapa({ ubicacion }: { ubicacion: [number, number] | null }) {
   return null;
 }
 
-export default function Mapa() {
+export default function Mapa({
+  conteoUsuariosPorRuta = {},
+  onRutaSeleccionada,
+}: MapaProps) {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
   const [zonaSeleccionada, setZonaSeleccionada] =
@@ -494,10 +502,33 @@ export default function Mapa() {
     );
   }, [buses, rutaSeleccionada]);
 
+  const usuariosRutaSeleccionada = rutaSeleccionada
+    ? conteoUsuariosPorRuta[rutaSeleccionada] || 0
+    : 0;
+
   const cambiarZona = (zona: Zona) => {
     setZonaSeleccionada(zona);
     setRutaSeleccionada("");
+    onRutaSeleccionada?.(null);
     setPantallaPasajero("rutas");
+  };
+
+  const seleccionarRuta = (ruta: string) => {
+    setRutaSeleccionada(ruta);
+    onRutaSeleccionada?.(ruta);
+    setPantallaPasajero("mapa");
+  };
+
+  const regresarARutas = () => {
+    setRutaSeleccionada("");
+    onRutaSeleccionada?.(null);
+    setPantallaPasajero("rutas");
+  };
+
+  const regresarAZonas = () => {
+    setRutaSeleccionada("");
+    onRutaSeleccionada?.(null);
+    setPantallaPasajero("zonas");
   };
 
   const obtenerMiUbicacion = () => {
@@ -585,31 +616,43 @@ export default function Mapa() {
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {rutasDeZona.map((ruta) => (
-            <button
-              key={ruta.nombre}
-              onClick={() => {
-                setRutaSeleccionada(ruta.nombre);
-                setPantallaPasajero("mapa");
-              }}
-              style={{
-                padding: 18,
-                borderRadius: 18,
-                border: "none",
-                background: ruta.color,
-                color: "white",
-                fontSize: 18,
-                fontWeight: 800,
-                textAlign: "left",
-              }}
-            >
-              🚍 {ruta.nombre}
-            </button>
-          ))}
+          {rutasDeZona.map((ruta) => {
+            const usuariosRuta = conteoUsuariosPorRuta[ruta.nombre] || 0;
+
+            return (
+              <button
+                key={ruta.nombre}
+                onClick={() => seleccionarRuta(ruta.nombre)}
+                style={{
+                  padding: 18,
+                  borderRadius: 18,
+                  border: "none",
+                  background: ruta.color,
+                  color: "white",
+                  fontSize: 18,
+                  fontWeight: 800,
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ display: "block" }}>🚍 {ruta.nombre}</span>
+                <span
+                  style={{
+                    display: "block",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    marginTop: 6,
+                    opacity: 0.9,
+                  }}
+                >
+                  👥 {usuariosRuta} usuarios en esta ruta
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         <button
-          onClick={() => setPantallaPasajero("zonas")}
+          onClick={regresarAZonas}
           style={{
             marginTop: 20,
             padding: 14,
@@ -646,11 +689,15 @@ export default function Mapa() {
         <div style={{ fontSize: 18, fontWeight: 800 }}>Rutas Tampico</div>
 
         <div style={{ fontSize: 13, opacity: 0.85 }}>
-          🚍 Usuarios en esta ruta: {busesFiltrados.length}
+          👥 Usuarios en esta ruta: {usuariosRutaSeleccionada}
+        </div>
+
+        <div style={{ fontSize: 13, opacity: 0.85 }}>
+          🚍 Autobuses en vivo: {busesFiltrados.length}
         </div>
 
         <button
-          onClick={() => setPantallaPasajero("rutas")}
+          onClick={regresarARutas}
           style={{
             width: "100%",
             marginTop: 8,

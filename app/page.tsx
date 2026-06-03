@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import { useOnlineUsers, useUserPresence } from "./useUserPresence";
 
 const Mapa = dynamic(() => import("./Mapa"), {
   ssr: false,
@@ -10,6 +11,19 @@ const Mapa = dynamic(() => import("./Mapa"), {
 export default function Home() {
   const [modo, setModo] = useState<"inicio" | "chofer" | "pasajero">("inicio");
   const [pasajeroActivo, setPasajeroActivo] = useState(false);
+  const [rutaActiva, setRutaActiva] = useState<string | null>(null);
+  const usuariosEnLinea = useOnlineUsers();
+
+  useUserPresence(modo === "inicio" ? null : rutaActiva);
+
+  const cambiarRutaActiva = useCallback((ruta: string | null) => {
+    setRutaActiva(ruta);
+  }, []);
+
+  const volverInicio = () => {
+    setRutaActiva(null);
+    setModo("inicio");
+  };
 
   useEffect(() => {
     if (modo === "pasajero" && pasajeroActivo) {
@@ -102,6 +116,21 @@ export default function Home() {
           <p style={{ color: "#cbd5e1", marginBottom: 16 }}>
             Transporte en vivo para Tampico, Madero y Altamira
           </p>
+
+          <div
+            style={{
+              background: "rgba(34,197,94,.14)",
+              border: "1px solid rgba(34,197,94,.45)",
+              color: "#bbf7d0",
+              borderRadius: 16,
+              padding: "12px 14px",
+              fontWeight: 800,
+              marginBottom: 4,
+            }}
+          >
+            👥 Usuarios en línea:{" "}
+            {usuariosEnLinea.loading ? "..." : usuariosEnLinea.total}
+          </div>
 
           <button
             onClick={() => setModo("chofer")}
@@ -214,9 +243,12 @@ export default function Home() {
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
-      <Mapa />
+      <Mapa
+        conteoUsuariosPorRuta={usuariosEnLinea.byRoute}
+        onRutaSeleccionada={cambiarRutaActiva}
+      />
       <button
-        onClick={() => setModo("inicio")}
+        onClick={volverInicio}
         style={{
           position: "absolute",
           top: 16,
