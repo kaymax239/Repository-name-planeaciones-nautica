@@ -510,6 +510,107 @@ const rutas: Ruta[] = [
       [22.46, -97.875],
     ],
   },
+  // Rutas sugeridas por usuarios en Firebase, agregadas sin quitar las existentes.
+  {
+    zona: "Tampico / Madero",
+    nombre: "Blanco Kinder",
+    color: "#38bdf8",
+    puntos: [
+      [22.244, -97.842],
+      [22.252, -97.832],
+      [22.262, -97.822],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Puertas Coloradas",
+    color: "#fb7185",
+    puntos: [
+      [22.2553, -97.8686],
+      [22.244, -97.879],
+      [22.232, -97.892],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Enrique Cárdenas / UAT",
+    color: "#facc15",
+    puntos: [
+      [22.2553, -97.8686],
+      [22.263, -97.858],
+      [22.276, -97.849],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Madero Kehoe",
+    color: "#c084fc",
+    puntos: [
+      [22.244, -97.82],
+      [22.253, -97.811],
+      [22.263, -97.802],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Águila Echeverría",
+    color: "#2dd4bf",
+    puntos: [
+      [22.216, -97.858],
+      [22.226, -97.849],
+      [22.238, -97.841],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Tampico - Las Flores",
+    color: "#f472b6",
+    puntos: [
+      [22.216, -97.858],
+      [22.229, -97.85],
+      [22.242, -97.84],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira Av. Monterrey",
+    color: "#f97316",
+    puntos: [
+      [22.392, -97.938],
+      [22.354, -97.91],
+      [22.304, -97.872],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Arboledas x Electricistas",
+    color: "#65a30d",
+    puntos: [
+      [22.392, -97.938],
+      [22.404, -97.929],
+      [22.414, -97.936],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Combi Bellavista",
+    color: "#0f766e",
+    puntos: [
+      [22.216, -97.858],
+      [22.224, -97.866],
+      [22.233, -97.875],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Puente Las Piñas",
+    color: "#2563eb",
+    puntos: [
+      [22.392, -97.938],
+      [22.382, -97.952],
+      [22.371, -97.967],
+    ],
+  },
 ];
 
 function BusAnimado({ bus }: { bus: Bus }) {
