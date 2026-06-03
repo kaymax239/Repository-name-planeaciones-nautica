@@ -19,7 +19,7 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore";
-import { db } from "./firebase";
+//import { db } from "./firebase";
 
 type Bus = {
   id: string;

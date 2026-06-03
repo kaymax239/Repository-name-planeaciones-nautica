@@ -9,17 +9,18 @@ const Mapa = dynamic(() => import("./Mapa"), {
 
 export default function Home() {
   const [modo, setModo] = useState<"inicio" | "chofer" | "pasajero">("inicio");
+  const [pasajeroActivo, setPasajeroActivo] = useState(false);
 
   useEffect(() => {
-    if (modo === "pasajero") {
-      setTimeout(() => {
-        const boton = document.getElementById("activar-pasajero");
-        if (boton) {
-          (boton as HTMLButtonElement).click();
-        }
-      }, 1200);
+    if (modo === "pasajero" && pasajeroActivo) {
+      const boton = document.getElementById("activar-pasajero");
+      if (boton) (boton as HTMLButtonElement).click();
     }
-  }, [modo]);
+  }, [modo, pasajeroActivo]);
+
+  const activarPasajero = () => {
+    setPasajeroActivo((prev) => !prev);
+  };
 
   const abrirWhatsAppViajeSeguro = () => {
     if (!navigator.geolocation) {
@@ -31,36 +32,41 @@ export default function Home() {
       (pos) => {
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
-
         const linkMapa = `https://www.google.com/maps?q=${lat},${lng}`;
-
         const mensaje =
           `🚍 Estoy usando Rutas Tampico.\n\n` +
           `🛡️ Te comparto mi ubicación por seguridad durante mi viaje.\n\n` +
           `📍 Mi ubicación actual:\n${linkMapa}\n\n` +
           `Por favor mantente pendiente.`;
-
         const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(
           mensaje
         )}`;
-
         window.location.href = url;
       },
       () => {
-        alert(
-          "No se pudo obtener tu ubicación. Activa el GPS y permite ubicación."
-        );
+        alert("No se pudo obtener tu ubicación. Activa el GPS y permite ubicación.");
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
-      }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
   const llamarEmergencias = () => {
     window.location.href = "tel:911";
+  };
+
+  const obtenerMiUbicacion = () => {
+    if (!navigator.geolocation) {
+      alert("Tu navegador no permite ubicación.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        alert(`Latitud: ${pos.coords.latitude}, Longitud: ${pos.coords.longitude}`);
+      },
+      () => {
+        alert("No se pudo obtener tu ubicación.");
+      }
+    );
   };
 
   if (modo === "inicio") {
@@ -84,13 +90,16 @@ export default function Home() {
             maxWidth: 420,
             textAlign: "center",
             boxShadow: "0 10px 30px rgba(0,0,0,.45)",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
           }}
         >
           <h1 style={{ color: "white", fontSize: 30, fontWeight: 800 }}>
             🚍 Rutas Tampico
           </h1>
 
-          <p style={{ color: "#cbd5e1", marginBottom: 28 }}>
+          <p style={{ color: "#cbd5e1", marginBottom: 16 }}>
             Transporte en vivo para Tampico, Madero y Altamira
           </p>
 
@@ -105,7 +114,6 @@ export default function Home() {
               borderRadius: 16,
               fontSize: 18,
               fontWeight: 700,
-              marginBottom: 14,
               cursor: "pointer",
             }}
           >
@@ -128,6 +136,77 @@ export default function Home() {
           >
             👤 Soy Pasajero
           </button>
+
+          {/* Botones movidos al inicio */}
+          {modo !== "inicio" && (
+            <>
+              <button
+                onClick={activarPasajero}
+                style={{
+                  width: "100%",
+                  background: pasajeroActivo ? "#22c55e" : "#facc15",
+                  color: pasajeroActivo ? "white" : "#111827",
+                  border: "none",
+                  padding: 12,
+                  borderRadius: 16,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                {pasajeroActivo
+                  ? "Pasajero activo: compartiendo ubicación"
+                  : "Activar modo pasajero"}
+              </button>
+
+              <button
+                onClick={abrirWhatsAppViajeSeguro}
+                style={{
+                  width: "100%",
+                  background: "#16a34a",
+                  color: "white",
+                  border: "none",
+                  padding: 12,
+                  borderRadius: 16,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                🛡️ Viaje Seguro WhatsApp
+              </button>
+
+              <button
+                onClick={obtenerMiUbicacion}
+                style={{
+                  width: "100%",
+                  background: "#2563eb",
+                  color: "white",
+                  border: "none",
+                  padding: 12,
+                  borderRadius: 16,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                📍 Mi Ubicación
+              </button>
+
+              <button
+                onClick={llamarEmergencias}
+                style={{
+                  width: "100%",
+                  background: "#dc2626",
+                  color: "white",
+                  border: "none",
+                  padding: 12,
+                  borderRadius: 16,
+                  fontWeight: 800,
+                  cursor: "pointer",
+                }}
+              >
+                🚨 Emergencia 911
+              </button>
+            </>
+          )}
         </div>
       </main>
     );
@@ -136,7 +215,6 @@ export default function Home() {
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
       <Mapa />
-
       <button
         onClick={() => setModo("inicio")}
         style={{
@@ -156,65 +234,6 @@ export default function Home() {
       >
         ← Inicio
       </button>
-
-      <div
-        style={{
-          position: "absolute",
-          left: 12,
-          bottom: 90,
-          zIndex: 9999,
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-        }}
-      >
-        <div
-          style={{
-            background: modo === "chofer" ? "#22c55e" : "#2563eb",
-            color: "white",
-            padding: 12,
-            borderRadius: 16,
-            fontWeight: 700,
-            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
-          }}
-        >
-          {modo === "chofer"
-            ? "🚌 Modo Chofer activo"
-            : "👤 Modo Pasajero activo"}
-        </div>
-
-        <button
-          onClick={abrirWhatsAppViajeSeguro}
-          style={{
-            background: "#16a34a",
-            color: "white",
-            border: "none",
-            padding: "12px 14px",
-            borderRadius: 16,
-            fontWeight: 800,
-            cursor: "pointer",
-            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
-          }}
-        >
-          🛡️ Viaje Seguro WhatsApp
-        </button>
-
-        <button
-          onClick={llamarEmergencias}
-          style={{
-            background: "#dc2626",
-            color: "white",
-            border: "none",
-            padding: "12px 14px",
-            borderRadius: 16,
-            fontWeight: 800,
-            cursor: "pointer",
-            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
-          }}
-        >
-          🚨 Emergencia 911
-        </button>
-      </div>
     </div>
   );
 }
