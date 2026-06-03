@@ -6,6 +6,13 @@ import dynamic from "next/dynamic";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "../../firebase";
 
+type Viaje = {
+  id: string;
+  nombre?: string;
+  lat: number;
+  lng: number;
+};
+
 const MapContainer = dynamic(
   () => import("react-leaflet").then((m) => m.MapContainer),
   { ssr: false }
@@ -30,7 +37,7 @@ export default function ViajePage() {
   const params = useParams();
   const id = params?.id as string;
 
-  const [viaje, setViaje] = useState<any>(null);
+  const [viaje, setViaje] = useState<Viaje | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -39,9 +46,13 @@ export default function ViajePage() {
 
     const unsub = onSnapshot(viajeRef, (snap) => {
       if (snap.exists()) {
+        const data = snap.data() as Partial<Omit<Viaje, "id">>;
+
         setViaje({
           id: snap.id,
-          ...snap.data(),
+          nombre: data.nombre,
+          lat: Number(data.lat),
+          lng: Number(data.lng),
         });
       }
     });

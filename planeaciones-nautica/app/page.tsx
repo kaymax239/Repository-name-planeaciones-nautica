@@ -7,6 +7,18 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 
+type SemanaMateria = {
+  semana: string;
+  tema: string;
+};
+
+type DatosMateria = {
+  unidad?: string;
+  objetivoEspecifico?: string;
+  estrategia?: string;
+  semanas?: SemanaMateria[];
+};
+
 export default function Home() {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [semestreSeleccionado, setSemestreSeleccionado] =
@@ -40,12 +52,12 @@ export default function Home() {
         linebreaks: true,
       });
 
-      const datosMateria: any =
+      const datosMateria =
         contenidosMaterias[
           materiaSeleccionada as keyof typeof contenidosMaterias
-        ];
+        ] as DatosMateria | undefined;
 
-      const semanas = (datosMateria?.semanas || []).map((s: any) => ({
+      const semanas = (datosMateria?.semanas || []).map((s: SemanaMateria) => ({
         semana: s.semana,
         tema: s.tema,
         secuencia:
