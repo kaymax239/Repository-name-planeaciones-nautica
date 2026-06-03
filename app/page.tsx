@@ -9,7 +9,7 @@ const Mapa = dynamic(() => import("./Mapa"), {
 });
 
 export default function Home() {
-  const [modo, setModo] = useState<"inicio" | "pasajero">("inicio");
+  const [modo, setModo] = useState<"inicio" | "chofer" | "pasajero">("inicio");
   const [rutaActiva, setRutaActiva] = useState<string | null>(null);
   const usuariosEnLinea = useOnlineUsers();
 
@@ -22,6 +22,34 @@ export default function Home() {
   const volverInicio = () => {
     setRutaActiva(null);
     setModo("inicio");
+  };
+
+  const abrirWhatsAppPasajeroSeguro = () => {
+    if (!navigator.geolocation) {
+      alert("Tu navegador no permite compartir ubicación.");
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        const linkMapa = `https://www.google.com/maps?q=${lat},${lng}`;
+        const mensaje =
+          `Estoy usando Rutas Tampico.\n\n` +
+          `Te comparto mi ubicación como pasajero seguro durante mi viaje.\n\n` +
+          `Mi ubicación actual:\n${linkMapa}\n\n` +
+          `Por favor mantente pendiente.`;
+        const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+          mensaje
+        )}`;
+        window.location.href = url;
+      },
+      () => {
+        alert("No se pudo obtener tu ubicación. Activa el GPS y permite ubicación.");
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
   };
 
   if (modo === "inicio") {
@@ -55,7 +83,7 @@ export default function Home() {
           </h1>
 
           <p style={{ color: "#cbd5e1", marginBottom: 16 }}>
-            Transporte en vivo para Tampico y Madero
+            Transporte en vivo para Tampico, Madero y Altamira
           </p>
 
           <div
@@ -74,6 +102,23 @@ export default function Home() {
           </div>
 
           <button
+            onClick={() => setModo("chofer")}
+            style={{
+              width: "100%",
+              background: "#22c55e",
+              color: "white",
+              border: "none",
+              padding: 18,
+              borderRadius: 16,
+              fontSize: 18,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            🚌 Soy Chofer
+          </button>
+
+          <button
             onClick={() => setModo("pasajero")}
             style={{
               width: "100%",
@@ -88,6 +133,23 @@ export default function Home() {
             }}
           >
             👤 Soy Pasajero
+          </button>
+
+          <button
+            onClick={abrirWhatsAppPasajeroSeguro}
+            style={{
+              width: "100%",
+              background: "#16a34a",
+              color: "white",
+              border: "none",
+              padding: 14,
+              borderRadius: 16,
+              fontSize: 16,
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            🛡️ Pasajero Seguro WhatsApp
           </button>
         </div>
       </main>

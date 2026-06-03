@@ -28,7 +28,7 @@ type Bus = {
   fecha?: Timestamp;
 };
 
-type Zona = "Tampico / Madero";
+type Zona = "Tampico / Madero" | "Zona Norte / Altamira";
 
 type Ruta = {
   zona: Zona;
@@ -355,6 +355,61 @@ const rutas: Ruta[] = [
       [22.254, -97.85],
     ],
   },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Tampico",
+    color: "#ef4444",
+    puntos: [
+      [22.392, -97.92],
+      [22.35, -97.9],
+      [22.31, -97.88],
+      [22.2553, -97.8686],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Nuevo Tampico",
+    color: "#f97316",
+    puntos: [
+      [22.392, -97.92],
+      [22.37, -97.9],
+      [22.34, -97.885],
+      [22.31, -97.875],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Borreguera",
+    color: "#eab308",
+    puntos: [
+      [22.392, -97.92],
+      [22.35, -97.9],
+      [22.31, -97.885],
+      [22.276, -97.889],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Centro",
+    color: "#22c55e",
+    puntos: [
+      [22.392, -97.92],
+      [22.385, -97.91],
+      [22.376, -97.9],
+      [22.365, -97.89],
+    ],
+  },
+  {
+    zona: "Zona Norte / Altamira",
+    nombre: "Altamira - Guadalupe Victoria",
+    color: "#3b82f6",
+    puntos: [
+      [22.392, -97.92],
+      [22.405, -97.91],
+      [22.42, -97.9],
+      [22.435, -97.89],
+    ],
+  },
 ];
 
 function BusAnimado({ bus }: { bus: Bus }) {
@@ -524,6 +579,20 @@ export default function Mapa({
           📍 Tampico / Madero
         </button>
 
+        <button
+          onClick={() => cambiarZona("Zona Norte / Altamira")}
+          style={{
+            padding: 22,
+            borderRadius: 20,
+            border: "none",
+            background: "#2563eb",
+            color: "white",
+            fontSize: 22,
+            fontWeight: 800,
+          }}
+        >
+          📍 Zona Norte / Altamira
+        </button>
       </div>
     );
   }
