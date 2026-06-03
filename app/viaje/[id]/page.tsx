@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import dynamic from "next/dynamic";
 import { doc, onSnapshot } from "firebase/firestore";
-import { db } from "../../../firebase";
+import { db } from "../../firebase";
 
 const MapContainer = dynamic(
   () => import("react-leaflet").then((m) => m.MapContainer),
@@ -35,9 +35,9 @@ export default function ViajePage() {
   useEffect(() => {
     if (!id) return;
 
-    const ref = doc(db, "autobuses", id);
+    const viajeRef = doc(db, "autobuses", id);
 
-    const unsub = onSnapshot(ref, (snap) => {
+    const unsub = onSnapshot(viajeRef, (snap) => {
       if (snap.exists()) {
         setViaje({
           id: snap.id,
@@ -81,7 +81,7 @@ export default function ViajePage() {
           fontWeight: "bold",
         }}
       >
-        Ruta {viaje.nombre || "Sin nombre"}
+        {viaje.nombre || "Ruta en vivo"}
       </div>
 
       <div style={{ height: "85vh", width: "100%" }}>
@@ -91,7 +91,7 @@ export default function ViajePage() {
           style={{ height: "100%", width: "100%" }}
         >
           <TileLayer
-            attribution='&copy; OpenStreetMap'
+            attribution="&copy; OpenStreetMap"
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
 
