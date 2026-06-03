@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -15,11 +15,9 @@ import "leaflet/dist/leaflet.css";
 import {
   collection,
   onSnapshot,
-  doc,
-  setDoc,
-  serverTimestamp,
+  type Timestamp,
 } from "firebase/firestore";
-import { db } from "./firebase";
+import { db } from "@/app/_lib/firebase";
 
 type Bus = {
   id: string;
@@ -27,7 +25,7 @@ type Bus = {
   ruta?: string;
   lat: number;
   lng: number;
-  fecha?: any;
+  fecha?: Timestamp;
 };
 
 type Zona = "Tampico / Madero" | "Zona Norte / Altamira";
@@ -271,6 +269,87 @@ const rutas: Ruta[] = [
       [22.276, -97.878],
     ],
   },
+  // Rutas solicitadas para publicar en Vercel: 1, 7, 8, 16, 24, 35, 38 y 39.
+  {
+    zona: "Tampico / Madero",
+    nombre: "Ruta 1 - Mirador / Aviación / Boulevard",
+    color: "#ef4444",
+    puntos: [
+      [22.2445, -97.8565],
+      [22.247, -97.853],
+      [22.25, -97.843],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Ruta 7 - Tampico ↔ Playa Norte por Boulevard",
+    color: "#3b82f6",
+    puntos: [
+      [22.249, -97.857],
+      [22.2565, -97.8545],
+      [22.2705, -97.8392],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Ruta 8 - Seguro Social ↔ Lomas de Infonavit",
+    color: "#10b981",
+    puntos: [
+      [22.247, -97.859],
+      [22.2525, -97.851],
+      [22.258, -97.847],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Ruta 16 - Ej. Contadero / Germinal / Águila",
+    color: "#f59e0b",
+    puntos: [
+      [22.2375, -97.835],
+      [22.2455, -97.848],
+      [22.25, -97.859],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Ruta 24 - Tampico Tancol / Col. del Bosque",
+    color: "#8b5cf6",
+    puntos: [
+      [22.2435, -97.8532],
+      [22.2603, -97.8325],
+      [22.2678, -97.828],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Ruta 35 - Madero Ganadera / Niños Héroes",
+    color: "#ec4899",
+    puntos: [
+      [22.268, -97.828],
+      [22.26, -97.8375],
+      [22.252, -97.853],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Ruta 38 - Circuito Norte",
+    color: "#14b8a6",
+    puntos: [
+      [22.269, -97.844],
+      [22.2735, -97.836],
+      [22.268, -97.828],
+    ],
+  },
+  {
+    zona: "Tampico / Madero",
+    nombre: "Ruta 39 - Playa Sur / Refinería Tampico",
+    color: "#db2777",
+    puntos: [
+      [22.2745, -97.843],
+      [22.267, -97.833],
+      [22.254, -97.85],
+    ],
+  },
   {
     zona: "Zona Norte / Altamira",
     nombre: "Altamira - Tampico",
@@ -327,19 +406,13 @@ const rutas: Ruta[] = [
     ],
   },
 ];
-function BusAnimado({ bus }: { bus: Bus }) {
-  const markerRef = useRef<L.Marker | null>(null);
 
-useEffect(() => {
-  if (markerRef.current) {
-    markerRef.current.setLatLng([bus.lat, bus.lng]);
-  }
-}, [bus.lat, bus.lng]);
+function BusAnimado({ bus }: { bus: Bus }) {
+  const posicion: [number, number] = [bus.lat, bus.lng];
 
   return (
     <Marker
-      ref={markerRef}
-      position={[bus.lat, bus.lng]}
+      position={posicion}
       icon={busIcon}
       riseOnHover={true}
     >
@@ -353,6 +426,7 @@ useEffect(() => {
     </Marker>
   );
 }
+
 function AjustarMapa({ ubicacion }: { ubicacion: [number, number] | null }) {
   const map = useMap();
 
@@ -368,98 +442,50 @@ function AjustarMapa({ ubicacion }: { ubicacion: [number, number] | null }) {
 export default function Mapa() {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
-  const [pasajeroActivo, setPasajeroActivo] = useState(false);
   const [zonaSeleccionada, setZonaSeleccionada] =
     useState<Zona>("Tampico / Madero");
   const [rutaSeleccionada, setRutaSeleccionada] = useState<string>("");
-const [pantallaPasajero, setPantallaPasajero] = useState<"zonas" | "rutas" | "mapa">("zonas");
+  const [pantallaPasajero, setPantallaPasajero] =
+    useState<"zonas" | "rutas" | "mapa">("zonas");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
       const data: Bus[] = snapshot.docs
         .map((docSnap) => {
-          const d = docSnap.data() as any;
+          const d = docSnap.data();
 
           return {
             id: docSnap.id,
-            nombre: d.nombre || d.ruta || "Autobús",
-            ruta: d.ruta || d.nombre || "Sin ruta",
+            nombre: String(d.nombre || d.ruta || "Autobús"),
+            ruta: String(d.ruta || d.nombre || "Sin ruta"),
             lat: Number(d.lat),
             lng: Number(d.lng),
             fecha: d.fecha,
           };
         })
-.filter((b) => {
-  if (isNaN(b.lat) || isNaN(b.lng)) return false;
+        .filter((b) => {
+          if (Number.isNaN(b.lat) || Number.isNaN(b.lng)) return false;
 
-  if (!b.fecha?.toDate) return false;
+          if (!b.fecha?.toDate) return false;
 
-  const minutos =
-    (Date.now() - b.fecha.toDate().getTime()) / 1000 / 60;
+          const minutos =
+            (Date.now() - b.fecha.toDate().getTime()) / 1000 / 60;
 
-  return minutos <= 30;
-});
+          return minutos <= 30;
+        });
 
-setBuses(data);
-   }); 
+      setBuses(data);
+    });
 
     return () => unsub();
   }, []);
-
-  useEffect(() => {
-    if (!pasajeroActivo) return;
-
-    if (!navigator.geolocation) {
-      alert("Tu navegador no permite ubicación.");
-      setPasajeroActivo(false);
-      return;
-    }
-
-    const pasajeroId =
-      localStorage.getItem("pasajeroId") ||
-      `pasajero-${Math.random().toString(36).substring(2, 12)}`;
-
-    localStorage.setItem("pasajeroId", pasajeroId);
-
-    const watchId = navigator.geolocation.watchPosition(
-      async (pos) => {
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-
-        setUbicacion([lat, lng]);
-
-        await setDoc(doc(db, "autobuses", pasajeroId), {
-          nombre:
-            rutaSeleccionada === "Todas" ? "Pasajero activo" : rutaSeleccionada,
-          ruta:
-            rutaSeleccionada === "Todas" ? "Pasajero activo" : rutaSeleccionada,
-          lat,
-          lng,
-          tipo: "pasajero",
-          activo: true,
-          fecha: serverTimestamp(),
-        });
-      },
-      () => {
-        alert("No se pudo activar la ubicación del pasajero.");
-        setPasajeroActivo(false);
-      },
-      {
-        enableHighAccuracy: true,
-        maximumAge: 0,
-        timeout: 10000,
-      }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, [pasajeroActivo, rutaSeleccionada]);
 
   const rutasDeZona = useMemo(() => {
     return rutas.filter((ruta) => ruta.zona === zonaSeleccionada);
   }, [zonaSeleccionada]);
 
   const busesFiltrados = useMemo(() => {
-  if (!rutaSeleccionada) return [];
+    if (!rutaSeleccionada) return [];
 
     return buses.filter(
       (b) =>
@@ -469,10 +495,10 @@ setBuses(data);
   }, [buses, rutaSeleccionada]);
 
   const cambiarZona = (zona: Zona) => {
-  setZonaSeleccionada(zona);
-  setRutaSeleccionada("");
-  setPantallaPasajero("rutas");
-};
+    setZonaSeleccionada(zona);
+    setRutaSeleccionada("");
+    setPantallaPasajero("rutas");
+  };
 
   const obtenerMiUbicacion = () => {
     if (!navigator.geolocation) {
@@ -486,26 +512,6 @@ setBuses(data);
       },
       () => {
         alert("No se pudo obtener tu ubicación.");
-      }
-    );
-  };
-
-    const activarPasajero = () => {
-    if (!navigator.geolocation) {
-      alert("Tu navegador no permite ubicación");
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      () => {
-        setPasajeroActivo((prev) => !prev);
-      },
-      () => {
-        alert("Debes permitir ubicación para activar modo pasajero");
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
       }
     );
   };
@@ -642,26 +648,6 @@ setBuses(data);
         <div style={{ fontSize: 13, opacity: 0.85 }}>
           🚍 Usuarios en esta ruta: {busesFiltrados.length}
         </div>
-
-        <button
-          id="activar-pasajero"
-          type="button"
-          onClick={activarPasajero}
-          style={{
-            width: "100%",
-            marginTop: 10,
-            padding: "11px 14px",
-            borderRadius: 999,
-            border: "none",
-            background: pasajeroActivo ? "#22c55e" : "#facc15",
-            color: pasajeroActivo ? "white" : "#111827",
-            fontWeight: 900,
-          }}
-        >
-          {pasajeroActivo
-            ? "Pasajero activo: compartiendo ubicación"
-            : "Compartir ubicación"}
-        </button>
 
         <button
           onClick={() => setPantallaPasajero("rutas")}
