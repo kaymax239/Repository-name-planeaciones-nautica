@@ -19,7 +19,7 @@ import {
   setDoc,
   serverTimestamp,
 } from "firebase/firestore";
-//import { db } from "./firebase";
+import { db } from "./firebase";
 
 type Bus = {
   id: string;
@@ -330,12 +330,11 @@ const rutas: Ruta[] = [
 function BusAnimado({ bus }: { bus: Bus }) {
   const markerRef = useRef<L.Marker | null>(null);
 
-  useEffect(() => {
-    if (markerRef.current) {
-     markerRef.current.setLatLng([bus.lat, bus.lng]);
-
-    
-  }, [bus.lat, bus.lng]);
+useEffect(() => {
+  if (markerRef.current) {
+    markerRef.current.setLatLng([bus.lat, bus.lng]);
+  }
+}, [bus.lat, bus.lng]);
 
   return (
     <Marker
