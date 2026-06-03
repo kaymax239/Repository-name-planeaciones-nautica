@@ -17,7 +17,7 @@ import {
   onSnapshot,
   type Timestamp,
 } from "firebase/firestore";
-import { db } from "@/app/_lib/firebase";
+import { db } from "./firebase";
 
 type Bus = {
   id: string;
