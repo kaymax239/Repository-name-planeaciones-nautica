@@ -40,9 +40,16 @@ type Ruta = {
   puntos: [number, number][];
 };
 
+type ModoUsuario = "chofer" | "pasajero";
+type TipoRuta = "urbano" | "micro-local";
+type PantallaFlujo = "tipos" | "zonas" | "rutas" | "mapa";
+type EstiloMapa = "normal" | "nocturno" | "barrio";
+
 type MapaProps = {
+  modoUsuario?: ModoUsuario;
   conteoUsuariosPorRuta?: Record<string, number>;
   onRutaSeleccionada?: (ruta: string | null) => void;
+  onRegresarInicio?: () => void;
 };
 
 type MetodoCalculo = "ruta" | "haversine";
@@ -69,6 +76,26 @@ const USUARIO_KM_INICIAL: UsuarioKm = {
   viajesTotales: 0,
   nivel: "Nuevo pasajero",
   ultimoViaje: null,
+};
+const MAPAS_DISPONIBLES: Record<
+  EstiloMapa,
+  { label: string; url: string; attribution: string }
+> = {
+  normal: {
+    label: "Mapa normal",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    attribution: "&copy; OpenStreetMap",
+  },
+  nocturno: {
+    label: "Mapa nocturno",
+    url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+    attribution: "&copy; OpenStreetMap &copy; CARTO",
+  },
+  barrio: {
+    label: "Mapa barrio",
+    url: "https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png",
+    attribution: "&copy; OpenStreetMap contributors, Tiles style by HOT",
+  },
 };
 
 function crearUserId() {
@@ -236,6 +263,21 @@ function formatearUltimoViaje(value: string | null) {
     dateStyle: "short",
     timeStyle: "short",
   });
+}
+
+function obtenerEtiquetaZona(zona: Zona) {
+  return zona === "Zona Norte / Altamira" ? "Zona Norte" : zona;
+}
+
+function obtenerEtiquetaTipoRuta(tipo: TipoRuta | null) {
+  if (tipo === "urbano") return "Rutas urbano";
+  if (tipo === "micro-local") return "Rutas micro/local";
+
+  return "Todas las rutas";
+}
+
+function obtenerTipoRuta(ruta: Ruta): TipoRuta {
+  return /^ruta\s+\d+/i.test(ruta.nombre) ? "urbano" : "micro-local";
 }
 
 const busIcon = new L.DivIcon({
@@ -842,20 +884,28 @@ function AjustarMapa({ ubicacion }: { ubicacion: [number, number] | null }) {
 }
 
 export default function Mapa({
+  modoUsuario = "pasajero",
   conteoUsuariosPorRuta = {},
   onRutaSeleccionada,
+  onRegresarInicio,
 }: MapaProps) {
   const [buses, setBuses] = useState<Bus[]>([]);
   const [ubicacion, setUbicacion] = useState<[number, number] | null>(null);
   const [zonaSeleccionada, setZonaSeleccionada] =
     useState<Zona>("Tampico / Madero");
+  const [tipoRutaSeleccionado, setTipoRutaSeleccionado] =
+    useState<TipoRuta | null>(null);
   const [rutaSeleccionada, setRutaSeleccionada] = useState<string>("");
-  const [pantallaPasajero, setPantallaPasajero] =
-    useState<"zonas" | "rutas" | "mapa">("zonas");
+  const [pantallaFlujo, setPantallaFlujo] = useState<PantallaFlujo>(
+    modoUsuario === "chofer" ? "tipos" : "zonas"
+  );
   const [userId, setUserId] = useState<string | null>(null);
   const [viajeActivo, setViajeActivo] = useState<ViajeActivo | null>(null);
   const [usuarioKm, setUsuarioKm] = useState<UsuarioKm>(USUARIO_KM_INICIAL);
   const [procesandoViaje, setProcesandoViaje] = useState(false);
+  const [mostrarDetalleKm, setMostrarDetalleKm] = useState(false);
+  const [mostrarOpcionesMapa, setMostrarOpcionesMapa] = useState(false);
+  const [estiloMapa, setEstiloMapa] = useState<EstiloMapa>("normal");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
@@ -925,8 +975,14 @@ export default function Mapa({
   }, [userId]);
 
   const rutasDeZona = useMemo(() => {
-    return rutas.filter((ruta) => ruta.zona === zonaSeleccionada);
-  }, [zonaSeleccionada]);
+    return rutas.filter((ruta) => {
+      if (ruta.zona !== zonaSeleccionada) return false;
+
+      return tipoRutaSeleccionado
+        ? obtenerTipoRuta(ruta) === tipoRutaSeleccionado
+        : true;
+    });
+  }, [tipoRutaSeleccionado, zonaSeleccionada]);
 
   const busesFiltrados = useMemo(() => {
     if (!rutaSeleccionada) return [];
@@ -941,30 +997,46 @@ export default function Mapa({
   const usuariosRutaSeleccionada = rutaSeleccionada
     ? conteoUsuariosPorRuta[rutaSeleccionada] || 0
     : 0;
+  const mapaActual = MAPAS_DISPONIBLES[estiloMapa];
+  const mapasDesbloqueados = usuarioKm.kmTotales > 100;
+
+  const seleccionarTipoRuta = (tipo: TipoRuta) => {
+    setTipoRutaSeleccionado(tipo);
+    setRutaSeleccionada("");
+    onRutaSeleccionada?.(null);
+    setPantallaFlujo("zonas");
+  };
+
+  const regresarATiposRuta = () => {
+    setTipoRutaSeleccionado(null);
+    setRutaSeleccionada("");
+    onRutaSeleccionada?.(null);
+    setPantallaFlujo("tipos");
+  };
 
   const cambiarZona = (zona: Zona) => {
     setZonaSeleccionada(zona);
     setRutaSeleccionada("");
     onRutaSeleccionada?.(null);
-    setPantallaPasajero("rutas");
+    setPantallaFlujo("rutas");
   };
 
   const seleccionarRuta = (ruta: string) => {
     setRutaSeleccionada(ruta);
     onRutaSeleccionada?.(ruta);
-    setPantallaPasajero("mapa");
+    setPantallaFlujo("mapa");
   };
 
   const regresarARutas = () => {
     setRutaSeleccionada("");
     onRutaSeleccionada?.(null);
-    setPantallaPasajero("rutas");
+    setPantallaFlujo("rutas");
   };
 
   const regresarAZonas = () => {
     setRutaSeleccionada("");
     onRutaSeleccionada?.(null);
-    setPantallaPasajero("zonas");
+    setPantallaFlujo("zonas");
   };
 
   const obtenerMiUbicacion = () => {
@@ -1095,7 +1167,7 @@ export default function Mapa({
     }
   };
 
-  if (pantallaPasajero === "zonas") {
+  if (pantallaFlujo === "tipos") {
     return (
       <div
         style={{
@@ -1108,9 +1180,100 @@ export default function Mapa({
           gap: 18,
         }}
       >
-        <h1 style={{ color: "white", textAlign: "center", fontSize: 28, fontWeight: 800 }}>
+        <h1
+          style={{
+            color: "white",
+            textAlign: "center",
+            fontSize: 28,
+            fontWeight: 800,
+            margin: 0,
+          }}
+        >
+          Soy Chofer
+        </h1>
+
+        <p style={{ color: "#cbd5e1", textAlign: "center", margin: 0 }}>
+          Selecciona el tipo de rutas que quieres ver.
+        </p>
+
+        <button
+          onClick={() => seleccionarTipoRuta("urbano")}
+          style={{
+            padding: 22,
+            borderRadius: 20,
+            border: "none",
+            background: "#22c55e",
+            color: "white",
+            fontSize: 22,
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          Rutas urbano
+        </button>
+
+        <button
+          onClick={() => seleccionarTipoRuta("micro-local")}
+          style={{
+            padding: 22,
+            borderRadius: 20,
+            border: "none",
+            background: "#2563eb",
+            color: "white",
+            fontSize: 22,
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          Rutas micro/local
+        </button>
+
+        <button
+          onClick={onRegresarInicio}
+          style={{
+            padding: 14,
+            borderRadius: 999,
+            border: "none",
+            background: "white",
+            color: "#111827",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          ← Regresar
+        </button>
+      </div>
+    );
+  }
+
+  if (pantallaFlujo === "zonas") {
+    return (
+      <div
+        style={{
+          height: "100vh",
+          background: "#0f172a",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          padding: 24,
+          gap: 18,
+        }}
+      >
+        <h1
+          style={{
+            color: "white",
+            textAlign: "center",
+            fontSize: 28,
+            fontWeight: 800,
+            margin: 0,
+          }}
+        >
           Selecciona tu zona
         </h1>
+
+        <p style={{ color: "#cbd5e1", textAlign: "center", margin: 0 }}>
+          {obtenerEtiquetaTipoRuta(tipoRutaSeleccionado)}
+        </p>
 
         <button
           onClick={() => cambiarZona("Tampico / Madero")}
@@ -1122,6 +1285,7 @@ export default function Mapa({
             color: "white",
             fontSize: 22,
             fontWeight: 800,
+            cursor: "pointer",
           }}
         >
           📍 Tampico / Madero
@@ -1137,15 +1301,33 @@ export default function Mapa({
             color: "white",
             fontSize: 22,
             fontWeight: 800,
+            cursor: "pointer",
           }}
         >
-          📍 Zona Norte / Altamira
+          📍 Zona Norte
+        </button>
+
+        <button
+          onClick={
+            modoUsuario === "chofer" ? regresarATiposRuta : onRegresarInicio
+          }
+          style={{
+            padding: 14,
+            borderRadius: 999,
+            border: "none",
+            background: "white",
+            color: "#111827",
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          ← Regresar
         </button>
       </div>
     );
   }
 
-  if (pantallaPasajero === "rutas") {
+  if (pantallaFlujo === "rutas") {
     return (
       <div
         style={{
@@ -1156,14 +1338,27 @@ export default function Mapa({
         }}
       >
         <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>
-          Selecciona tu ruta
+          {obtenerEtiquetaTipoRuta(tipoRutaSeleccionado)}
         </h1>
 
         <p style={{ color: "#cbd5e1", marginBottom: 20 }}>
-          Zona: {zonaSeleccionada}
+          Zona: {obtenerEtiquetaZona(zonaSeleccionada)}
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {rutasDeZona.length === 0 && (
+            <div
+              style={{
+                border: "1px solid rgba(148,163,184,.35)",
+                borderRadius: 18,
+                color: "#cbd5e1",
+                padding: 18,
+              }}
+            >
+              No hay rutas en esta selección.
+            </div>
+          )}
+
           {rutasDeZona.map((ruta) => {
             const usuariosRuta = conteoUsuariosPorRuta[ruta.nombre] || 0;
 
@@ -1180,6 +1375,7 @@ export default function Mapa({
                   fontSize: 18,
                   fontWeight: 800,
                   textAlign: "left",
+                  cursor: "pointer",
                 }}
               >
                 <span style={{ display: "block" }}>🚍 {ruta.nombre}</span>
@@ -1210,9 +1406,10 @@ export default function Mapa({
             color: "#111827",
             fontWeight: 800,
             width: "100%",
+            cursor: "pointer",
           }}
         >
-          ← Regresar a zonas
+          ← Regresar
         </button>
       </div>
     );
@@ -1223,76 +1420,88 @@ export default function Mapa({
       <div
         style={{
           position: "absolute",
-          top: 12,
-          left: 12,
-          right: 12,
+          top: 10,
+          left: 10,
+          right: 10,
           zIndex: 99999,
-          background: "rgba(15,23,42,.92)",
+          background: "rgba(15,23,42,.9)",
           color: "white",
-          borderRadius: 18,
-          padding: 12,
+          borderRadius: 16,
+          padding: 10,
           boxShadow: "0 10px 30px rgba(0,0,0,.35)",
         }}
       >
-        <div style={{ fontSize: 18, fontWeight: 800 }}>Rutas Tampico</div>
-
-        <div style={{ fontSize: 13, opacity: 0.85 }}>
-          👥 Usuarios en esta ruta: {usuariosRutaSeleccionada}
-        </div>
-
-        <div style={{ fontSize: 13, opacity: 0.85 }}>
-          🚍 Autobuses en vivo: {busesFiltrados.length}
-        </div>
-
         <div
           style={{
-            marginTop: 10,
-            padding: 10,
-            borderRadius: 14,
-            background: "rgba(37,99,235,.18)",
-            border: "1px solid rgba(147,197,253,.35)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 8,
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 900 }}>Mis kilómetros</div>
-          <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
-            Km totales: {usuarioKm.kmTotales.toFixed(2)}
-          </div>
-          <div style={{ fontSize: 12, opacity: 0.9 }}>
-            Viajes totales: {usuarioKm.viajesTotales}
-          </div>
-          <div style={{ fontSize: 12, opacity: 0.9 }}>
-            Nivel: {usuarioKm.nivel}
-          </div>
-          <div style={{ fontSize: 12, opacity: 0.9 }}>
-            Último viaje: {formatearUltimoViaje(usuarioKm.ultimoViaje)}
-          </div>
-          {viajeActivo && (
-            <div style={{ fontSize: 12, marginTop: 6, color: "#bfdbfe" }}>
-              Viaje activo: {viajeActivo.ruta}
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 900 }}>Rutas Kaymax</div>
+            <div style={{ fontSize: 11, opacity: 0.85 }}>
+              {rutaSeleccionada || "Ruta seleccionada"}
             </div>
-          )}
+          </div>
+
+          <button
+            type="button"
+            onClick={regresarARutas}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 999,
+              border: "none",
+              background: "white",
+              color: "#111827",
+              fontSize: 12,
+              fontWeight: 800,
+              cursor: "pointer",
+            }}
+          >
+            Cambiar ruta
+          </button>
         </div>
 
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 8,
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 6,
             marginTop: 8,
           }}
         >
           <button
             type="button"
+            onClick={() => setMostrarDetalleKm((prev) => !prev)}
+            style={{
+              padding: "9px 8px",
+              borderRadius: 12,
+              border: "1px solid rgba(147,197,253,.35)",
+              background: "rgba(37,99,235,.22)",
+              color: "white",
+              fontSize: 12,
+              fontWeight: 900,
+              cursor: "pointer",
+            }}
+          >
+            Mis kilómetros
+          </button>
+
+          <button
+            type="button"
             onClick={iniciarViaje}
             disabled={procesandoViaje || Boolean(viajeActivo)}
             style={{
-              padding: "10px 12px",
-              borderRadius: 999,
+              padding: "9px 8px",
+              borderRadius: 12,
               border: "none",
               background:
                 procesandoViaje || viajeActivo ? "#64748b" : "#22c55e",
               color: "white",
-              fontWeight: 800,
+              fontSize: 12,
+              fontWeight: 900,
               cursor:
                 procesandoViaje || viajeActivo ? "not-allowed" : "pointer",
             }}
@@ -1305,13 +1514,14 @@ export default function Mapa({
             onClick={finalizarViaje}
             disabled={procesandoViaje || !viajeActivo}
             style={{
-              padding: "10px 12px",
-              borderRadius: 999,
+              padding: "9px 8px",
+              borderRadius: 12,
               border: "none",
               background:
                 procesandoViaje || !viajeActivo ? "#64748b" : "#f97316",
               color: "white",
-              fontWeight: 800,
+              fontSize: 12,
+              fontWeight: 900,
               cursor:
                 procesandoViaje || !viajeActivo ? "not-allowed" : "pointer",
             }}
@@ -1320,21 +1530,42 @@ export default function Mapa({
           </button>
         </div>
 
-        <button
-          onClick={regresarARutas}
+        <div
           style={{
-            width: "100%",
-            marginTop: 8,
-            padding: "10px 14px",
-            borderRadius: 999,
-            border: "none",
-            background: "white",
-            color: "#111827",
-            fontWeight: 800,
+            display: "flex",
+            gap: 10,
+            marginTop: 6,
+            fontSize: 11,
+            opacity: 0.85,
           }}
         >
-          Cambiar ruta
-        </button>
+          <span>👥 {usuariosRutaSeleccionada}</span>
+          <span>🚍 {busesFiltrados.length}</span>
+          <span>{usuarioKm.kmTotales.toFixed(2)} km</span>
+        </div>
+
+        {mostrarDetalleKm && (
+          <div
+            style={{
+              marginTop: 8,
+              padding: 9,
+              borderRadius: 12,
+              background: "rgba(37,99,235,.18)",
+              border: "1px solid rgba(147,197,253,.35)",
+              fontSize: 12,
+            }}
+          >
+            <div>Km totales: {usuarioKm.kmTotales.toFixed(2)}</div>
+            <div>Viajes totales: {usuarioKm.viajesTotales}</div>
+            <div>Nivel: {usuarioKm.nivel}</div>
+            <div>Último viaje: {formatearUltimoViaje(usuarioKm.ultimoViaje)}</div>
+            {viajeActivo && (
+              <div style={{ marginTop: 5, color: "#bfdbfe" }}>
+                Viaje activo: {viajeActivo.ruta}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <button
@@ -1351,10 +1582,94 @@ export default function Mapa({
           padding: "12px 16px",
           borderRadius: 999,
           fontWeight: 800,
+          cursor: "pointer",
         }}
       >
         Mi ubicación
       </button>
+
+      <div
+        style={{
+          position: "absolute",
+          left: 14,
+          bottom: 24,
+          zIndex: 99999,
+          display: "flex",
+          flexDirection: "column",
+          gap: 8,
+          alignItems: "flex-start",
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setMostrarOpcionesMapa((prev) => !prev)}
+          style={{
+            background: "#111827",
+            color: "white",
+            border: "none",
+            padding: "12px 16px",
+            borderRadius: 999,
+            fontWeight: 800,
+            cursor: "pointer",
+            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
+          }}
+        >
+          Cambiar mapa
+        </button>
+
+        {mostrarOpcionesMapa && (
+          <div
+            style={{
+              width: 230,
+              background: "rgba(15,23,42,.94)",
+              color: "white",
+              borderRadius: 16,
+              padding: 10,
+              boxShadow: "0 10px 30px rgba(0,0,0,.35)",
+            }}
+          >
+            {mapasDesbloqueados ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {(Object.keys(MAPAS_DISPONIBLES) as EstiloMapa[]).map(
+                  (mapa) => (
+                    <button
+                      key={mapa}
+                      type="button"
+                      onClick={() => {
+                        setEstiloMapa(mapa);
+                        setMostrarOpcionesMapa(false);
+                      }}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: 12,
+                        border:
+                          estiloMapa === mapa
+                            ? "2px solid #38bdf8"
+                            : "1px solid rgba(148,163,184,.35)",
+                        background:
+                          estiloMapa === mapa
+                            ? "rgba(14,165,233,.28)"
+                            : "rgba(15,23,42,.65)",
+                        color: "white",
+                        fontWeight: 800,
+                        textAlign: "left",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {MAPAS_DISPONIBLES[mapa].label}
+                    </button>
+                  )
+                )}
+              </div>
+            ) : (
+              <div style={{ fontSize: 13, lineHeight: 1.35 }}>
+                Registra más kilómetros para desbloquear nuevos estilos de mapa.
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <MapContainer
         center={[22.2553, -97.8686]}
@@ -1365,8 +1680,9 @@ export default function Mapa({
         <AjustarMapa ubicacion={ubicacion} />
 
         <TileLayer
-          attribution="&copy; OpenStreetMap"
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          key={estiloMapa}
+          attribution={mapaActual.attribution}
+          url={mapaActual.url}
         />
 
         {rutasDeZona

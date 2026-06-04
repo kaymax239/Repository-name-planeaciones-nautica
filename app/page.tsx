@@ -120,7 +120,7 @@ export default function Home() {
           }}
         >
           <h1 style={{ color: "white", fontSize: 30, fontWeight: 800 }}>
-            🚍 Rutas Tampico
+            🚍 Rutas Kaymax
           </h1>
 
           <p style={{ color: "#cbd5e1", marginBottom: 16 }}>
@@ -190,7 +190,7 @@ export default function Home() {
               cursor: "pointer",
             }}
           >
-            🛡️ Pasajero Seguro WhatsApp
+            🛡️ Pasajero Seguro
           </button>
 
           <button
@@ -207,7 +207,7 @@ export default function Home() {
               cursor: "pointer",
             }}
           >
-            🚨 Emergencia 911
+            🚨 911
           </button>
 
           <button
@@ -224,7 +224,7 @@ export default function Home() {
               cursor: "pointer",
             }}
           >
-            💡 Sugerir una ruta
+            💡 Sugerir ruta / comentarios
           </button>
 
           {mostrarSugerencia && (
@@ -326,28 +326,11 @@ export default function Home() {
   return (
     <div style={{ position: "relative", width: "100%", height: "100vh" }}>
       <Mapa
+        modoUsuario={modo === "chofer" ? "chofer" : "pasajero"}
         conteoUsuariosPorRuta={usuariosEnLinea.byRoute}
         onRutaSeleccionada={cambiarRutaActiva}
+        onRegresarInicio={volverInicio}
       />
-      <button
-        onClick={volverInicio}
-        style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          zIndex: 9999,
-          background: "#111827",
-          color: "white",
-          border: "none",
-          borderRadius: 999,
-          padding: "10px 16px",
-          fontWeight: 700,
-          cursor: "pointer",
-          boxShadow: "0 6px 20px rgba(0,0,0,.35)",
-        }}
-      >
-        ← Inicio
-      </button>
     </div>
   );
 }
