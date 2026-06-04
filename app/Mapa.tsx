@@ -14,7 +14,10 @@ import "leaflet/dist/leaflet.css";
 
 import {
   collection,
+  doc,
   onSnapshot,
+  runTransaction,
+  serverTimestamp,
   type Timestamp,
 } from "firebase/firestore";
 import { db } from "./firebase";
@@ -41,6 +44,199 @@ type MapaProps = {
   conteoUsuariosPorRuta?: Record<string, number>;
   onRutaSeleccionada?: (ruta: string | null) => void;
 };
+
+type MetodoCalculo = "ruta" | "haversine";
+
+type ViajeActivo = {
+  ruta: string;
+  horaInicio: string;
+  latInicio: number;
+  lngInicio: number;
+};
+
+type UsuarioKm = {
+  kmTotales: number;
+  viajesTotales: number;
+  nivel: string;
+  ultimoViaje: string | null;
+};
+
+const USER_ID_STORAGE_KEY = "rutasKaymax.userId";
+const VIAJE_ACTIVO_STORAGE_KEY = "rutasKaymax.viajeActivo";
+const EARTH_RADIUS_KM = 6371;
+const USUARIO_KM_INICIAL: UsuarioKm = {
+  kmTotales: 0,
+  viajesTotales: 0,
+  nivel: "Nuevo pasajero",
+  ultimoViaje: null,
+};
+
+function crearUserId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function obtenerOCrearUserId() {
+  const existente = localStorage.getItem(USER_ID_STORAGE_KEY);
+
+  if (existente) return existente;
+
+  const nuevoUserId = crearUserId();
+  localStorage.setItem(USER_ID_STORAGE_KEY, nuevoUserId);
+
+  return nuevoUserId;
+}
+
+function leerViajeActivo(): ViajeActivo | null {
+  const guardado = localStorage.getItem(VIAJE_ACTIVO_STORAGE_KEY);
+
+  if (!guardado) return null;
+
+  try {
+    const parsed = JSON.parse(guardado) as Partial<ViajeActivo>;
+
+    if (
+      typeof parsed.ruta === "string" &&
+      typeof parsed.horaInicio === "string" &&
+      typeof parsed.latInicio === "number" &&
+      typeof parsed.lngInicio === "number"
+    ) {
+      return {
+        ruta: parsed.ruta,
+        horaInicio: parsed.horaInicio,
+        latInicio: parsed.latInicio,
+        lngInicio: parsed.lngInicio,
+      };
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function guardarViajeActivo(viaje: ViajeActivo) {
+  localStorage.setItem(VIAJE_ACTIVO_STORAGE_KEY, JSON.stringify(viaje));
+}
+
+function limpiarViajeActivo() {
+  localStorage.removeItem(VIAJE_ACTIVO_STORAGE_KEY);
+}
+
+function obtenerNivel(kmTotales: number) {
+  if (kmTotales >= 1000) return "Leyenda del micro";
+  if (kmTotales >= 500) return "Explorador Tampico";
+  if (kmTotales >= 100) return "Pasajero frecuente";
+
+  return "Nuevo pasajero";
+}
+
+function redondearKm(km: number) {
+  return Math.round(km * 100) / 100;
+}
+
+function distanciaHaversineKm(
+  inicio: [number, number],
+  fin: [number, number]
+) {
+  const toRad = (value: number) => (value * Math.PI) / 180;
+  const [lat1, lng1] = inicio;
+  const [lat2, lng2] = fin;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) *
+      Math.cos(toRad(lat2)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return EARTH_RADIUS_KM * c;
+}
+
+function calcularDistanciaRutaKm(puntos: [number, number][]) {
+  if (puntos.length < 2) return 0;
+
+  return puntos.reduce((total, punto, index) => {
+    if (index === 0) return total;
+
+    return total + distanciaHaversineKm(puntos[index - 1], punto);
+  }, 0);
+}
+
+function calcularKilometrajeViaje(
+  ruta: string,
+  inicio: [number, number],
+  fin: [number, number]
+): { kmCalculados: number; metodoCalculo: MetodoCalculo } {
+  const rutaRegistrada = rutas.find((item) => item.nombre === ruta);
+  const kmRuta = rutaRegistrada ? calcularDistanciaRutaKm(rutaRegistrada.puntos) : 0;
+
+  if (kmRuta > 0) {
+    return {
+      kmCalculados: redondearKm(kmRuta),
+      metodoCalculo: "ruta",
+    };
+  }
+
+  return {
+    kmCalculados: redondearKm(distanciaHaversineKm(inicio, fin)),
+    metodoCalculo: "haversine",
+  };
+}
+
+function obtenerPosicionActual() {
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocalizacion no disponible"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
+    });
+  });
+}
+
+function obtenerNumero(value: unknown) {
+  const numero = Number(value);
+
+  return Number.isFinite(numero) ? numero : 0;
+}
+
+function normalizarUltimoViaje(value: unknown) {
+  if (typeof value === "string" && value) return value;
+
+  if (
+    value &&
+    typeof value === "object" &&
+    "toDate" in value &&
+    typeof value.toDate === "function"
+  ) {
+    return value.toDate().toISOString();
+  }
+
+  return null;
+}
+
+function formatearUltimoViaje(value: string | null) {
+  if (!value) return "Sin viajes";
+
+  const fecha = new Date(value);
+
+  if (Number.isNaN(fecha.getTime())) return "Sin viajes";
+
+  return fecha.toLocaleString("es-MX", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+}
 
 const busIcon = new L.DivIcon({
   html: `
@@ -656,6 +852,10 @@ export default function Mapa({
   const [rutaSeleccionada, setRutaSeleccionada] = useState<string>("");
   const [pantallaPasajero, setPantallaPasajero] =
     useState<"zonas" | "rutas" | "mapa">("zonas");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [viajeActivo, setViajeActivo] = useState<ViajeActivo | null>(null);
+  const [usuarioKm, setUsuarioKm] = useState<UsuarioKm>(USUARIO_KM_INICIAL);
+  const [procesandoViaje, setProcesandoViaje] = useState(false);
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
@@ -688,6 +888,41 @@ export default function Mapa({
 
     return () => unsub();
   }, []);
+
+  useEffect(() => {
+    const id = obtenerOCrearUserId();
+    setUserId(id);
+    setViajeActivo(leerViajeActivo());
+  }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const usuarioRef = doc(db, "usuariosKm", userId);
+    const unsub = onSnapshot(usuarioRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        setUsuarioKm(USUARIO_KM_INICIAL);
+        return;
+      }
+
+      const data = snapshot.data();
+      const kmTotales = obtenerNumero(data.kmTotales);
+      const viajesTotales = obtenerNumero(data.viajesTotales);
+      const nivel =
+        typeof data.nivel === "string" && data.nivel
+          ? data.nivel
+          : obtenerNivel(kmTotales);
+
+      setUsuarioKm({
+        kmTotales,
+        viajesTotales,
+        nivel,
+        ultimoViaje: normalizarUltimoViaje(data.ultimoViaje),
+      });
+    });
+
+    return () => unsub();
+  }, [userId]);
 
   const rutasDeZona = useMemo(() => {
     return rutas.filter((ruta) => ruta.zona === zonaSeleccionada);
@@ -746,6 +981,118 @@ export default function Mapa({
         alert("No se pudo obtener tu ubicación.");
       }
     );
+  };
+
+  const iniciarViaje = async () => {
+    if (procesandoViaje) return;
+
+    const viajeGuardado = leerViajeActivo();
+
+    if (viajeActivo || viajeGuardado) {
+      setViajeActivo(viajeGuardado || viajeActivo);
+      alert("Ya tienes un viaje activo. Finalízalo antes de iniciar otro.");
+      return;
+    }
+
+    if (!rutaSeleccionada) {
+      alert("Selecciona una ruta antes de iniciar el viaje.");
+      return;
+    }
+
+    setProcesandoViaje(true);
+
+    try {
+      const pos = await obtenerPosicionActual();
+      const viaje: ViajeActivo = {
+        ruta: rutaSeleccionada,
+        horaInicio: new Date().toISOString(),
+        latInicio: pos.coords.latitude,
+        lngInicio: pos.coords.longitude,
+      };
+
+      guardarViajeActivo(viaje);
+      setViajeActivo(viaje);
+      setUbicacion([pos.coords.latitude, pos.coords.longitude]);
+      alert("Viaje iniciado");
+    } catch {
+      alert("No se pudo obtener tu ubicación. Activa el GPS y permite ubicación.");
+    } finally {
+      setProcesandoViaje(false);
+    }
+  };
+
+  const finalizarViaje = async () => {
+    if (procesandoViaje) return;
+
+    const id = userId || obtenerOCrearUserId();
+    const viaje = viajeActivo || leerViajeActivo();
+
+    if (!viaje) {
+      alert("No tienes un viaje activo para finalizar.");
+      return;
+    }
+
+    setUserId(id);
+    setProcesandoViaje(true);
+
+    try {
+      const pos = await obtenerPosicionActual();
+      const latFin = pos.coords.latitude;
+      const lngFin = pos.coords.longitude;
+      const fechaFin = new Date().toISOString();
+      const { kmCalculados, metodoCalculo } = calcularKilometrajeViaje(
+        viaje.ruta,
+        [viaje.latInicio, viaje.lngInicio],
+        [latFin, lngFin]
+      );
+      const viajeRef = doc(collection(db, "viajesUsuarios"));
+      const usuarioRef = doc(db, "usuariosKm", id);
+
+      await runTransaction(db, async (transaction) => {
+        const usuarioSnapshot = await transaction.get(usuarioRef);
+        const data = usuarioSnapshot.exists() ? usuarioSnapshot.data() : {};
+        const kmTotalesAnteriores = obtenerNumero(data.kmTotales);
+        const viajesTotalesAnteriores = obtenerNumero(data.viajesTotales);
+        const kmTotales = redondearKm(kmTotalesAnteriores + kmCalculados);
+        const viajesTotales = viajesTotalesAnteriores + 1;
+
+        transaction.set(viajeRef, {
+          userId: id,
+          ruta: viaje.ruta,
+          fechaInicio: viaje.horaInicio,
+          fechaFin,
+          latInicio: viaje.latInicio,
+          lngInicio: viaje.lngInicio,
+          latFin,
+          lngFin,
+          kmCalculados,
+          metodoCalculo,
+          fechaCreacion: serverTimestamp(),
+        });
+
+        transaction.set(
+          usuarioRef,
+          {
+            userId: id,
+            kmTotales,
+            viajesTotales,
+            nivel: obtenerNivel(kmTotales),
+            ultimoViaje: fechaFin,
+            fechaActualizacion: serverTimestamp(),
+          },
+          { merge: true }
+        );
+      });
+
+      limpiarViajeActivo();
+      setViajeActivo(null);
+      setUbicacion([latFin, lngFin]);
+      alert(`Viaje finalizado. Sumaste ${kmCalculados.toFixed(2)} km.`);
+    } catch {
+      alert("No se pudo finalizar el viaje. Intenta otra vez.");
+    } finally {
+      setProcesandoViaje(false);
+    }
   };
 
   if (pantallaPasajero === "zonas") {
@@ -895,6 +1242,82 @@ export default function Mapa({
 
         <div style={{ fontSize: 13, opacity: 0.85 }}>
           🚍 Autobuses en vivo: {busesFiltrados.length}
+        </div>
+
+        <div
+          style={{
+            marginTop: 10,
+            padding: 10,
+            borderRadius: 14,
+            background: "rgba(37,99,235,.18)",
+            border: "1px solid rgba(147,197,253,.35)",
+          }}
+        >
+          <div style={{ fontSize: 14, fontWeight: 900 }}>Mis kilómetros</div>
+          <div style={{ fontSize: 12, marginTop: 4, opacity: 0.9 }}>
+            Km totales: {usuarioKm.kmTotales.toFixed(2)}
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.9 }}>
+            Viajes totales: {usuarioKm.viajesTotales}
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.9 }}>
+            Nivel: {usuarioKm.nivel}
+          </div>
+          <div style={{ fontSize: 12, opacity: 0.9 }}>
+            Último viaje: {formatearUltimoViaje(usuarioKm.ultimoViaje)}
+          </div>
+          {viajeActivo && (
+            <div style={{ fontSize: 12, marginTop: 6, color: "#bfdbfe" }}>
+              Viaje activo: {viajeActivo.ruta}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 8,
+            marginTop: 8,
+          }}
+        >
+          <button
+            type="button"
+            onClick={iniciarViaje}
+            disabled={procesandoViaje || Boolean(viajeActivo)}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 999,
+              border: "none",
+              background:
+                procesandoViaje || viajeActivo ? "#64748b" : "#22c55e",
+              color: "white",
+              fontWeight: 800,
+              cursor:
+                procesandoViaje || viajeActivo ? "not-allowed" : "pointer",
+            }}
+          >
+            Iniciar viaje
+          </button>
+
+          <button
+            type="button"
+            onClick={finalizarViaje}
+            disabled={procesandoViaje || !viajeActivo}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 999,
+              border: "none",
+              background:
+                procesandoViaje || !viajeActivo ? "#64748b" : "#f97316",
+              color: "white",
+              fontWeight: 800,
+              cursor:
+                procesandoViaje || !viajeActivo ? "not-allowed" : "pointer",
+            }}
+          >
+            Finalizar viaje
+          </button>
         </div>
 
         <button
