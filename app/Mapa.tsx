@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -43,7 +43,7 @@ type Ruta = {
 type ModoUsuario = "chofer" | "pasajero";
 type TipoRuta = "urbano" | "micro-local";
 type PantallaFlujo = "tipos" | "zonas" | "rutas" | "mapa";
-type EstiloMapa = "normal" | "nocturno" | "barrio";
+type EstiloMapa = "navegacion" | "normal" | "nocturno" | "barrio";
 
 type MapaProps = {
   modoUsuario?: ModoUsuario;
@@ -79,17 +79,23 @@ const USUARIO_KM_INICIAL: UsuarioKm = {
 };
 const MAPAS_DISPONIBLES: Record<
   EstiloMapa,
-  { label: string; url: string; attribution: string }
+  { label: string; url: string; attribution: string; premium?: boolean }
 > = {
+  navegacion: {
+    label: "Navegación",
+    url: "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png",
+    attribution: "&copy; OpenStreetMap &copy; CARTO",
+  },
   normal: {
     label: "Mapa normal",
-    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    attribution: "&copy; OpenStreetMap",
+    url: "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    attribution: "&copy; OpenStreetMap &copy; CARTO",
   },
   nocturno: {
     label: "Mapa nocturno",
     url: "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
     attribution: "&copy; OpenStreetMap &copy; CARTO",
+    premium: true,
   },
   barrio: {
     label: "Mapa barrio",
@@ -282,42 +288,35 @@ function obtenerTipoRuta(ruta: Ruta): TipoRuta {
 
 const busIcon = new L.DivIcon({
   html: `
-    <div style="
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      width:42px;
-      height:42px;
-      background:white;
-      border-radius:14px;
-      box-shadow:0 8px 22px rgba(0,0,0,.35);
-      border:3px solid #22c55e;
-      font-size:24px;
-      transform: rotate(-8deg);
-    ">
-      🚌
+    <div class="rt-bus-marker" aria-hidden="true">
+      <span class="rt-bus-marker__pulse"></span>
+      <div class="rt-bus-marker__body">
+        <svg viewBox="0 0 48 48" role="img" focusable="false">
+          <path d="M12 9h24c4 0 7 3 7 7v15c0 3-2 6-5 7l-1 3a3 3 0 0 1-3 2h-1a3 3 0 0 1-3-3v-1H18v1a3 3 0 0 1-3 3h-1a3 3 0 0 1-3-2l-1-3c-3-1-5-4-5-7V16c0-4 3-7 7-7Z" fill="currentColor"/>
+          <path d="M11 17c0-2 1-3 3-3h20c2 0 3 1 3 3v8H11v-8Z" fill="white" opacity=".92"/>
+          <path d="M14 29h20" stroke="white" stroke-width="3" stroke-linecap="round" opacity=".78"/>
+          <circle cx="15" cy="34" r="3" fill="#0f172a"/>
+          <circle cx="33" cy="34" r="3" fill="#0f172a"/>
+          <path d="M17 14h14" stroke="#0f172a" stroke-width="2" stroke-linecap="round" opacity=".35"/>
+        </svg>
+      </div>
     </div>
   `,
   className: "",
-  iconSize: [42, 42],
-  iconAnchor: [21, 21],
-  popupAnchor: [0, -18],
+  iconSize: [56, 56],
+  iconAnchor: [28, 31],
+  popupAnchor: [0, -26],
 });
 
 const miUbicacionIcon = new L.DivIcon({
   html: `
-    <div style="
-      width:18px;
-      height:18px;
-      background:#2563eb;
-      border:3px solid white;
-      border-radius:999px;
-      box-shadow:0 0 12px rgba(37,99,235,.8);
-    "></div>
+    <div class="rt-location-marker" aria-hidden="true">
+      <span></span>
+    </div>
   `,
   className: "",
-  iconSize: [18, 18],
-  iconAnchor: [9, 9],
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
 });
 
 const rutas: Ruta[] = [
@@ -905,7 +904,7 @@ export default function Mapa({
   const [procesandoViaje, setProcesandoViaje] = useState(false);
   const [mostrarDetalleKm, setMostrarDetalleKm] = useState(false);
   const [mostrarOpcionesMapa, setMostrarOpcionesMapa] = useState(false);
-  const [estiloMapa, setEstiloMapa] = useState<EstiloMapa>("normal");
+  const [estiloMapa, setEstiloMapa] = useState<EstiloMapa>("navegacion");
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, "autobuses"), (snapshot) => {
@@ -998,7 +997,17 @@ export default function Mapa({
     ? conteoUsuariosPorRuta[rutaSeleccionada] || 0
     : 0;
   const mapaActual = MAPAS_DISPONIBLES[estiloMapa];
-  const mapasDesbloqueados = usuarioKm.kmTotales > 100;
+  const kilometrosUsuario = obtenerNumero(usuarioKm.kmTotales);
+  const nocturnoDesbloqueado = kilometrosUsuario >= 100;
+  const rutaMapaSeleccionada = rutasDeZona.find(
+    (ruta) => ruta.nombre === rutaSeleccionada
+  );
+
+  useEffect(() => {
+    if (estiloMapa === "nocturno" && !nocturnoDesbloqueado) {
+      setEstiloMapa("navegacion");
+    }
+  }, [estiloMapa, nocturnoDesbloqueado]);
 
   const seleccionarTipoRuta = (tipo: TipoRuta) => {
     setTipoRutaSeleccionado(tipo);
@@ -1416,265 +1425,145 @@ export default function Mapa({
   }
 
   return (
-    <div style={{ width: "100%", height: "100vh", position: "relative" }}>
-      <div
-        style={{
-          position: "absolute",
-          top: 10,
-          left: 10,
-          right: 10,
-          zIndex: 99999,
-          background: "rgba(15,23,42,.9)",
-          color: "white",
-          borderRadius: 16,
-          padding: 10,
-          boxShadow: "0 10px 30px rgba(0,0,0,.35)",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <div>
-            <div style={{ fontSize: 15, fontWeight: 900 }}>Rutas Kaymax</div>
-            <div style={{ fontSize: 11, opacity: 0.85 }}>
-              {rutaSeleccionada || "Ruta seleccionada"}
-            </div>
+    <div className="rt-map-shell">
+      <div className="rt-map-panel">
+        <div className="rt-map-panel__main">
+          <div
+            className="rt-route-color"
+            style={{ background: rutaMapaSeleccionada?.color || "#38bdf8" }}
+          />
+
+          <div className="rt-route-copy">
+            <span className="rt-route-kicker">Modo navegación</span>
+            <strong>{rutaSeleccionada || "Ruta seleccionada"}</strong>
           </div>
 
           <button
             type="button"
             onClick={regresarARutas}
-            style={{
-              padding: "8px 12px",
-              borderRadius: 999,
-              border: "none",
-              background: "white",
-              color: "#111827",
-              fontSize: 12,
-              fontWeight: 800,
-              cursor: "pointer",
-            }}
+            className="rt-mini-pill"
           >
             Cambiar ruta
           </button>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 6,
-            marginTop: 8,
-          }}
-        >
+        <div className="rt-map-panel__stats">
+          <span>Zona: {obtenerEtiquetaZona(zonaSeleccionada)}</span>
+          <span>Usuarios: {usuariosRutaSeleccionada}</span>
+          <span>Camiones: {busesFiltrados.length}</span>
+        </div>
+
+        <div className="rt-trip-actions">
           <button
             type="button"
             onClick={() => setMostrarDetalleKm((prev) => !prev)}
-            style={{
-              padding: "9px 8px",
-              borderRadius: 12,
-              border: "1px solid rgba(147,197,253,.35)",
-              background: "rgba(37,99,235,.22)",
-              color: "white",
-              fontSize: 12,
-              fontWeight: 900,
-              cursor: "pointer",
-            }}
+            className="rt-trip-button rt-trip-button--ghost"
           >
-            Mis kilómetros
+            {kilometrosUsuario.toFixed(2)} km
           </button>
 
           <button
             type="button"
             onClick={iniciarViaje}
             disabled={procesandoViaje || Boolean(viajeActivo)}
-            style={{
-              padding: "9px 8px",
-              borderRadius: 12,
-              border: "none",
-              background:
-                procesandoViaje || viajeActivo ? "#64748b" : "#22c55e",
-              color: "white",
-              fontSize: 12,
-              fontWeight: 900,
-              cursor:
-                procesandoViaje || viajeActivo ? "not-allowed" : "pointer",
-            }}
+            className="rt-trip-button rt-trip-button--start"
           >
-            Iniciar viaje
+            Iniciar
           </button>
 
           <button
             type="button"
             onClick={finalizarViaje}
             disabled={procesandoViaje || !viajeActivo}
-            style={{
-              padding: "9px 8px",
-              borderRadius: 12,
-              border: "none",
-              background:
-                procesandoViaje || !viajeActivo ? "#64748b" : "#f97316",
-              color: "white",
-              fontSize: 12,
-              fontWeight: 900,
-              cursor:
-                procesandoViaje || !viajeActivo ? "not-allowed" : "pointer",
-            }}
+            className="rt-trip-button rt-trip-button--end"
           >
-            Finalizar viaje
+            Finalizar
           </button>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            gap: 10,
-            marginTop: 6,
-            fontSize: 11,
-            opacity: 0.85,
-          }}
-        >
-          <span>👥 {usuariosRutaSeleccionada}</span>
-          <span>🚍 {busesFiltrados.length}</span>
-          <span>{usuarioKm.kmTotales.toFixed(2)} km</span>
-        </div>
-
         {mostrarDetalleKm && (
-          <div
-            style={{
-              marginTop: 8,
-              padding: 9,
-              borderRadius: 12,
-              background: "rgba(37,99,235,.18)",
-              border: "1px solid rgba(147,197,253,.35)",
-              fontSize: 12,
-            }}
-          >
-            <div>Km totales: {usuarioKm.kmTotales.toFixed(2)}</div>
+          <div className="rt-km-detail">
+            <div>Km totales: {kilometrosUsuario.toFixed(2)}</div>
             <div>Viajes totales: {usuarioKm.viajesTotales}</div>
             <div>Nivel: {usuarioKm.nivel}</div>
             <div>Último viaje: {formatearUltimoViaje(usuarioKm.ultimoViaje)}</div>
-            {viajeActivo && (
-              <div style={{ marginTop: 5, color: "#bfdbfe" }}>
-                Viaje activo: {viajeActivo.ruta}
-              </div>
-            )}
+            {viajeActivo && <div>Viaje activo: {viajeActivo.ruta}</div>}
           </div>
         )}
       </div>
 
-      <button
-        type="button"
-        onClick={obtenerMiUbicacion}
-        style={{
-          position: "absolute",
-          right: 14,
-          bottom: 24,
-          zIndex: 99999,
-          background: "#2563eb",
-          color: "white",
-          border: "none",
-          padding: "12px 16px",
-          borderRadius: 999,
-          fontWeight: 800,
-          cursor: "pointer",
-        }}
-      >
-        Mi ubicación
-      </button>
-
-      <div
-        style={{
-          position: "absolute",
-          left: 14,
-          bottom: 24,
-          zIndex: 99999,
-          display: "flex",
-          flexDirection: "column",
-          gap: 8,
-          alignItems: "flex-start",
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setMostrarOpcionesMapa((prev) => !prev)}
-          style={{
-            background: "#111827",
-            color: "white",
-            border: "none",
-            padding: "12px 16px",
-            borderRadius: 999,
-            fontWeight: 800,
-            cursor: "pointer",
-            boxShadow: "0 6px 20px rgba(0,0,0,.35)",
-          }}
-        >
-          Cambiar mapa
-        </button>
-
+      <div className="rt-floating-controls">
         {mostrarOpcionesMapa && (
-          <div
-            style={{
-              width: 230,
-              background: "rgba(15,23,42,.94)",
-              color: "white",
-              borderRadius: 16,
-              padding: 10,
-              boxShadow: "0 10px 30px rgba(0,0,0,.35)",
-            }}
-          >
-            {mapasDesbloqueados ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {(Object.keys(MAPAS_DISPONIBLES) as EstiloMapa[]).map(
-                  (mapa) => (
-                    <button
-                      key={mapa}
-                      type="button"
-                      onClick={() => {
-                        setEstiloMapa(mapa);
-                        setMostrarOpcionesMapa(false);
-                      }}
-                      style={{
-                        width: "100%",
-                        padding: "10px 12px",
-                        borderRadius: 12,
-                        border:
-                          estiloMapa === mapa
-                            ? "2px solid #38bdf8"
-                            : "1px solid rgba(148,163,184,.35)",
-                        background:
-                          estiloMapa === mapa
-                            ? "rgba(14,165,233,.28)"
-                            : "rgba(15,23,42,.65)",
-                        color: "white",
-                        fontWeight: 800,
-                        textAlign: "left",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {MAPAS_DISPONIBLES[mapa].label}
-                    </button>
-                  )
-                )}
-              </div>
-            ) : (
-              <div style={{ fontSize: 13, lineHeight: 1.35 }}>
-                Registra más kilómetros para desbloquear nuevos estilos de mapa.
-              </div>
+          <div className="rt-map-style-menu">
+            <div className="rt-map-style-menu__title">Estilo de mapa</div>
+            {(Object.keys(MAPAS_DISPONIBLES) as EstiloMapa[]).map((mapa) => {
+              const opcion = MAPAS_DISPONIBLES[mapa];
+              const bloqueado = Boolean(opcion.premium && !nocturnoDesbloqueado);
+
+              return (
+                <button
+                  key={mapa}
+                  type="button"
+                  disabled={bloqueado}
+                  onClick={() => {
+                    if (bloqueado) return;
+                    setEstiloMapa(mapa);
+                    setMostrarOpcionesMapa(false);
+                  }}
+                  className={
+                    estiloMapa === mapa
+                      ? "rt-map-style-option rt-map-style-option--active"
+                      : "rt-map-style-option"
+                  }
+                >
+                  <span>{opcion.label}</span>
+                  {bloqueado && <small>Bloqueado · 100 km</small>}
+                </button>
+              );
+            })}
+            {!nocturnoDesbloqueado && (
+              <p>
+                Nocturno se desbloquea al llegar a 100 km. Km actuales:{" "}
+                {kilometrosUsuario.toFixed(2)}
+              </p>
             )}
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={onRegresarInicio}
+          disabled={!onRegresarInicio}
+          className="rt-fab"
+          aria-label="Volver al inicio"
+        >
+          <span>Inicio</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMostrarOpcionesMapa((prev) => !prev)}
+          className="rt-fab rt-fab--dark"
+          aria-label="Cambiar mapa"
+        >
+          <span>Mapa</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={obtenerMiUbicacion}
+          className="rt-fab rt-fab--primary"
+          aria-label="Ir a mi ubicación"
+        >
+          <span>GPS</span>
+        </button>
       </div>
 
       <MapContainer
         center={[22.2553, -97.8686]}
-        zoom={12}
+        zoom={13}
         scrollWheelZoom={true}
+        zoomControl={false}
         style={{ width: "100%", height: "100%" }}
       >
         <AjustarMapa ubicacion={ubicacion} />
@@ -1688,15 +1577,28 @@ export default function Mapa({
         {rutasDeZona
           .filter((ruta) => ruta.nombre === rutaSeleccionada)
           .map((ruta) => (
-            <Polyline
-              key={ruta.nombre}
-              positions={ruta.puntos}
-              pathOptions={{
-                color: ruta.color,
-                weight: 6,
-                opacity: 0.9,
-              }}
-            />
+            <Fragment key={ruta.nombre}>
+              <Polyline
+                positions={ruta.puntos}
+                pathOptions={{
+                  color: estiloMapa === "nocturno" ? "#020617" : "#ffffff",
+                  weight: 13,
+                  opacity: estiloMapa === "nocturno" ? 0.8 : 0.92,
+                  lineCap: "round",
+                  lineJoin: "round",
+                }}
+              />
+              <Polyline
+                positions={ruta.puntos}
+                pathOptions={{
+                  color: ruta.color,
+                  weight: 7,
+                  opacity: 1,
+                  lineCap: "round",
+                  lineJoin: "round",
+                }}
+              />
+            </Fragment>
           ))}
 
         {ubicacion && (
