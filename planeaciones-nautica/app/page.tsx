@@ -780,7 +780,7 @@ fecha: fechaInicio,
                       onClick={generarAvanceProgramatico}
                       className="rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52]"
                     >
-                      Generar avance programático
+                      Generar Avance Programático F-51
                     </button>
                   </div>
                 </div>
