@@ -20,6 +20,16 @@ type DatosMateria = {
   semanas?: SemanaMateria[];
 };
 
+const periodosAvance = [
+  { nombre: "Julio-Agosto", inicio: 0, fin: 4 },
+  { nombre: "Septiembre", inicio: 4, fin: 8 },
+  { nombre: "Octubre", inicio: 8, fin: 12 },
+  { nombre: "Noviembre", inicio: 12, fin: 16 },
+  { nombre: "Diciembre", inicio: 16, fin: 18 },
+] as const;
+
+type MesReportado = (typeof periodosAvance)[number]["nombre"];
+
 const limpiarTema = (tema: string) => tema.trim().replace(/\.$/, "");
 
 const contieneAlgunaPalabra = (texto: string, palabras: string[]) => {
@@ -119,6 +129,110 @@ const generarSecuenciaDidactica = (
   ].join("\n\n");
 };
 
+const obtenerPeriodoAvance = (mesReportado: MesReportado) =>
+  periodosAvance.find((periodo) => periodo.nombre === mesReportado) ||
+  periodosAvance[0];
+
+const obtenerAnioPeriodo = (periodo: string) =>
+  periodo.match(/\d{4}/)?.[0] || new Date().getFullYear().toString();
+
+const obtenerSemanasAvance = (
+  datosMateria: DatosMateria | undefined,
+  mesReportado: MesReportado,
+) => {
+  const periodoAvance = obtenerPeriodoAvance(mesReportado);
+  const semanasSeleccionadas =
+    datosMateria?.semanas?.slice(periodoAvance.inicio, periodoAvance.fin) || [];
+
+  return Array.from({ length: 4 }, (_, index) => {
+    const semana = semanasSeleccionadas[index];
+
+    return {
+      numero: `Semana ${index + 1}`,
+      tema: semana?.tema
+        ? limpiarTema(semana.tema)
+        : "Sin tema programado para este periodo reportado.",
+      sesiones: semana?.tema ? "1" : "0",
+    };
+  });
+};
+
+const construirDatosAvanceProgramatico = ({
+  materia,
+  datosMateria,
+  docente,
+  grupo,
+  semestre,
+  periodoEscolar,
+  mesReportado,
+  escuela,
+}: {
+  materia: string;
+  datosMateria?: DatosMateria;
+  docente: string;
+  grupo: string;
+  semestre: string;
+  periodoEscolar: string;
+  mesReportado: MesReportado;
+  escuela: string;
+}) => {
+  const semanasAvance = obtenerSemanasAvance(datosMateria, mesReportado);
+  const temasSubtemasCubiertos = semanasAvance
+    .filter((semana) => semana.sesiones !== "0")
+    .map((semana) => `${semana.numero}: ${semana.tema}`)
+    .join("\n");
+  const objetivosCompetencias =
+    datosMateria?.objetivoEspecifico ||
+    datosMateria?.objetivoGeneral ||
+    `Desarrollar competencias académicas y profesionales relacionadas con ${materia}.`;
+  const estrategiasTecnicas =
+    datosMateria?.estrategia ||
+    "Exposición guiada, análisis de casos, ejercicios prácticos, trabajo individual y colaborativo.";
+  const recursosDidacticos =
+    "Presentación digital, equipo de cómputo, material didáctico, recursos digitales y referencias académicas.";
+  const evidenciasAprendizaje =
+    "Actividades de clase, ejercicios resueltos, participación, reporte breve y evidencias integradas en el portafolio académico.";
+  const instrumentosEvaluacion =
+    "Lista de cotejo, rúbrica de desempeño, participación guiada y evaluación formativa.";
+
+  return {
+    escuela,
+    asignatura: materia,
+    curso: materia,
+    asignaturaCurso: materia,
+    mes: mesReportado,
+    anio: obtenerAnioPeriodo(periodoEscolar),
+    docente,
+    licenciatura: "Licenciatura en Piloto Naval",
+    semestre,
+    grupo,
+    periodoReportado: `${mesReportado} ${obtenerAnioPeriodo(periodoEscolar)}`,
+    periodoEscolar,
+    temasSubtemasCubiertos:
+      temasSubtemasCubiertos || "Sin temas registrados para este periodo.",
+    objetivosCompetencias,
+    estrategiasTecnicas,
+    evidenciasAprendizaje,
+    recursosDidacticos,
+    instrumentosEvaluacion,
+    actividadesSigaaSi: "X",
+    actividadesSigaaNo: "",
+    nombreFirmaDocente: docente || "Nombre y firma del docente",
+    semana1: semanasAvance[0].numero,
+    semana1Tema: semanasAvance[0].tema,
+    semana1Sesiones: semanasAvance[0].sesiones,
+    semana2: semanasAvance[1].numero,
+    semana2Tema: semanasAvance[1].tema,
+    semana2Sesiones: semanasAvance[1].sesiones,
+    semana3: semanasAvance[2].numero,
+    semana3Tema: semanasAvance[2].tema,
+    semana3Sesiones: semanasAvance[2].sesiones,
+    semana4: semanasAvance[3].numero,
+    semana4Tema: semanasAvance[3].tema,
+    semana4Sesiones: semanasAvance[3].sesiones,
+  };
+};
+
 export default function Home() {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
@@ -127,6 +241,8 @@ export default function Home() {
   const [grupo, setGrupo] = useState("");
   const [cadetes, setCadetes] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
+  const [mesReportado, setMesReportado] =
+    useState<MesReportado>("Julio-Agosto");
 
   const periodo = "Julio-Diciembre 2026";
   const escuelaNautica =
@@ -254,6 +370,50 @@ fecha: fechaInicio,
     } catch (error) {
       console.log(error);
       alert("Error generando F-32");
+    }
+  };
+
+  const generarAvanceProgramatico = async () => {
+    try {
+      const response = await fetch("/templates/Avance-Programatico-F51.docx");
+      const content = await response.arrayBuffer();
+
+      const zip = new PizZip(content);
+
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+
+      const datosMateria =
+        contenidosMaterias[
+          materiaSeleccionada as keyof typeof contenidosMaterias
+        ] as DatosMateria | undefined;
+
+      doc.render(
+        construirDatosAvanceProgramatico({
+          materia: materiaSeleccionada,
+          datosMateria,
+          docente,
+          grupo,
+          semestre: semestreSeleccionado,
+          periodoEscolar: periodo,
+          mesReportado,
+          escuela: escuelaNautica,
+        }),
+      );
+
+      const blob = doc.getZip().generate({
+        type: "blob",
+      });
+
+      saveAs(
+        blob,
+        `F51_${materiaSeleccionada || "Avance"}_${mesReportado}.docx`,
+      );
+    } catch (error) {
+      console.log(error);
+      alert("Error generando avance programático F-51");
     }
   };
 
@@ -508,6 +668,26 @@ fecha: fechaInicio,
                     </label>
 
                     <label>
+                      <span className={labelClass}>Mes reportado F-51</span>
+                      <select
+                        className={inputClass}
+                        value={mesReportado}
+                        onChange={(e) =>
+                          setMesReportado(e.target.value as MesReportado)
+                        }
+                      >
+                        {periodosAvance.map((periodoAvance) => (
+                          <option
+                            key={periodoAvance.nombre}
+                            value={periodoAvance.nombre}
+                          >
+                            {periodoAvance.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label>
                       <span className={labelClass}>Fecha de inicio</span>
                       <input
                         className={inputClass}
@@ -586,13 +766,23 @@ fecha: fechaInicio,
                     />
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={generarWord}
-                    className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.2em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a]"
-                  >
-                    Generar planeación F-32
-                  </button>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={generarWord}
+                      className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a]"
+                    >
+                      Generar planeación F-32
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={generarAvanceProgramatico}
+                      className="rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52]"
+                    >
+                      Generar avance programático
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
