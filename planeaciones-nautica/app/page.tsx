@@ -14,9 +14,109 @@ type SemanaMateria = {
 
 type DatosMateria = {
   unidad?: string;
+  objetivoGeneral?: string;
   objetivoEspecifico?: string;
   estrategia?: string;
   semanas?: SemanaMateria[];
+};
+
+const limpiarTema = (tema: string) => tema.trim().replace(/\.$/, "");
+
+const contieneAlgunaPalabra = (texto: string, palabras: string[]) => {
+  const textoNormalizado = texto.toLowerCase();
+
+  return palabras.some((palabra) => textoNormalizado.includes(palabra));
+};
+
+const obtenerContextoDidactico = (materia: string, tema: string) => {
+  const textoBase = `${materia} ${tema}`;
+
+  if (
+    contieneAlgunaPalabra(textoBase, [
+      "naveg",
+      "marít",
+      "maritim",
+      "náut",
+      "naut",
+      "buque",
+      "maniobra",
+      "cartograf",
+      "meteorolog",
+      "puerto",
+      "portuar",
+      "transporte",
+      "guardia",
+      "radar",
+      "ecdis",
+      "seguridad",
+      "pmr",
+    ])
+  ) {
+    return "el contexto de navegación, operaciones portuarias, seguridad marítima o vida a bordo";
+  }
+
+  if (
+    contieneAlgunaPalabra(textoBase, [
+      "álgebra",
+      "algebra",
+      "geometr",
+      "física",
+      "fisica",
+      "dinámica",
+      "dinamica",
+      "química",
+      "quimica",
+      "electric",
+      "electrotecnia",
+    ])
+  ) {
+    return "la solución de problemas técnicos y académicos vinculados con la formación náutica";
+  }
+
+  if (
+    contieneAlgunaPalabra(textoBase, [
+      "inglés",
+      "ingles",
+      "expresión",
+      "expresion",
+      "comunicación",
+      "comunicacion",
+      "liderazgo",
+      "derecho",
+    ])
+  ) {
+    return "situaciones profesionales, comunicativas y colaborativas propias del entorno marítimo";
+  }
+
+  return "la formación académica y profesional del cadete";
+};
+
+const generarSecuenciaDidactica = (
+  materia: string,
+  semana: SemanaMateria,
+  datosMateria?: DatosMateria,
+  siguienteTema?: string,
+) => {
+  const tema = limpiarTema(semana.tema);
+  const contexto = obtenerContextoDidactico(materia, tema);
+  const objetivo =
+    datosMateria?.objetivoEspecifico ||
+    datosMateria?.objetivoGeneral ||
+    `comprender y aplicar el tema de ${tema} en ${materia}`;
+  const estrategia =
+    datosMateria?.estrategia ||
+    "aprendizaje guiado, práctica supervisada y trabajo colaborativo";
+  const enlaceSiguiente = siguienteTema
+    ? `Se vincula el aprendizaje con la siguiente sesión sobre ${limpiarTema(
+        siguienteTema,
+      )}.`
+    : "Se integran los aprendizajes de la sesión como base para la evaluación o actividad integradora.";
+
+  return [
+    `Inicio: Pregunta detonadora: ¿cómo se relaciona ${tema} con ${contexto}? El docente recupera conocimientos previos mediante preguntas breves, ejemplos cercanos a la experiencia del cadete y una contextualización del tema dentro de ${materia}.`,
+    `Desarrollo: Se realiza una explicación guiada de ${tema}, alineada con el propósito de ${objetivo}. Los cadetes desarrollan una actividad práctica basada en ${estrategia}, alternando trabajo individual y colaborativo para resolver ejercicios, analizar casos o elaborar productos aplicados a ${contexto}.`,
+    `Cierre: Se socializan resultados y se brinda retroalimentación puntual sobre aciertos, áreas de mejora y criterios de desempeño. La evidencia de aprendizaje será una actividad, ejercicio, reporte breve o participación argumentada relacionada con ${tema}. Cada cadete formula una reflexión final sobre la utilidad del tema. ${enlaceSiguiente}`,
+  ].join("\n\n");
 };
 
 export default function Home() {
@@ -63,16 +163,22 @@ export default function Home() {
           materiaSeleccionada as keyof typeof contenidosMaterias
         ] as DatosMateria | undefined;
 
-      const semanas = (datosMateria?.semanas || []).map((s: SemanaMateria) => ({
-        semana: s.semana,
-        tema: s.tema,
-        secuencia:
-          "Inicio: activación de conocimientos previos. Desarrollo: explicación docente, práctica guiada y ejercicios aplicados. Cierre: reflexión y retroalimentación.",
-        recursos:
-          "Computadora, presentación, material didáctico y recursos digitales.",
-        producto: "Actividad, evidencia y participación.",
-        evaluacion: "Lista de cotejo, participación y evaluación formativa.",
-      }));
+      const semanas = (datosMateria?.semanas || []).map(
+        (s: SemanaMateria, index, semanasMateria) => ({
+          semana: s.semana,
+          tema: s.tema,
+          secuencia: generarSecuenciaDidactica(
+            materiaSeleccionada,
+            s,
+            datosMateria,
+            semanasMateria[index + 1]?.tema,
+          ),
+          recursos:
+            "Computadora, presentación, material didáctico y recursos digitales.",
+          producto: "Actividad, evidencia y participación.",
+          evaluacion: "Lista de cotejo, participación y evaluación formativa.",
+        }),
+      );
 
       doc.render({
         asignatura: materiaSeleccionada,
