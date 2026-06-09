@@ -113,7 +113,6 @@ export default function PresentacionesPage() {
     pptx.subject = materiaSeleccionada;
     pptx.title = `${materiaSeleccionada} - ${temaLimpio}`;
     pptx.company = "Universidad Maritima y Portuaria de Mexico";
-    pptx.lang = "es-MX";
     pptx.theme = {
       headFontFace: "Arial",
       bodyFontFace: "Arial",
