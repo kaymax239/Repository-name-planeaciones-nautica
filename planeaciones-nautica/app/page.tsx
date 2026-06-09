@@ -261,6 +261,68 @@ const construirDatosAvanceProgramatico = ({
   };
 };
 
+const construirDatosExamen = ({
+  tipo,
+  materia,
+  datosMateria,
+  docente,
+  grupo,
+  semestre,
+  fecha,
+  periodoEscolar,
+}: {
+  tipo: string;
+  materia: string;
+  datosMateria?: DatosMateria;
+  docente: string;
+  grupo: string;
+  semestre: string;
+  fecha: string;
+  periodoEscolar: string;
+}) => {
+  const temas = datosMateria?.semanas?.map((semana) => limpiarTema(semana.tema)) || [];
+  const temasTexto = temas
+    .map((tema, index) => `${index + 1}. ${tema}`)
+    .join("\n");
+  const objetivo =
+    datosMateria?.objetivoEspecifico ||
+    datosMateria?.objetivoGeneral ||
+    `Evaluar los aprendizajes de ${materia}.`;
+
+  return {
+    tipoExamen: tipo,
+    examen: tipo,
+    materia,
+    asignatura: materia,
+    asignaturaCurso: materia,
+    curso: materia,
+    semestre,
+    docente,
+    profesor: docente,
+    grupo,
+    fecha,
+    fechaInicio: fecha,
+    periodo: periodoEscolar,
+    periodoEscolar,
+    unidad: datosMateria?.unidad || "I",
+    objetivo,
+    objetivosCompetencias: objetivo,
+    temas: temasTexto,
+    temasMateria: temasTexto,
+    temasEvaluar: temasTexto,
+    tema1: temas[0] || "",
+    tema2: temas[1] || "",
+    tema3: temas[2] || "",
+    tema4: temas[3] || "",
+    tema5: temas[4] || "",
+    tema6: temas[5] || "",
+    tema7: temas[6] || "",
+    tema8: temas[7] || "",
+    tema9: temas[8] || "",
+    tema10: temas[9] || "",
+  };
+};
+
 export default function Home() {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
@@ -442,6 +504,47 @@ fecha: fechaInicio,
     } catch (error) {
       console.log(error);
       alert("Error generando avance programático F-51");
+    }
+  };
+
+  const generarExamen = async (tipo: string, templatePath: string) => {
+    try {
+      const response = await fetch(templatePath);
+      const content = await response.arrayBuffer();
+
+      const zip = new PizZip(content);
+
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+
+      const datosMateria =
+        contenidosMaterias[
+          materiaSeleccionada as keyof typeof contenidosMaterias
+        ] as DatosMateria | undefined;
+
+      doc.render(
+        construirDatosExamen({
+          tipo,
+          materia: materiaSeleccionada,
+          datosMateria,
+          docente,
+          grupo,
+          semestre: semestreSeleccionado,
+          fecha: fechaInicio,
+          periodoEscolar: periodo,
+        }),
+      );
+
+      const blob = doc.getZip().generate({
+        type: "blob",
+      });
+
+      saveAs(blob, `${tipo}_${materiaSeleccionada || "Examen"}.docx`);
+    } catch (error) {
+      console.log(error);
+      alert(`Error generando ${tipo.toLowerCase()}`);
     }
   };
 
@@ -810,6 +913,44 @@ fecha: fechaInicio,
                     >
                       Generar Avance Programático F-51
                     </button>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                      Exámenes
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Genera documentos de evaluación usando las plantillas
+                      institucionales existentes.
+                    </p>
+
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          generarExamen(
+                            "Examen Parcial",
+                            "/templates/examen-parcial.docx",
+                          )
+                        }
+                        className="rounded-2xl border border-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#071a33] hover:text-white"
+                      >
+                        Generar Examen Parcial
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          generarExamen(
+                            "Examen Ordinario",
+                            "/templates/examen-ordinario.docx",
+                          )
+                        }
+                        className="rounded-2xl border border-[#c8a45d] bg-[#fffaf0] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#c8a45d]"
+                      >
+                        Generar Examen Ordinario
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
