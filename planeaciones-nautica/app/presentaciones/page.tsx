@@ -116,7 +116,6 @@ export default function PresentacionesPage() {
     pptx.theme = {
       headFontFace: "Arial",
       bodyFontFace: "Arial",
-      lang: "es-MX",
     };
 
     const colores = {
