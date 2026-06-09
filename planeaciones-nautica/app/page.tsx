@@ -20,6 +20,11 @@ type DatosMateria = {
   semanas?: SemanaMateria[];
 };
 
+type RangoSemanas = {
+  inicio: number;
+  fin: number;
+};
+
 const periodosAvance = [
   { nombre: "Julio-Agosto", inicio: 0, fin: 4 },
   { nombre: "Septiembre", inicio: 4, fin: 8 },
@@ -261,6 +266,62 @@ const construirDatosAvanceProgramatico = ({
   };
 };
 
+const construirPreguntasExamen = (materia: string, temas: SemanaMateria[]) => {
+  const temasLimpios = temas.map((semana) => limpiarTema(semana.tema));
+  const temasBase =
+    temasLimpios.length > 0 ? temasLimpios : [`contenidos esenciales de ${materia}`];
+
+  const opcionMultiple = temasBase
+    .slice(0, 10)
+    .map(
+      (tema, index) =>
+        `${index + 1}. ¿Cuál es la importancia de ${tema} dentro de ${materia}?\n` +
+        `A) Permite aplicar el contenido en situaciones académicas o náuticas.\n` +
+        `B) Sustituye todos los demás temas de la asignatura.\n` +
+        `C) No tiene relación con la formación profesional.\n` +
+        `D) Solo se utiliza para actividades administrativas.`,
+    )
+    .join("\n\n");
+
+  const verdaderoFalso = temasBase
+    .slice(0, 8)
+    .map(
+      (tema, index) =>
+        `${index + 1}. ${tema} debe analizarse considerando conceptos, procedimientos y aplicaciones propias de ${materia}. (V/F)`,
+    )
+    .join("\n");
+
+  const relacionarColumnas = [
+    "Columna A",
+    ...temasBase
+      .slice(0, 6)
+      .map((tema, index) => `${index + 1}. ${tema}`),
+    "",
+    "Columna B",
+    ...temasBase
+      .slice(0, 6)
+      .map(
+        (tema, index) =>
+          `${String.fromCharCode(65 + index)}. Aplicación, concepto o procedimiento relacionado con ${tema}.`,
+      ),
+  ].join("\n");
+
+  const preguntasAbiertas = temasBase
+    .slice(0, 5)
+    .map(
+      (tema, index) =>
+        `${index + 1}. Explica cómo se aplica ${tema} en el contexto académico o profesional de ${materia}.`,
+    )
+    .join("\n");
+
+  return {
+    opcionMultiple,
+    verdaderoFalso,
+    relacionarColumnas,
+    preguntasAbiertas,
+  };
+};
+
 const construirDatosExamen = ({
   tipo,
   materia,
@@ -270,6 +331,7 @@ const construirDatosExamen = ({
   semestre,
   fecha,
   periodoEscolar,
+  rango,
 }: {
   tipo: string;
   materia: string;
@@ -279,15 +341,22 @@ const construirDatosExamen = ({
   semestre: string;
   fecha: string;
   periodoEscolar: string;
+  rango: RangoSemanas;
 }) => {
-  const temas = datosMateria?.semanas?.map((semana) => limpiarTema(semana.tema)) || [];
-  const temasTexto = temas
-    .map((tema, index) => `${index + 1}. ${tema}`)
+  const semanas = datosMateria?.semanas?.slice(rango.inicio, rango.fin) || [];
+  const temasTexto = semanas
+    .map((semana, index) => {
+      const numeroSemana = rango.inicio + index + 1;
+
+      return `Semana ${numeroSemana}. ${limpiarTema(semana.tema)}`;
+    })
     .join("\n");
+  const temas = semanas.map((semana) => limpiarTema(semana.tema));
   const objetivo =
     datosMateria?.objetivoEspecifico ||
     datosMateria?.objetivoGeneral ||
     `Evaluar los aprendizajes de ${materia}.`;
+  const preguntas = construirPreguntasExamen(materia, semanas);
 
   return {
     tipoExamen: tipo,
@@ -310,6 +379,10 @@ const construirDatosExamen = ({
     temas: temasTexto,
     temasMateria: temasTexto,
     temasEvaluar: temasTexto,
+    opcionMultiple: preguntas.opcionMultiple,
+    verdaderoFalso: preguntas.verdaderoFalso,
+    relacionarColumnas: preguntas.relacionarColumnas,
+    preguntasAbiertas: preguntas.preguntasAbiertas,
     tema1: temas[0] || "",
     tema2: temas[1] || "",
     tema3: temas[2] || "",
@@ -320,6 +393,14 @@ const construirDatosExamen = ({
     tema8: temas[7] || "",
     tema9: temas[8] || "",
     tema10: temas[9] || "",
+    tema11: temas[10] || "",
+    tema12: temas[11] || "",
+    tema13: temas[12] || "",
+    tema14: temas[13] || "",
+    tema15: temas[14] || "",
+    tema16: temas[15] || "",
+    tema17: temas[16] || "",
+    tema18: temas[17] || "",
   };
 };
 
@@ -507,12 +588,18 @@ fecha: fechaInicio,
     }
   };
 
-  const generarExamen = async (tipo: string, templatePath: string) => {
+  const generarExamen = async (
+    tipo: string,
+    templatePath: string,
+    rango: RangoSemanas,
+  ) => {
     try {
       const response = await fetch(templatePath);
       const content = await response.arrayBuffer();
 
       const zip = new PizZip(content);
+      const documentXml = zip.file("word/document.xml")?.asText() || "";
+      const tienePlaceholders = /\{[^{}]+\}/.test(documentXml);
 
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
@@ -534,6 +621,7 @@ fecha: fechaInicio,
           semestre: semestreSeleccionado,
           fecha: fechaInicio,
           periodoEscolar: periodo,
+          rango,
         }),
       );
 
@@ -542,6 +630,12 @@ fecha: fechaInicio,
       });
 
       saveAs(blob, `${tipo}_${materiaSeleccionada || "Examen"}.docx`);
+      if (!tienePlaceholders) {
+        alert(
+          `La plantilla de ${tipo.toLowerCase()} no contiene placeholders. ` +
+            "Se descargó el formato original sin insertar datos automáticos.",
+        );
+      }
     } catch (error) {
       console.log(error);
       alert(`Error generando ${tipo.toLowerCase()}`);
@@ -924,18 +1018,33 @@ fecha: fechaInicio,
                       institucionales existentes.
                     </p>
 
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="mt-4 grid gap-3">
                       <button
                         type="button"
                         onClick={() =>
                           generarExamen(
-                            "Examen Parcial",
+                            "Examen Parcial 1",
                             "/templates/examen-parcial.docx",
+                            { inicio: 0, fin: 10 },
                           )
                         }
                         className="rounded-2xl border border-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#071a33] hover:text-white"
                       >
-                        Generar Examen Parcial
+                        Generar Examen Parcial 1
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          generarExamen(
+                            "Examen Parcial 2",
+                            "/templates/examen-parcial.docx",
+                            { inicio: 10, fin: 18 },
+                          )
+                        }
+                        className="rounded-2xl border border-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#071a33] hover:text-white"
+                      >
+                        Generar Examen Parcial 2
                       </button>
 
                       <button
@@ -944,6 +1053,7 @@ fecha: fechaInicio,
                           generarExamen(
                             "Examen Ordinario",
                             "/templates/examen-ordinario.docx",
+                            { inicio: 0, fin: 18 },
                           )
                         }
                         className="rounded-2xl border border-[#c8a45d] bg-[#fffaf0] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#c8a45d]"
