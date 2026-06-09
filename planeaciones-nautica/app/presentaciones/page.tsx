@@ -178,7 +178,7 @@ export default function PresentacionesPage() {
         color: colores.texto,
         breakLine: false,
         fit: "shrink",
-        valign: "mid",
+        valign: "middle",
       });
     };
 
@@ -201,7 +201,7 @@ export default function PresentacionesPage() {
         fontSize: 17,
         color: colores.texto,
         fit: "shrink",
-        valign: "mid",
+        valign: "middle",
       });
     };
 
