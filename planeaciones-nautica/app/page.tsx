@@ -692,6 +692,12 @@ fecha: fechaInicio,
                     Portada institucional de planeación académica
                   </h1>
                   <div className="mt-6 h-1 w-28 rounded-full bg-[#c8a45d]" />
+                  <a
+                    href="/presentaciones"
+                    className="mt-6 inline-flex rounded-2xl border border-[#c8a45d] px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-[#d7bd7a] transition hover:bg-[#c8a45d] hover:text-[#071a33]"
+                  >
+                    Presentaciones
+                  </a>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 sm:w-72">
