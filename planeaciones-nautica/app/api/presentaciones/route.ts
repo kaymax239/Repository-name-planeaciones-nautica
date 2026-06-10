@@ -1,3 +1,7 @@
+import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
+import { z } from "zod";
+
 type SolicitudPresentacion = {
   semestre?: string;
   materia?: string;
@@ -7,102 +11,63 @@ type SolicitudPresentacion = {
   temasRelacionados?: string[];
 };
 
-const presentacionSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["titulo", "subtitulo", "diapositivas"],
-  properties: {
-    titulo: { type: "string" },
-    subtitulo: { type: "string" },
-    diapositivas: {
-      type: "array",
-      minItems: 15,
-      maxItems: 25,
-      items: {
-        type: "object",
-        additionalProperties: false,
-        required: ["titulo", "contenido", "notas", "tipo", "fuentes"],
-        properties: {
-          titulo: { type: "string" },
-          contenido: {
-            type: "array",
-            minItems: 1,
-            items: { type: "string" },
-          },
-          notas: { type: "string" },
-          tipo: {
-            type: "string",
-            enum: [
-              "portada",
-              "objetivo",
-              "contenido",
-              "ejemplo",
-              "actividad",
-              "repaso",
-              "resumen",
-              "bibliografia",
-            ],
-          },
-          fuentes: {
-            type: "array",
-            items: {
-              type: "object",
-              additionalProperties: false,
-              required: ["titulo", "url"],
-              properties: {
-                titulo: { type: "string" },
-                url: { type: "string" },
-              },
-            },
-          },
-        },
-      },
-    },
-  },
-} as const;
+const fuenteSchema = z.object({
+  titulo: z.string(),
+  url: z.string(),
+});
 
-const extraerTextoRespuesta = (data: unknown) => {
-  const response = data as {
-    output_text?: string;
-    output?: Array<{
-      content?: Array<{
-        text?: string;
-        type?: string;
-      }>;
-    }>;
-  };
+const diapositivaSchema = z.object({
+  titulo: z.string(),
+  contenido: z.array(z.string()).min(1),
+  notas: z.string(),
+  tipo: z.enum([
+    "portada",
+    "objetivo",
+    "contenido",
+    "ejemplo",
+    "actividad",
+    "repaso",
+    "resumen",
+    "bibliografia",
+  ]),
+  fuentes: z.array(fuenteSchema),
+});
 
-  if (typeof response.output_text === "string") {
-    return response.output_text;
-  }
+const presentacionSchema = z.object({
+  titulo: z.string(),
+  subtitulo: z.string(),
+  diapositivas: z.array(diapositivaSchema).min(15).max(25),
+});
 
-  return (
-    response.output
-      ?.flatMap((item) => item.content || [])
-      .map((content) => content.text || "")
-      .join("\n") || ""
-  );
-};
-
-const extraerErrorOpenAI = (responseBody: unknown, status: number, statusText: string) => {
-  const body = responseBody as {
-    error?: {
-      message?: unknown;
-      code?: unknown;
-      type?: unknown;
-    };
+const extraerErrorOpenAI = (error: unknown) => {
+  const posibleError = error as {
+    status?: unknown;
+    code?: unknown;
+    type?: unknown;
+    message?: unknown;
+    response?: unknown;
+    error?: unknown;
   };
   const message =
-    typeof body?.error?.message === "string"
-      ? body.error.message
-      : statusText || "OpenAI no pudo generar la presentación.";
+    typeof posibleError.message === "string"
+      ? posibleError.message
+      : error instanceof Error
+        ? error.message
+        : "OpenAI no pudo generar la presentación.";
 
   return {
     message,
-    status,
-    code: typeof body?.error?.code === "string" ? body.error.code : null,
-    type: typeof body?.error?.type === "string" ? body.error.type : null,
-    response: responseBody,
+    status: typeof posibleError.status === "number" ? posibleError.status : 500,
+    code: typeof posibleError.code === "string" ? posibleError.code : null,
+    type: typeof posibleError.type === "string" ? posibleError.type : null,
+    response: {
+      name: error instanceof Error ? error.name : null,
+      message,
+      stack: error instanceof Error ? error.stack : null,
+      response: posibleError.response || null,
+      error: posibleError.error || null,
+      raw: error,
+    },
   };
 };
 
@@ -158,108 +123,38 @@ Instrucciones obligatorias:
 14. Respeta estrictamente el esquema JSON solicitado por la API. No uses markdown ni bloques de codigo.
 `;
 
-  let response: Response;
+  const openai = new OpenAI({ apiKey });
 
   try {
-    response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    const response = await openai.responses.parse({
         model: process.env.OPENAI_PRESENTACIONES_MODEL || "gpt-4o-mini",
         tools: [{ type: "web_search_preview" }],
         input: prompt,
         text: {
-          format: {
-            type: "json_schema",
-            name: "presentacion_academica",
-            strict: true,
-            schema: presentacionSchema,
-          },
+          format: zodTextFormat(presentacionSchema, "presentacion_academica"),
         },
         temperature: 0.3,
-      }),
     });
-  } catch (error) {
-    const openAIError = {
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo conectar con OpenAI.",
-      status: 500,
-      code: null,
-      type: "network_error",
-      response:
-        error instanceof Error
-          ? { name: error.name, message: error.message, stack: error.stack }
-          : error,
-    };
 
-    console.error("OPENAI ERROR:", openAIError);
+    const resultado = response.output_parsed;
 
-    return Response.json({ error: openAIError }, { status: 502 });
-  }
-
-  if (!response.ok) {
-    const responseText = await response.text();
-    let responseBody: unknown = responseText;
-
-    try {
-      responseBody = JSON.parse(responseText);
-    } catch {
-      responseBody = responseText;
+    if (!resultado) {
+      const openAIError = {
+        message: "OpenAI no devolvió salida estructurada.",
+        status: 502,
+        code: "missing_structured_output",
+        type: "structured_output_error",
+        response,
+      };
+      console.error("OPENAI ERROR:", openAIError);
+      return Response.json({ error: openAIError }, { status: 502 });
     }
 
-    const openAIError = extraerErrorOpenAI(
-      responseBody,
-      response.status,
-      response.statusText,
-    );
-
-    console.error("OPENAI ERROR:", openAIError);
-
-    return Response.json(
-      { error: openAIError },
-      { status: 502 },
-    );
-  }
-
-  const data = await response.json();
-  const contenido = extraerTextoRespuesta(data);
-
-  console.log("OPENAI RAW CONTENT:", contenido);
-
-  try {
-    const parsed = JSON.parse(contenido);
-    return Response.json(parsed);
+    console.log("OPENAI STRUCTURED OUTPUT", resultado);
+    return Response.json(resultado);
   } catch (error) {
-    const parseError = {
-      message:
-        error instanceof Error
-          ? error.message
-          : "No se pudo parsear la respuesta de OpenAI.",
-      status: 502,
-      code: "invalid_json",
-      type: "parse_error",
-      response: {
-        contenidoRecibido: contenido,
-        errorParseo:
-          error instanceof Error
-            ? { name: error.name, message: error.message, stack: error.stack }
-            : error,
-        respuestaOpenAICompleta: data,
-      },
-    };
-
-    console.error("OPENAI ERROR:", parseError);
-
-    return Response.json(
-      {
-        error: parseError,
-      },
-      { status: 502 },
-    );
+    const openAIError = extraerErrorOpenAI(error);
+    console.error("OPENAI ERROR:", openAIError);
+    return Response.json({ error: openAIError }, { status: 502 });
   }
 }
