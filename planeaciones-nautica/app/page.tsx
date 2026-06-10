@@ -5,6 +5,7 @@ import { materiasPorSemestre } from "./data/materias";
 import { contenidosMaterias } from "./data/contenidosMaterias";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import pptxgen from "pptxgenjs";
 import { saveAs } from "file-saver";
 
 type SemanaMateria = {
@@ -17,6 +18,7 @@ type DatosMateria = {
   objetivoGeneral?: string;
   objetivoEspecifico?: string;
   estrategia?: string;
+  fuentes?: string;
   semanas?: SemanaMateria[];
 };
 
@@ -36,6 +38,36 @@ const periodosAvance = [
 type MesReportado = (typeof periodosAvance)[number]["nombre"];
 
 const limpiarTema = (tema: string) => tema.trim().replace(/\.$/, "");
+
+const nombreArchivoSeguro = (valor: string) =>
+  valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+
+const dividirTexto = (texto: string, maximo: number) => {
+  const palabras = texto.split(/\s+/);
+  const lineas: string[] = [];
+  let linea = "";
+
+  palabras.forEach((palabra) => {
+    const siguiente = linea ? `${linea} ${palabra}` : palabra;
+    if (siguiente.length > maximo) {
+      lineas.push(linea);
+      linea = palabra;
+    } else {
+      linea = siguiente;
+    }
+  });
+
+  if (linea) {
+    lineas.push(linea);
+  }
+
+  return lineas;
+};
 
 const contieneAlgunaPalabra = (texto: string, palabras: string[]) => {
   const textoNormalizado = texto.toLowerCase();
@@ -642,6 +674,242 @@ fecha: fechaInicio,
     }
   };
 
+  const generarPresentacionPowerPoint = async () => {
+    try {
+      const datosMateria =
+        contenidosMaterias[
+          materiaSeleccionada as keyof typeof contenidosMaterias
+        ] as DatosMateria | undefined;
+      const temas = datosMateria?.semanas || [];
+
+      if (!datosMateria || temas.length === 0) {
+        alert("No hay contenidos registrados para generar la presentación.");
+        return;
+      }
+
+      const unidad = datosMateria.unidad || "I";
+      const objetivo =
+        datosMateria.objetivoEspecifico ||
+        datosMateria.objetivoGeneral ||
+        `Comprender y aplicar los temas principales de ${materiaSeleccionada}.`;
+      const estrategia =
+        datosMateria.estrategia ||
+        "Aprendizaje guiado, análisis de ejemplos, participación y trabajo colaborativo.";
+      const fuentes =
+        datosMateria.fuentes ||
+        "Bibliografía básica de la asignatura, apuntes de clase y recursos académicos digitales.";
+      const temasLimpios = temas.map((tema) => ({
+        semana: tema.semana,
+        tema: limpiarTema(tema.tema),
+      }));
+      const temasPrincipales = temasLimpios.slice(0, 8);
+
+      const pptx = new pptxgen();
+      pptx.layout = "LAYOUT_WIDE";
+      pptx.author = docente || "Planeaciones Nautica";
+      pptx.subject = materiaSeleccionada;
+      pptx.title = `${materiaSeleccionada} - Unidad ${unidad}`;
+      pptx.company = "Universidad Maritima y Portuaria de Mexico";
+      pptx.theme = {
+        headFontFace: "Arial",
+        bodyFontFace: "Arial",
+      };
+
+      const colores = {
+        azul: "071A33",
+        dorado: "C8A45D",
+        blanco: "FFFFFF",
+        gris: "F4F6F8",
+        texto: "1F2937",
+      };
+
+      const agregarEncabezado = (titulo: string, subtitulo?: string) => {
+        const slide = pptx.addSlide();
+        slide.background = { color: colores.blanco };
+        slide.addShape(pptx.ShapeType.rect, {
+          x: 0,
+          y: 0,
+          w: 13.333,
+          h: 0.28,
+          fill: { color: colores.dorado },
+          line: { color: colores.dorado },
+        });
+        slide.addText(titulo, {
+          x: 0.6,
+          y: 0.45,
+          w: 12.1,
+          h: 0.45,
+          fontSize: 22,
+          bold: true,
+          color: colores.azul,
+          margin: 0,
+          fit: "shrink",
+        });
+        if (subtitulo) {
+          slide.addText(subtitulo, {
+            x: 0.6,
+            y: 0.96,
+            w: 12.1,
+            h: 0.35,
+            fontSize: 11,
+            color: "64748B",
+            margin: 0,
+          });
+        }
+
+        return slide;
+      };
+
+      const agregarLista = (
+        titulo: string,
+        puntos: string[],
+        subtitulo?: string,
+      ) => {
+        const slide = agregarEncabezado(titulo, subtitulo);
+        slide.addText(puntos.map((punto) => `• ${punto}`).join("\n"), {
+          x: 0.85,
+          y: 1.55,
+          w: 11.8,
+          h: 4.9,
+          fontSize: 18,
+          color: colores.texto,
+          fit: "shrink",
+          valign: "middle",
+        });
+      };
+
+      const agregarParrafo = (titulo: string, texto: string, subtitulo?: string) => {
+        const slide = agregarEncabezado(titulo, subtitulo);
+        slide.addShape(pptx.ShapeType.roundRect, {
+          x: 0.75,
+          y: 1.45,
+          w: 11.8,
+          h: 4.8,
+          rectRadius: 0.08,
+          fill: { color: colores.gris },
+          line: { color: "E2E8F0" },
+        });
+        slide.addText(dividirTexto(texto, 110).join("\n"), {
+          x: 1.05,
+          y: 1.75,
+          w: 11.2,
+          h: 4.15,
+          fontSize: 17,
+          color: colores.texto,
+          fit: "shrink",
+          valign: "middle",
+        });
+      };
+
+      const portada = pptx.addSlide();
+      portada.background = { color: colores.azul };
+      portada.addShape(pptx.ShapeType.rect, {
+        x: 0,
+        y: 0,
+        w: 13.333,
+        h: 0.35,
+        fill: { color: colores.dorado },
+        line: { color: colores.dorado },
+      });
+      portada.addText("Universidad Maritima y Portuaria de Mexico", {
+        x: 0.75,
+        y: 0.85,
+        w: 11.8,
+        h: 0.35,
+        fontSize: 16,
+        bold: true,
+        color: colores.dorado,
+        margin: 0,
+      });
+      portada.addText("Escuela Nautica Mercante de Tampico", {
+        x: 0.75,
+        y: 1.25,
+        w: 11.8,
+        h: 0.3,
+        fontSize: 13,
+        color: colores.blanco,
+        margin: 0,
+      });
+      portada.addText(`${materiaSeleccionada} - Unidad ${unidad}`, {
+        x: 0.75,
+        y: 2.05,
+        w: 11.8,
+        h: 1.15,
+        fontSize: 34,
+        bold: true,
+        color: colores.blanco,
+        fit: "shrink",
+        margin: 0,
+      });
+      portada.addText(semestreSeleccionado, {
+        x: 0.75,
+        y: 3.45,
+        w: 11.8,
+        h: 0.35,
+        fontSize: 16,
+        color: colores.dorado,
+        margin: 0,
+      });
+      portada.addText(`Docente: ${docente || "Por definir"} | Grupo: ${grupo || "Por definir"}`, {
+        x: 0.75,
+        y: 6.45,
+        w: 11.8,
+        h: 0.28,
+        fontSize: 11,
+        color: "CBD5E1",
+        margin: 0,
+      });
+
+      agregarParrafo("Objetivo de aprendizaje", objetivo, materiaSeleccionada);
+      agregarParrafo(
+        "Introducción",
+        `La unidad ${unidad} de ${materiaSeleccionada} integra contenidos que fortalecen la formación académica y profesional del cadete. Esta presentación organiza los temas principales para facilitar su explicación, práctica y repaso.`,
+      );
+      agregarLista(
+        "Temas de la unidad",
+        temasPrincipales.map((tema) => `${tema.semana}: ${tema.tema}`),
+      );
+      agregarParrafo(
+        "Desarrollo del contenido",
+        `El desarrollo se basa en ${estrategia.toLowerCase()} Los temas se abordan mediante explicación guiada, análisis de conceptos clave y aplicaciones vinculadas al contexto académico o náutico.`,
+      );
+      agregarLista(
+        "Conceptos clave",
+        temasPrincipales.slice(0, 5).map((tema) => tema.tema),
+      );
+      agregarLista("Ejemplos", [
+        `Ejemplo 1: aplicación de ${temasPrincipales[0]?.tema || materiaSeleccionada}.`,
+        `Ejemplo 2: análisis de ${temasPrincipales[1]?.tema || "un tema complementario"}.`,
+        "Ejemplo 3: resolución o explicación de un caso contextualizado.",
+      ]);
+      agregarLista("Actividad en clase", [
+        "Organizar equipos para resolver un caso breve de la unidad.",
+        "Relacionar los temas con una situación académica o profesional.",
+        "Presentar conclusiones y recibir retroalimentación.",
+      ]);
+      agregarLista("Preguntas de repaso", [
+        `¿Cuál es el propósito central de la unidad ${unidad}?`,
+        "¿Qué conceptos deben dominarse antes de avanzar?",
+        "¿Cómo se relacionan los temas con la práctica profesional?",
+        "¿Qué dudas deben aclararse para la siguiente sesión?",
+      ]);
+      agregarParrafo(
+        "Cierre o resumen",
+        `La unidad ${unidad} permite integrar los aprendizajes de ${materiaSeleccionada}. Como cierre, el cadete identifica los temas dominados, reconoce áreas de mejora y vincula el contenido con las siguientes actividades de la asignatura.`,
+      );
+      agregarParrafo("Bibliografía", fuentes);
+
+      await pptx.writeFile({
+        fileName: `${nombreArchivoSeguro(materiaSeleccionada)}-unidad-${nombreArchivoSeguro(
+          unidad,
+        )}.pptx`,
+      });
+    } catch (error) {
+      console.log(error);
+      alert("Error generando presentación PowerPoint");
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[#eef2f7] text-slate-900">
       <div className="flex min-h-screen flex-col xl:flex-row">
@@ -692,12 +960,6 @@ fecha: fechaInicio,
                     Portada institucional de planeación académica
                   </h1>
                   <div className="mt-6 h-1 w-28 rounded-full bg-[#c8a45d]" />
-                  <a
-                    href="/presentaciones"
-                    className="mt-6 inline-flex rounded-2xl border border-[#c8a45d] px-5 py-3 text-sm font-black uppercase tracking-[0.18em] text-[#d7bd7a] transition hover:bg-[#c8a45d] hover:text-[#071a33]"
-                  >
-                    Presentaciones
-                  </a>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 sm:w-72">
@@ -1067,6 +1329,24 @@ fecha: fechaInicio,
                         Generar Examen Ordinario
                       </button>
                     </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                      Presentaciones
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Genera una presentación PowerPoint con la materia,
+                      semestre y temas ya seleccionados.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={generarPresentacionPowerPoint}
+                      className="mt-4 w-full rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52]"
+                    >
+                      Generar Presentación PowerPoint
+                    </button>
                   </div>
                 </div>
               </div>
