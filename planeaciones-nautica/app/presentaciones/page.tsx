@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import pptxgen from "pptxgenjs";
 import { materiasPorSemestre } from "../data/materias";
 import { contenidosMaterias } from "../data/contenidosMaterias";
@@ -143,6 +143,23 @@ export default function PresentacionesPage() {
       ]
     : [];
   const unidadActual = unidades.find((unidad) => unidad.id === unidadSeleccionada);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const semestre = params.get("semestre") || "";
+    const materia = params.get("materia") || "";
+    const materiasDelSemestre = semestre
+      ? materiasPorSemestre[semestre as keyof typeof materiasPorSemestre] || []
+      : [];
+
+    if (semestre && materiasDelSemestre.length > 0) {
+      setSemestreSeleccionado(semestre);
+    }
+
+    if (materia && materiasDelSemestre.includes(materia)) {
+      setMateriaSeleccionada(materia);
+    }
+  }, []);
 
   const seleccionarSemestre = (semestre: string) => {
     setSemestreSeleccionado(semestre);
@@ -506,6 +523,9 @@ export default function PresentacionesPage() {
                   <h2 className="mt-2 text-2xl font-black text-[#071a33]">
                     {materiaSeleccionada}
                   </h2>
+                  <p className="mt-1 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                    {semestreSeleccionado}
+                  </p>
                   {!datosMateria ? (
                     <p className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
                       No hay contenidos registrados para esta materia.
