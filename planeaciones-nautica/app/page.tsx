@@ -5,6 +5,7 @@ import { materiasPorSemestre } from "./data/materias";
 import { contenidosMaterias } from "./data/contenidosMaterias";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
+import pptxgen from "pptxgenjs";
 import { saveAs } from "file-saver";
 
 type SemanaMateria = {
@@ -14,20 +15,479 @@ type SemanaMateria = {
 
 type DatosMateria = {
   unidad?: string;
+  objetivoGeneral?: string;
   objetivoEspecifico?: string;
   estrategia?: string;
+  fuentes?: string;
   semanas?: SemanaMateria[];
+};
+
+type RangoSemanas = {
+  inicio: number;
+  fin: number;
+};
+
+type DiapositivaIA = {
+  tipo: string;
+  titulo: string;
+  contenido: string[];
+  notas?: string;
+};
+
+type PresentacionIA = {
+  titulo: string;
+  subtitulo?: string;
+  bibliografia?: Array<{
+    titulo: string;
+    url: string;
+    descripcion?: string;
+  }>;
+  diapositivas: DiapositivaIA[];
+};
+
+const periodosAvance = [
+  { nombre: "Julio-Agosto", inicio: 0, fin: 4 },
+  { nombre: "Septiembre", inicio: 4, fin: 8 },
+  { nombre: "Octubre", inicio: 8, fin: 12 },
+  { nombre: "Noviembre", inicio: 12, fin: 16 },
+  { nombre: "Diciembre", inicio: 16, fin: 18 },
+] as const;
+
+type MesReportado = (typeof periodosAvance)[number]["nombre"];
+
+const limpiarTema = (tema: string) => tema.trim().replace(/\.$/, "");
+
+const nombreArchivoSeguro = (valor: string) =>
+  valor
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+
+const dividirTexto = (texto: string, maximo: number) => {
+  const palabras = texto.split(/\s+/);
+  const lineas: string[] = [];
+  let linea = "";
+
+  palabras.forEach((palabra) => {
+    const siguiente = linea ? `${linea} ${palabra}` : palabra;
+    if (siguiente.length > maximo) {
+      lineas.push(linea);
+      linea = palabra;
+    } else {
+      linea = siguiente;
+    }
+  });
+
+  if (linea) {
+    lineas.push(linea);
+  }
+
+  return lineas;
+};
+
+const formatearErrorOpenAI = (error: unknown) => {
+  const errorData = error as {
+    message?: unknown;
+    status?: unknown;
+    code?: unknown;
+    type?: unknown;
+  };
+  const resumen =
+    typeof error === "object" && error !== null
+      ? [
+          "OpenAI Error",
+          `Status: ${errorData.status ?? "N/A"}`,
+          `Code: ${errorData.code ?? "N/A"}`,
+          `Type: ${errorData.type ?? "N/A"}`,
+          `Message: ${errorData.message ?? "Error desconocido"}`,
+          "",
+          JSON.stringify(error, null, 2),
+        ].join("\n")
+      : JSON.stringify(error, null, 2);
+
+  return resumen;
+};
+
+const contieneAlgunaPalabra = (texto: string, palabras: string[]) => {
+  const textoNormalizado = texto.toLowerCase();
+
+  return palabras.some((palabra) => textoNormalizado.includes(palabra));
+};
+
+const obtenerContextoDidactico = (materia: string, tema: string) => {
+  const textoBase = `${materia} ${tema}`;
+
+  if (
+    contieneAlgunaPalabra(textoBase, [
+      "naveg",
+      "marít",
+      "maritim",
+      "náut",
+      "naut",
+      "buque",
+      "maniobra",
+      "cartograf",
+      "meteorolog",
+      "puerto",
+      "portuar",
+      "transporte",
+      "guardia",
+      "radar",
+      "ecdis",
+      "seguridad",
+      "pmr",
+    ])
+  ) {
+    return "el contexto de navegación, operaciones portuarias, seguridad marítima o vida a bordo";
+  }
+
+  if (
+    contieneAlgunaPalabra(textoBase, [
+      "álgebra",
+      "algebra",
+      "geometr",
+      "física",
+      "fisica",
+      "dinámica",
+      "dinamica",
+      "química",
+      "quimica",
+      "electric",
+      "electrotecnia",
+    ])
+  ) {
+    return "la solución de problemas técnicos y académicos vinculados con la formación náutica";
+  }
+
+  if (
+    contieneAlgunaPalabra(textoBase, [
+      "inglés",
+      "ingles",
+      "expresión",
+      "expresion",
+      "comunicación",
+      "comunicacion",
+      "liderazgo",
+      "derecho",
+    ])
+  ) {
+    return "situaciones profesionales, comunicativas y colaborativas propias del entorno marítimo";
+  }
+
+  return "la formación académica y profesional del cadete";
+};
+
+const generarSecuenciaDidactica = (
+  materia: string,
+  semana: SemanaMateria,
+  datosMateria?: DatosMateria,
+  siguienteTema?: string,
+) => {
+  const tema = limpiarTema(semana.tema);
+  const contexto = obtenerContextoDidactico(materia, tema);
+  const objetivo =
+    datosMateria?.objetivoEspecifico ||
+    datosMateria?.objetivoGeneral ||
+    `comprender y aplicar el tema de ${tema} en ${materia}`;
+  const estrategia =
+    datosMateria?.estrategia ||
+    "aprendizaje guiado, práctica supervisada y trabajo colaborativo";
+  const enlaceSiguiente = siguienteTema
+    ? `Se vincula el aprendizaje con la siguiente sesión sobre ${limpiarTema(
+        siguienteTema,
+      )}.`
+    : "Se integran los aprendizajes de la sesión como base para la evaluación o actividad integradora.";
+
+  return [
+    `Inicio: Pregunta detonadora: ¿cómo se relaciona ${tema} con ${contexto}? El docente recupera conocimientos previos mediante preguntas breves, ejemplos cercanos a la experiencia del cadete y una contextualización del tema dentro de ${materia}.`,
+    `Desarrollo: Se realiza una explicación guiada de ${tema}, alineada con el propósito de ${objetivo}. Los cadetes desarrollan una actividad práctica basada en ${estrategia}, alternando trabajo individual y colaborativo para resolver ejercicios, analizar casos o elaborar productos aplicados a ${contexto}.`,
+    `Cierre: Se socializan resultados y se brinda retroalimentación puntual sobre aciertos, áreas de mejora y criterios de desempeño. La evidencia de aprendizaje será una actividad, ejercicio, reporte breve o participación argumentada relacionada con ${tema}. Cada cadete formula una reflexión final sobre la utilidad del tema. ${enlaceSiguiente}`,
+  ].join("\n\n");
+};
+
+const obtenerPeriodoAvance = (mesReportado: MesReportado) =>
+  periodosAvance.find((periodo) => periodo.nombre === mesReportado) ||
+  periodosAvance[0];
+
+const obtenerAnioPeriodo = (periodo: string) =>
+  periodo.match(/\d{4}/)?.[0] || new Date().getFullYear().toString();
+
+const obtenerSemanasAvance = (
+  datosMateria: DatosMateria | undefined,
+  mesReportado: MesReportado,
+) => {
+  const periodoAvance = obtenerPeriodoAvance(mesReportado);
+  const semanasSeleccionadas =
+    datosMateria?.semanas?.slice(periodoAvance.inicio, periodoAvance.fin) || [];
+
+  return Array.from({ length: 4 }, (_, index) => {
+    const semana = semanasSeleccionadas[index];
+
+    return {
+      numero: `Semana ${index + 1}`,
+      tema: semana?.tema
+        ? limpiarTema(semana.tema)
+        : "Sin tema programado para este periodo reportado.",
+      sesiones: semana?.tema ? "1" : "0",
+    };
+  });
+};
+
+const construirDatosAvanceProgramatico = ({
+  materia,
+  datosMateria,
+  docente,
+  grupo,
+  semestre,
+  periodoEscolar,
+  mesReportado,
+  escuela,
+}: {
+  materia: string;
+  datosMateria?: DatosMateria;
+  docente: string;
+  grupo: string;
+  semestre: string;
+  periodoEscolar: string;
+  mesReportado: MesReportado;
+  escuela: string;
+}) => {
+  const semanasAvance = obtenerSemanasAvance(datosMateria, mesReportado);
+  const temasSubtemasCubiertos = semanasAvance
+    .filter((semana) => semana.sesiones !== "0")
+    .map((semana) => `${semana.numero}: ${semana.tema}`)
+    .join("\n");
+  const objetivosCompetencias =
+    datosMateria?.objetivoEspecifico ||
+    datosMateria?.objetivoGeneral ||
+    `Desarrollar competencias académicas y profesionales relacionadas con ${materia}.`;
+  const estrategiasTecnicas =
+    datosMateria?.estrategia ||
+    "Exposición guiada, análisis de casos, ejercicios prácticos, trabajo individual y colaborativo.";
+  const recursosDidacticos =
+    "Presentación digital, equipo de cómputo, material didáctico, recursos digitales y referencias académicas.";
+  const evidenciasAprendizaje =
+    "Actividades de clase, ejercicios resueltos, participación, reporte breve y evidencias integradas en el portafolio académico.";
+  const instrumentosEvaluacion =
+    "Lista de cotejo, rúbrica de desempeño, participación guiada y evaluación formativa.";
+
+  return {
+    escuela,
+    asignatura: materia,
+    curso: materia,
+    asignaturaCurso: materia,
+    mes: mesReportado,
+    anio: obtenerAnioPeriodo(periodoEscolar),
+    docente,
+    licenciatura: "Licenciatura en Piloto Naval",
+    semestre,
+    grupo,
+    periodoReportado: `${mesReportado} ${obtenerAnioPeriodo(periodoEscolar)}`,
+    periodoEscolar,
+    temasCubiertos:
+      temasSubtemasCubiertos || "Sin temas registrados para este periodo.",
+    temasSubtemasCubiertos:
+      temasSubtemasCubiertos || "Sin temas registrados para este periodo.",
+    objetivosCompetencias,
+    estrategiasTecnicas,
+    evidenciasAprendizaje,
+    recursosDidacticos,
+    instrumentosEvaluacion,
+    actividadesSigaaSi: "X",
+    actividadesSigaaNo: "",
+    nombreFirmaDocente: docente || "Nombre y firma del docente",
+    semana1: semanasAvance[0].numero,
+    tema1: semanasAvance[0].tema,
+    semana1Tema: semanasAvance[0].tema,
+    sesiones1: semanasAvance[0].sesiones,
+    semana1Sesiones: semanasAvance[0].sesiones,
+    estrategia1: estrategiasTecnicas,
+    evidencia1: evidenciasAprendizaje,
+    recursos1: recursosDidacticos,
+    instrumento1: instrumentosEvaluacion,
+    semana2: semanasAvance[1].numero,
+    tema2: semanasAvance[1].tema,
+    semana2Tema: semanasAvance[1].tema,
+    sesiones2: semanasAvance[1].sesiones,
+    semana2Sesiones: semanasAvance[1].sesiones,
+    estrategia2: estrategiasTecnicas,
+    evidencia2: evidenciasAprendizaje,
+    recursos2: recursosDidacticos,
+    instrumento2: instrumentosEvaluacion,
+    semana3: semanasAvance[2].numero,
+    tema3: semanasAvance[2].tema,
+    semana3Tema: semanasAvance[2].tema,
+    sesiones3: semanasAvance[2].sesiones,
+    semana3Sesiones: semanasAvance[2].sesiones,
+    estrategia3: estrategiasTecnicas,
+    evidencia3: evidenciasAprendizaje,
+    recursos3: recursosDidacticos,
+    instrumento3: instrumentosEvaluacion,
+    semana4: semanasAvance[3].numero,
+    tema4: semanasAvance[3].tema,
+    semana4Tema: semanasAvance[3].tema,
+    sesiones4: semanasAvance[3].sesiones,
+    semana4Sesiones: semanasAvance[3].sesiones,
+    estrategia4: estrategiasTecnicas,
+    evidencia4: evidenciasAprendizaje,
+    recursos4: recursosDidacticos,
+    instrumento4: instrumentosEvaluacion,
+    razonesNoCumplio: "",
+    firmaDocente: docente || "Nombre y firma del docente",
+  };
+};
+
+const construirPreguntasExamen = (materia: string, temas: SemanaMateria[]) => {
+  const temasLimpios = temas.map((semana) => limpiarTema(semana.tema));
+  const temasBase =
+    temasLimpios.length > 0 ? temasLimpios : [`contenidos esenciales de ${materia}`];
+
+  const opcionMultiple = temasBase
+    .slice(0, 10)
+    .map(
+      (tema, index) =>
+        `${index + 1}. ¿Cuál es la importancia de ${tema} dentro de ${materia}?\n` +
+        `A) Permite aplicar el contenido en situaciones académicas o náuticas.\n` +
+        `B) Sustituye todos los demás temas de la asignatura.\n` +
+        `C) No tiene relación con la formación profesional.\n` +
+        `D) Solo se utiliza para actividades administrativas.`,
+    )
+    .join("\n\n");
+
+  const verdaderoFalso = temasBase
+    .slice(0, 8)
+    .map(
+      (tema, index) =>
+        `${index + 1}. ${tema} debe analizarse considerando conceptos, procedimientos y aplicaciones propias de ${materia}. (V/F)`,
+    )
+    .join("\n");
+
+  const relacionarColumnas = [
+    "Columna A",
+    ...temasBase
+      .slice(0, 6)
+      .map((tema, index) => `${index + 1}. ${tema}`),
+    "",
+    "Columna B",
+    ...temasBase
+      .slice(0, 6)
+      .map(
+        (tema, index) =>
+          `${String.fromCharCode(65 + index)}. Aplicación, concepto o procedimiento relacionado con ${tema}.`,
+      ),
+  ].join("\n");
+
+  const preguntasAbiertas = temasBase
+    .slice(0, 5)
+    .map(
+      (tema, index) =>
+        `${index + 1}. Explica cómo se aplica ${tema} en el contexto académico o profesional de ${materia}.`,
+    )
+    .join("\n");
+
+  return {
+    opcionMultiple,
+    verdaderoFalso,
+    relacionarColumnas,
+    preguntasAbiertas,
+  };
+};
+
+const construirDatosExamen = ({
+  tipo,
+  materia,
+  datosMateria,
+  docente,
+  grupo,
+  semestre,
+  fecha,
+  periodoEscolar,
+  rango,
+}: {
+  tipo: string;
+  materia: string;
+  datosMateria?: DatosMateria;
+  docente: string;
+  grupo: string;
+  semestre: string;
+  fecha: string;
+  periodoEscolar: string;
+  rango: RangoSemanas;
+}) => {
+  const semanas = datosMateria?.semanas?.slice(rango.inicio, rango.fin) || [];
+  const temasTexto = semanas
+    .map((semana, index) => {
+      const numeroSemana = rango.inicio + index + 1;
+
+      return `Semana ${numeroSemana}. ${limpiarTema(semana.tema)}`;
+    })
+    .join("\n");
+  const temas = semanas.map((semana) => limpiarTema(semana.tema));
+  const objetivo =
+    datosMateria?.objetivoEspecifico ||
+    datosMateria?.objetivoGeneral ||
+    `Evaluar los aprendizajes de ${materia}.`;
+  const preguntas = construirPreguntasExamen(materia, semanas);
+
+  return {
+    tipoExamen: tipo,
+    examen: tipo,
+    materia,
+    asignatura: materia,
+    asignaturaCurso: materia,
+    curso: materia,
+    semestre,
+    docente,
+    profesor: docente,
+    grupo,
+    fecha,
+    fechaInicio: fecha,
+    periodo: periodoEscolar,
+    periodoEscolar,
+    unidad: datosMateria?.unidad || "I",
+    objetivo,
+    objetivosCompetencias: objetivo,
+    temas: temasTexto,
+    temasMateria: temasTexto,
+    temasEvaluar: temasTexto,
+    opcionMultiple: preguntas.opcionMultiple,
+    verdaderoFalso: preguntas.verdaderoFalso,
+    relacionarColumnas: preguntas.relacionarColumnas,
+    preguntasAbiertas: preguntas.preguntasAbiertas,
+    tema1: temas[0] || "",
+    tema2: temas[1] || "",
+    tema3: temas[2] || "",
+    tema4: temas[3] || "",
+    tema5: temas[4] || "",
+    tema6: temas[5] || "",
+    tema7: temas[6] || "",
+    tema8: temas[7] || "",
+    tema9: temas[8] || "",
+    tema10: temas[9] || "",
+    tema11: temas[10] || "",
+    tema12: temas[11] || "",
+    tema13: temas[12] || "",
+    tema14: temas[13] || "",
+    tema15: temas[14] || "",
+    tema16: temas[15] || "",
+    tema17: temas[16] || "",
+    tema18: temas[17] || "",
+  };
 };
 
 export default function Home() {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
-  const [semestreSeleccionado, setSemestreSeleccionado] =
-    useState("I SEMESTRE");
+  const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
 
   const [docente, setDocente] = useState("");
   const [grupo, setGrupo] = useState("");
   const [cadetes, setCadetes] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
+  const [mesReportado, setMesReportado] =
+    useState<MesReportado>("Julio-Agosto");
+  const [generandoPresentacion, setGenerandoPresentacion] = useState(false);
 
   const periodo = "Julio-Diciembre 2026";
   const escuelaNautica =
@@ -39,6 +499,30 @@ export default function Home() {
   const horasIndependientes = "0";
 
   const menu = materiasPorSemestre;
+  const inputClass =
+    "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#c8a45d] focus:ring-2 focus:ring-[#c8a45d]/30";
+  const readOnlyClass =
+    "w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 shadow-sm";
+  const labelClass =
+    "mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-[#0b1f3a]";
+  const semestres = Object.keys(menu);
+  const materiasDelSemestre = semestreSeleccionado
+    ? menu[semestreSeleccionado as keyof typeof menu] || []
+    : [];
+
+  const seleccionarSemestre = (semestre: string) => {
+    setSemestreSeleccionado(semestre);
+    setMateriaSeleccionada("");
+  };
+
+  const regresarASemestres = () => {
+    setSemestreSeleccionado("");
+    setMateriaSeleccionada("");
+  };
+
+  const regresarAMaterias = () => {
+    setMateriaSeleccionada("");
+  };
 
   const generarWord = async () => {
     try {
@@ -57,16 +541,22 @@ export default function Home() {
           materiaSeleccionada as keyof typeof contenidosMaterias
         ] as DatosMateria | undefined;
 
-      const semanas = (datosMateria?.semanas || []).map((s: SemanaMateria) => ({
-        semana: s.semana,
-        tema: s.tema,
-        secuencia:
-          "Inicio: activación de conocimientos previos. Desarrollo: explicación docente, práctica guiada y ejercicios aplicados. Cierre: reflexión y retroalimentación.",
-        recursos:
-          "Computadora, presentación, material didáctico y recursos digitales.",
-        producto: "Actividad, evidencia y participación.",
-        evaluacion: "Lista de cotejo, participación y evaluación formativa.",
-      }));
+      const semanas = (datosMateria?.semanas || []).map(
+        (s: SemanaMateria, index, semanasMateria) => ({
+          semana: s.semana,
+          tema: s.tema,
+          secuencia: generarSecuenciaDidactica(
+            materiaSeleccionada,
+            s,
+            datosMateria,
+            semanasMateria[index + 1]?.tema,
+          ),
+          recursos:
+            "Computadora, presentación, material didáctico y recursos digitales.",
+          producto: "Actividad, evidencia y participación.",
+          evaluacion: "Lista de cotejo, participación y evaluación formativa.",
+        }),
+      );
 
       doc.render({
         asignatura: materiaSeleccionada,
@@ -128,148 +618,776 @@ fecha: fechaInicio,
     }
   };
 
+  const generarAvanceProgramatico = async () => {
+    try {
+      const response = await fetch("/templates/Avance-Programatico-F51.docx");
+      const content = await response.arrayBuffer();
+
+      const zip = new PizZip(content);
+
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+
+      const datosMateria =
+        contenidosMaterias[
+          materiaSeleccionada as keyof typeof contenidosMaterias
+        ] as DatosMateria | undefined;
+
+      doc.render(
+        construirDatosAvanceProgramatico({
+          materia: materiaSeleccionada,
+          datosMateria,
+          docente,
+          grupo,
+          semestre: semestreSeleccionado,
+          periodoEscolar: periodo,
+          mesReportado,
+          escuela: escuelaNautica,
+        }),
+      );
+
+      const blob = doc.getZip().generate({
+        type: "blob",
+      });
+
+      saveAs(
+        blob,
+        `F51_${materiaSeleccionada || "Avance"}_${mesReportado}.docx`,
+      );
+    } catch (error) {
+      console.log(error);
+      alert("Error generando avance programático F-51");
+    }
+  };
+
+  const generarExamen = async (
+    tipo: string,
+    templatePath: string,
+    rango: RangoSemanas,
+  ) => {
+    try {
+      const response = await fetch(templatePath);
+      const content = await response.arrayBuffer();
+
+      const zip = new PizZip(content);
+      const documentXml = zip.file("word/document.xml")?.asText() || "";
+      const tienePlaceholders = /\{[^{}]+\}/.test(documentXml);
+
+      const doc = new Docxtemplater(zip, {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+
+      const datosMateria =
+        contenidosMaterias[
+          materiaSeleccionada as keyof typeof contenidosMaterias
+        ] as DatosMateria | undefined;
+
+      doc.render(
+        construirDatosExamen({
+          tipo,
+          materia: materiaSeleccionada,
+          datosMateria,
+          docente,
+          grupo,
+          semestre: semestreSeleccionado,
+          fecha: fechaInicio,
+          periodoEscolar: periodo,
+          rango,
+        }),
+      );
+
+      const blob = doc.getZip().generate({
+        type: "blob",
+      });
+
+      saveAs(blob, `${tipo}_${materiaSeleccionada || "Examen"}.docx`);
+      if (!tienePlaceholders) {
+        alert(
+          `La plantilla de ${tipo.toLowerCase()} no contiene placeholders. ` +
+            "Se descargó el formato original sin insertar datos automáticos.",
+        );
+      }
+    } catch (error) {
+      console.log(error);
+      alert(`Error generando ${tipo.toLowerCase()}`);
+    }
+  };
+
+  const generarPresentacionPowerPoint = async () => {
+    try {
+      setGenerandoPresentacion(true);
+      const datosMateria =
+        contenidosMaterias[
+          materiaSeleccionada as keyof typeof contenidosMaterias
+        ] as DatosMateria | undefined;
+      const temas = datosMateria?.semanas || [];
+
+      if (!datosMateria || temas.length === 0) {
+        alert("No hay contenidos registrados para generar la presentación.");
+        return;
+      }
+
+      const unidad = datosMateria.unidad || "I";
+      const temasRelacionados = temas.map(
+        (tema) => `${tema.semana}: ${limpiarTema(tema.tema)}`,
+      );
+      const temaCentral = `Unidad ${unidad}: ${materiaSeleccionada}`;
+      const objetivo =
+        datosMateria.objetivoEspecifico ||
+        datosMateria.objetivoGeneral ||
+        `Comprender y aplicar los temas principales de ${materiaSeleccionada}.`;
+
+      const response = await fetch("/api/presentaciones", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          semestre: semestreSeleccionado,
+          materia: materiaSeleccionada,
+          unidad: `Unidad ${unidad}`,
+          tema: temaCentral,
+          objetivo,
+          temasRelacionados,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as
+          | { error?: unknown }
+          | null;
+        const error =
+          data?.error || "No se pudo generar el contenido IA.";
+        console.error("OPENAI ERROR:", error);
+        alert(formatearErrorOpenAI(error));
+        return;
+      }
+
+      const contenidoIA = (await response.json()) as PresentacionIA;
+      const diapositivas =
+        contenidoIA.diapositivas?.length > 0 ? contenidoIA.diapositivas : [];
+
+      if (diapositivas.length === 0) {
+        alert("La IA no devolvió diapositivas para la presentación.");
+        return;
+      }
+
+      const pptx = new pptxgen();
+      pptx.layout = "LAYOUT_WIDE";
+      pptx.author = docente || "Planeaciones Nautica";
+      pptx.subject = materiaSeleccionada;
+      pptx.title = contenidoIA.titulo || `${materiaSeleccionada} - Unidad ${unidad}`;
+      pptx.company = "Universidad Maritima y Portuaria de Mexico";
+      pptx.theme = {
+        headFontFace: "Arial",
+        bodyFontFace: "Arial",
+      };
+
+      const colores = {
+        azul: "071A33",
+        dorado: "C8A45D",
+        blanco: "FFFFFF",
+        gris: "F4F6F8",
+        texto: "1F2937",
+      };
+
+      const agregarEncabezado = (titulo: string, subtitulo?: string) => {
+        const slide = pptx.addSlide();
+        slide.background = { color: colores.blanco };
+        slide.addShape(pptx.ShapeType.rect, {
+          x: 0,
+          y: 0,
+          w: 13.333,
+          h: 0.28,
+          fill: { color: colores.dorado },
+          line: { color: colores.dorado },
+        });
+        slide.addText(titulo, {
+          x: 0.6,
+          y: 0.45,
+          w: 12.1,
+          h: 0.45,
+          fontSize: 22,
+          bold: true,
+          color: colores.azul,
+          margin: 0,
+          fit: "shrink",
+        });
+        if (subtitulo) {
+          slide.addText(subtitulo, {
+            x: 0.6,
+            y: 0.96,
+            w: 12.1,
+            h: 0.35,
+            fontSize: 11,
+            color: "64748B",
+            margin: 0,
+          });
+        }
+
+        return slide;
+      };
+
+      const agregarContenido = (diapositiva: DiapositivaIA, subtitulo?: string) => {
+        const slide = agregarEncabezado(diapositiva.titulo, subtitulo);
+        slide.addShape(pptx.ShapeType.roundRect, {
+          x: 0.75,
+          y: 1.45,
+          w: 11.8,
+          h: 4.8,
+          rectRadius: 0.08,
+          fill: { color: colores.gris },
+          line: { color: "E2E8F0" },
+        });
+        slide.addText(
+          diapositiva.contenido
+            .flatMap((punto) => dividirTexto(`• ${punto}`, 115))
+            .join("\n"),
+          {
+          x: 1.05,
+          y: 1.75,
+          w: 11.2,
+          h: 4.15,
+          fontSize: 17,
+          color: colores.texto,
+          fit: "shrink",
+          valign: "middle",
+          },
+        );
+      };
+
+      const agregarPortada = () => {
+        const portada = pptx.addSlide();
+        portada.background = { color: colores.azul };
+        portada.addShape(pptx.ShapeType.rect, {
+        x: 0,
+        y: 0,
+        w: 13.333,
+        h: 0.35,
+        fill: { color: colores.dorado },
+        line: { color: colores.dorado },
+        });
+        portada.addText("Universidad Maritima y Portuaria de Mexico", {
+        x: 0.75,
+        y: 0.85,
+        w: 11.8,
+        h: 0.35,
+        fontSize: 16,
+        bold: true,
+        color: colores.dorado,
+        margin: 0,
+        });
+        portada.addText("Escuela Nautica Mercante de Tampico", {
+        x: 0.75,
+        y: 1.25,
+        w: 11.8,
+        h: 0.3,
+        fontSize: 13,
+        color: colores.blanco,
+        margin: 0,
+        });
+        portada.addText(contenidoIA.titulo || `${materiaSeleccionada} - Unidad ${unidad}`, {
+        x: 0.75,
+        y: 2.05,
+        w: 11.8,
+        h: 1.15,
+        fontSize: 34,
+        bold: true,
+        color: colores.blanco,
+        fit: "shrink",
+        margin: 0,
+        });
+        portada.addText(
+          contenidoIA.subtitulo || `${materiaSeleccionada} | ${semestreSeleccionado}`,
+          {
+        x: 0.75,
+        y: 3.45,
+        w: 11.8,
+        h: 0.35,
+        fontSize: 16,
+        color: colores.dorado,
+        margin: 0,
+          },
+        );
+        portada.addText(`Docente: ${docente || "Por definir"} | Grupo: ${grupo || "Por definir"}`, {
+        x: 0.75,
+        y: 6.45,
+        w: 11.8,
+        h: 0.28,
+        fontSize: 11,
+        color: "CBD5E1",
+        margin: 0,
+        });
+      };
+
+      diapositivas.forEach((diapositiva, index) => {
+        if (index === 0 || diapositiva.tipo === "portada") {
+          agregarPortada();
+          return;
+        }
+
+        agregarContenido(diapositiva, `${materiaSeleccionada} | Unidad ${unidad}`);
+      });
+
+      await pptx.writeFile({
+        fileName: `${nombreArchivoSeguro(materiaSeleccionada)}-unidad-${nombreArchivoSeguro(
+          unidad,
+        )}.pptx`,
+      });
+    } catch (error) {
+      console.error("OPENAI ERROR:", error);
+      alert(formatearErrorOpenAI(error));
+    } finally {
+      setGenerandoPresentacion(false);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-slate-100 text-slate-900">
-      <div className="flex min-h-screen">
-        <aside className="w-80 bg-white border-r border-slate-300 p-4 overflow-y-auto">
-          <h1 className="text-xl font-bold mb-4 text-blue-900">
-            Programas de Estudio
-          </h1>
+    <main className="min-h-screen bg-[#eef2f7] text-slate-900">
+      <div className="flex min-h-screen flex-col xl:flex-row">
+        <aside className="bg-[#071a33] text-white xl:w-88 xl:min-h-screen">
+          <div className="sticky top-0 flex h-full flex-col gap-8 overflow-y-auto p-6">
+            <div className="rounded-3xl border border-white/15 bg-white/10 p-5 shadow-2xl shadow-black/20">
+              <div className="mb-5 flex items-center gap-4">
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border-2 border-[#c8a45d] bg-white/95 text-center text-[10px] font-black uppercase leading-tight text-[#071a33] shadow-lg">
+                  Logo
+                  <br />
+                  UMPM
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#d7bd7a]">
+                    Sistema académico
+                  </p>
+                  <h1 className="mt-1 text-2xl font-black leading-tight">
+                    Planeación F-32
+                  </h1>
+                </div>
+              </div>
 
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-2 mb-4">
-              {Object.keys(menu).map((semestre) => (
-                <button
-                  key={semestre}
-                  onClick={() => {
-                    setSemestreSeleccionado(semestre);
-                    setMateriaSeleccionada("");
-                  }}
-                  className={`rounded-lg px-3 py-2 text-sm font-bold transition ${
-                    semestreSeleccionado === semestre
-                      ? "bg-blue-800 text-white"
-                      : "bg-slate-200 text-slate-800 hover:bg-slate-300"
-                  }`}
-                >
-                  {semestre}
-                </button>
-              ))}
-            </div>
-
-            <div>
-              <h2 className="font-bold text-sm text-slate-700 mb-2">
-                {semestreSeleccionado}
-              </h2>
-
-              <div className="space-y-2">
-                {menu[
-                  semestreSeleccionado as keyof typeof menu
-                ]?.map((materia) => (
-                  <button
-                    key={materia}
-                    onClick={() => setMateriaSeleccionada(materia)}
-                    className={`w-full rounded-lg px-3 py-2 text-left text-sm transition ${
-                      materiaSeleccionada === materia
-                        ? "bg-blue-800 text-white"
-                        : "bg-blue-100 text-blue-900 hover:bg-blue-200"
-                    }`}
-                  >
-                    {materia}
-                  </button>
-                ))}
+              <div className="space-y-2 border-t border-white/15 pt-5">
+                <p className="text-sm font-bold text-white">
+                  Universidad Marítima y Portuaria de México
+                </p>
+                <p className="text-sm text-slate-200">
+                  Escuela Náutica Mercante de Tampico
+                </p>
+                <p className="text-xs leading-relaxed text-slate-300">
+                  Cap. de Altura Luis Gonzaga Priego González
+                </p>
               </div>
             </div>
           </div>
         </aside>
 
-        <section className="flex-1 p-8">
-          <div className="bg-white rounded-xl shadow p-6">
-            <h1 className="text-2xl font-bold text-blue-900 mb-4">
-              Planeación F-32
-            </h1>
-
-            {materiaSeleccionada ? (
-              <>
-                <p className="text-lg mb-4">
-                  Materia seleccionada:
-                  <span className="font-bold"> {materiaSeleccionada}</span>
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <input
-                    className="border rounded-lg p-2 md:col-span-2"
-                    placeholder="Nombre del docente"
-                    value={docente}
-                    onChange={(e) => setDocente(e.target.value)}
-                  />
-
-                  <input
-                    className="border rounded-lg p-2 md:col-span-2 bg-slate-100"
-                    value={periodo}
-                    readOnly
-                  />
-
-                  <input
-                    className="border rounded-lg p-2 md:col-span-2 bg-slate-100"
-                    value={escuelaNautica}
-                    readOnly
-                  />
-
-                  <input
-                    className="border rounded-lg p-2"
-                    placeholder="Grupo"
-                    value={grupo}
-                    onChange={(e) => setGrupo(e.target.value)}
-                  />
-
-                  <input
-                    className="border rounded-lg p-2"
-                    placeholder="Número de cadetes"
-                    value={cadetes}
-                    onChange={(e) => setCadetes(e.target.value)}
-                  />
-
-                  <input
-                    className="border rounded-lg p-2"
-                    placeholder="Fecha de inicio"
-                    value={fechaInicio}
-                    onChange={(e) => setFechaInicio(e.target.value)}
-                  />
-
-                  <input
-                    className="border rounded-lg p-2 bg-slate-100"
-                    value={`Horas por semana: ${horasPorSemana}`}
-                    readOnly
-                  />
-
-                  <input
-                    className="border rounded-lg p-2 bg-slate-100"
-                    value={`Horas totales: ${horasTotales}`}
-                    readOnly
-                  />
-
-                  <input
-                    className="border rounded-lg p-2 bg-slate-100"
-                    value={`Horas teóricas: ${horasTeoricas}`}
-                    readOnly
-                  />
-
-                  <input
-                    className="border rounded-lg p-2 bg-slate-100"
-                    value={`Horas independientes: ${horasIndependientes}`}
-                    readOnly
-                  />
+        <section className="flex-1 p-4 sm:p-8">
+          <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-2xl shadow-slate-300/60">
+            <header className="relative bg-[#071a33] px-6 py-8 text-white sm:px-10">
+              <div className="absolute inset-x-0 top-0 h-2 bg-[#c8a45d]" />
+              <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+                <div>
+                  <p className="mb-3 text-xs font-bold uppercase tracking-[0.32em] text-[#d7bd7a]">
+                    Universidad Marítima y Portuaria de México
+                  </p>
+                  <h1 className="max-w-3xl text-3xl font-black leading-tight sm:text-5xl">
+                    Portada institucional de planeación académica
+                  </h1>
+                  <div className="mt-6 h-1 w-28 rounded-full bg-[#c8a45d]" />
                 </div>
 
-                <button
-                  onClick={generarWord}
-                  className="bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800"
-                >
-                  Generar planeación
-                </button>
-              </>
+                <div className="grid grid-cols-2 gap-4 sm:w-72">
+                  <div className="flex aspect-square items-center justify-center rounded-3xl border-2 border-[#c8a45d] bg-white text-center text-xs font-black uppercase tracking-[0.18em] text-[#071a33] shadow-xl">
+                    Escudo
+                    <br />
+                    institucional
+                  </div>
+                  <div className="flex aspect-square items-center justify-center rounded-3xl border-2 border-white/40 bg-white/10 text-center text-xs font-black uppercase tracking-[0.18em] text-white shadow-xl">
+                    Logo
+                    <br />
+                    escuela
+                  </div>
+                </div>
+              </div>
+            </header>
+
+            <div className="border-b border-slate-200 bg-[#f8fafc] px-6 py-5 sm:px-10">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c8a45d]">
+                    Institución
+                  </p>
+                  <p className="mt-2 font-bold text-[#071a33]">
+                    Universidad Marítima y Portuaria de México
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c8a45d]">
+                    Plantel
+                  </p>
+                  <p className="mt-2 font-bold text-[#071a33]">
+                    Escuela Náutica Mercante de Tampico
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#c8a45d]">
+                    Nombre oficial
+                  </p>
+                  <p className="mt-2 font-bold text-[#071a33]">
+                    Cap. de Altura Luis Gonzaga Priego González
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {!semestreSeleccionado ? (
+              <div className="px-6 py-10 sm:px-10">
+                <div className="rounded-3xl border border-dashed border-[#c8a45d] bg-[#fffaf0] p-6 text-center sm:p-8">
+                  <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#071a33] text-xs font-black uppercase tracking-[0.18em] text-[#d7bd7a]">
+                    F-32
+                  </div>
+                  <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                    Paso 1
+                  </p>
+                  <h2 className="mt-2 text-2xl font-black text-[#071a33] sm:text-3xl">
+                    Selecciona un semestre
+                  </h2>
+                  <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                    Elige el semestre para consultar únicamente sus asignaturas
+                    y continuar con la captura de la planeación F-32.
+                  </p>
+
+                  <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                    {semestres.map((semestre) => (
+                      <button
+                        key={semestre}
+                        type="button"
+                        onClick={() => seleccionarSemestre(semestre)}
+                        className="rounded-2xl border border-[#c8a45d]/40 bg-white px-5 py-6 text-lg font-black text-[#071a33] shadow-sm transition hover:-translate-y-0.5 hover:border-[#c8a45d] hover:bg-[#071a33] hover:text-white hover:shadow-xl"
+                      >
+                        {semestre.replace(" SEMESTRE", "")}
+                        <span className="mt-2 block text-xs font-bold uppercase tracking-[0.2em] text-[#c8a45d]">
+                          Semestre
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : !materiaSeleccionada ? (
+              <div className="px-6 py-8 sm:px-10">
+                <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                      Paso 2
+                    </p>
+                    <h2 className="mt-2 text-2xl font-black text-[#071a33]">
+                      Materias de {semestreSeleccionado}
+                    </h2>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Selecciona una asignatura para abrir el formulario de
+                      datos generales.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={regresarASemestres}
+                    className="rounded-2xl border border-[#071a33] px-4 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] transition hover:bg-[#071a33] hover:text-white"
+                  >
+                    Regresar a semestres
+                  </button>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {materiasDelSemestre.map((materia) => (
+                    <button
+                      key={materia}
+                      type="button"
+                      onClick={() => setMateriaSeleccionada(materia)}
+                      className="rounded-2xl border border-slate-200 bg-white p-5 text-left text-sm font-bold text-[#071a33] shadow-sm transition hover:-translate-y-0.5 hover:border-[#c8a45d] hover:shadow-lg"
+                    >
+                      <span className="mb-3 block h-1 w-12 rounded-full bg-[#c8a45d]" />
+                      {materia}
+                    </button>
+                  ))}
+                </div>
+              </div>
             ) : (
-              <p>Selecciona materia.</p>
+              <div className="grid gap-8 px-6 py-8 sm:px-10 lg:grid-cols-[1.05fr_0.95fr]">
+                <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <div className="mb-6 flex items-start justify-between gap-4 border-b border-slate-200 pb-5">
+                    <div>
+                      <div className="mb-4 flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={regresarASemestres}
+                          className="rounded-xl border border-[#071a33] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#071a33] transition hover:bg-[#071a33] hover:text-white"
+                        >
+                          Regresar a semestres
+                        </button>
+                        <button
+                          type="button"
+                          onClick={regresarAMaterias}
+                          className="rounded-xl border border-[#c8a45d] px-3 py-2 text-xs font-black uppercase tracking-[0.14em] text-[#071a33] transition hover:bg-[#c8a45d]"
+                        >
+                          Regresar a materias
+                        </button>
+                      </div>
+                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                        Paso 3 · Formato F-32
+                      </p>
+                      <h2 className="mt-2 text-2xl font-black text-[#071a33]">
+                        Datos generales de la portada
+                      </h2>
+                    </div>
+                    <div className="hidden rounded-2xl bg-[#071a33] px-4 py-3 text-right text-xs font-bold uppercase tracking-[0.16em] text-white sm:block">
+                      {semestreSeleccionado}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                    <label className="md:col-span-2">
+                      <span className={labelClass}>Nombre del docente</span>
+                      <input
+                        className={inputClass}
+                        placeholder="Nombre completo del docente"
+                        value={docente}
+                        onChange={(e) => setDocente(e.target.value)}
+                      />
+                    </label>
+
+                    <label className="md:col-span-2">
+                      <span className={labelClass}>Asignatura</span>
+                      <input
+                        className={readOnlyClass}
+                        value={materiaSeleccionada}
+                        readOnly
+                      />
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>Grupo</span>
+                      <input
+                        className={inputClass}
+                        placeholder="Ej. 101-A"
+                        value={grupo}
+                        onChange={(e) => setGrupo(e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>Número de cadetes</span>
+                      <input
+                        className={inputClass}
+                        placeholder="Ej. 28"
+                        value={cadetes}
+                        onChange={(e) => setCadetes(e.target.value)}
+                      />
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>Periodo escolar</span>
+                      <input
+                        className={readOnlyClass}
+                        value={periodo}
+                        readOnly
+                      />
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>Mes reportado F-51</span>
+                      <select
+                        className={inputClass}
+                        value={mesReportado}
+                        onChange={(e) =>
+                          setMesReportado(e.target.value as MesReportado)
+                        }
+                      >
+                        {periodosAvance.map((periodoAvance) => (
+                          <option
+                            key={periodoAvance.nombre}
+                            value={periodoAvance.nombre}
+                          >
+                            {periodoAvance.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label>
+                      <span className={labelClass}>Fecha de inicio</span>
+                      <input
+                        className={inputClass}
+                        placeholder="Fecha de inicio"
+                        value={fechaInicio}
+                        onChange={(e) => setFechaInicio(e.target.value)}
+                      />
+                    </label>
+
+                    <label className="md:col-span-2">
+                      <span className={labelClass}>Escuela</span>
+                      <input
+                        className={readOnlyClass}
+                        value={escuelaNautica}
+                        readOnly
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-6">
+                  <div className="rounded-3xl bg-[#071a33] p-6 text-white shadow-xl shadow-slate-300/60">
+                    <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#d7bd7a]">
+                      Vista institucional
+                    </p>
+                    <h3 className="mt-3 text-2xl font-black leading-tight">
+                      {materiaSeleccionada}
+                    </h3>
+                    <div className="mt-6 space-y-4 rounded-2xl border border-white/15 bg-white/10 p-5">
+                      <div className="flex justify-between gap-4 border-b border-white/10 pb-3 text-sm">
+                        <span className="text-slate-300">Docente</span>
+                        <span className="font-bold text-right">
+                          {docente || "Por definir"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-4 border-b border-white/10 pb-3 text-sm">
+                        <span className="text-slate-300">Grupo</span>
+                        <span className="font-bold">{grupo || "Por definir"}</span>
+                      </div>
+                      <div className="flex justify-between gap-4 border-b border-white/10 pb-3 text-sm">
+                        <span className="text-slate-300">Cadetes</span>
+                        <span className="font-bold">
+                          {cadetes || "Por definir"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between gap-4 text-sm">
+                        <span className="text-slate-300">Periodo</span>
+                        <span className="font-bold">{periodo}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <input
+                      className={readOnlyClass}
+                      value={`Horas/semana: ${horasPorSemana}`}
+                      readOnly
+                    />
+
+                    <input
+                      className={readOnlyClass}
+                      value={`Horas totales: ${horasTotales}`}
+                      readOnly
+                    />
+
+                    <input
+                      className={readOnlyClass}
+                      value={`Horas teóricas: ${horasTeoricas}`}
+                      readOnly
+                    />
+
+                    <input
+                      className={readOnlyClass}
+                      value={`Independientes: ${horasIndependientes}`}
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={generarWord}
+                      className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a]"
+                    >
+                      Generar planeación F-32
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={generarAvanceProgramatico}
+                      className="rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52]"
+                    >
+                      Generar Avance Programático F-51
+                    </button>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                      Exámenes
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Genera documentos de evaluación usando las plantillas
+                      institucionales existentes.
+                    </p>
+
+                    <div className="mt-4 grid gap-3">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          generarExamen(
+                            "Examen Parcial 1",
+                            "/templates/examen-parcial.docx",
+                            { inicio: 0, fin: 10 },
+                          )
+                        }
+                        className="rounded-2xl border border-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#071a33] hover:text-white"
+                      >
+                        Generar Examen Parcial 1
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          generarExamen(
+                            "Examen Parcial 2",
+                            "/templates/examen-parcial.docx",
+                            { inicio: 10, fin: 18 },
+                          )
+                        }
+                        className="rounded-2xl border border-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#071a33] hover:text-white"
+                      >
+                        Generar Examen Parcial 2
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          generarExamen(
+                            "Examen Ordinario",
+                            "/templates/examen-ordinario.docx",
+                            { inicio: 0, fin: 18 },
+                          )
+                        }
+                        className="rounded-2xl border border-[#c8a45d] bg-[#fffaf0] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#c8a45d]"
+                      >
+                        Generar Examen Ordinario
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                      Presentaciones
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Genera una presentación IA profesional con la materia,
+                      semestre y temas ya seleccionados.
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={generarPresentacionPowerPoint}
+                      disabled={generandoPresentacion}
+                      className="mt-4 w-full rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52]"
+                    >
+                      {generandoPresentacion
+                        ? "Generando Presentación IA..."
+                        : "Generar Presentación IA Profesional"}
+                    </button>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </section>
