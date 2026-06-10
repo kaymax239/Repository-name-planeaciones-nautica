@@ -19,6 +19,24 @@ type DatosMateria = {
   semanas?: SemanaMateria[];
 };
 
+type DiapositivaIA = {
+  tipo: string;
+  titulo: string;
+  contenido: string[];
+  notas?: string;
+};
+
+type PresentacionIA = {
+  titulo: string;
+  subtitulo?: string;
+  bibliografia?: Array<{
+    titulo: string;
+    url: string;
+    descripcion?: string;
+  }>;
+  diapositivas: DiapositivaIA[];
+};
+
 const limpiarTema = (tema: string) => tema.trim().replace(/\.$/, "");
 
 const nombreArchivoSeguro = (valor: string) =>
@@ -55,6 +73,7 @@ export default function PresentacionesPage() {
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [unidadSeleccionada, setUnidadSeleccionada] = useState("");
+  const [temaGenerando, setTemaGenerando] = useState("");
 
   const semestres = Object.keys(materiasPorSemestre);
   const materias = semestreSeleccionado
@@ -89,224 +108,218 @@ export default function PresentacionesPage() {
 
   const generarPresentacion = async (tema: SemanaMateria) => {
     const temaLimpio = limpiarTema(tema.tema);
-    const objetivo =
-      datosMateria?.objetivoEspecifico ||
-      datosMateria?.objetivoGeneral ||
-      `Comprender y aplicar ${temaLimpio} en la asignatura ${materiaSeleccionada}.`;
-    const estrategia =
-      datosMateria?.estrategia ||
-      "Aprendizaje guiado, análisis de ejemplos, participación y trabajo colaborativo.";
-    const fuentes =
-      datosMateria?.fuentes ||
-      "Bibliografía básica de la asignatura, apuntes de clase y recursos académicos digitales.";
-    const conceptos = temaLimpio
-      .split(/,| y |:|;/)
-      .map((concepto) => concepto.trim())
-      .filter(Boolean)
-      .slice(0, 5);
-    const conceptosClave =
-      conceptos.length > 0 ? conceptos : [temaLimpio, materiaSeleccionada, "aplicación práctica"];
 
-    const pptx = new pptxgen();
-    pptx.layout = "LAYOUT_WIDE";
-    pptx.author = "Planeaciones Nautica";
-    pptx.subject = materiaSeleccionada;
-    pptx.title = `${materiaSeleccionada} - ${temaLimpio}`;
-    pptx.company = "Universidad Maritima y Portuaria de Mexico";
-    pptx.theme = {
-      headFontFace: "Arial",
-      bodyFontFace: "Arial",
-    };
+    try {
+      setTemaGenerando(`${tema.semana}-${tema.tema}`);
+      const objetivo =
+        datosMateria?.objetivoEspecifico ||
+        datosMateria?.objetivoGeneral ||
+        `Comprender y aplicar ${temaLimpio} en la asignatura ${materiaSeleccionada}.`;
+      const temasRelacionados =
+        datosMateria?.semanas?.map(
+          (semana) => `${semana.semana}: ${limpiarTema(semana.tema)}`,
+        ) || [];
 
-    const colores = {
-      azul: "071A33",
-      dorado: "C8A45D",
-      blanco: "FFFFFF",
-      gris: "F4F6F8",
-      texto: "1F2937",
-    };
-
-    const agregarTitulo = (titulo: string, subtitulo?: string) => {
-      const slide = pptx.addSlide();
-      slide.background = { color: colores.blanco };
-      slide.addShape(pptx.ShapeType.rect, {
-        x: 0,
-        y: 0,
-        w: 13.333,
-        h: 0.28,
-        fill: { color: colores.dorado },
-        line: { color: colores.dorado },
+      const response = await fetch("/api/presentaciones", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          semestre: semestreSeleccionado,
+          materia: materiaSeleccionada,
+          unidad: `Unidad ${datosMateria?.unidad || "I"}`,
+          tema: temaLimpio,
+          objetivo,
+          temasRelacionados,
+        }),
       });
-      slide.addText(titulo, {
-        x: 0.6,
-        y: 0.45,
-        w: 12.1,
-        h: 0.45,
-        fontFace: "Arial",
-        fontSize: 22,
-        bold: true,
-        color: colores.azul,
-        margin: 0,
-      });
-      if (subtitulo) {
-        slide.addText(subtitulo, {
-          x: 0.6,
-          y: 0.96,
-          w: 12.1,
-          h: 0.35,
-          fontSize: 11,
-          color: "64748B",
-          margin: 0,
-        });
+
+      if (!response.ok) {
+        const data = (await response.json().catch(() => null)) as
+          | { error?: string }
+          | null;
+        alert(data?.error || "No se pudo generar el contenido IA.");
+        return;
       }
 
-      return slide;
-    };
+      const contenidoIA = (await response.json()) as PresentacionIA;
+      const diapositivas = contenidoIA.diapositivas || [];
 
-    const agregarLista = (
-      titulo: string,
-      puntos: string[],
-      subtitulo?: string,
-    ) => {
-      const slide = agregarTitulo(titulo, subtitulo);
-      slide.addText(puntos.map((punto) => `• ${punto}`).join("\n"), {
-        x: 0.85,
-        y: 1.55,
-        w: 11.8,
-        h: 4.9,
-        fontSize: 18,
-        color: colores.texto,
-        breakLine: false,
-        fit: "shrink",
-        valign: "middle",
+      if (diapositivas.length === 0) {
+        alert("La IA no devolvió diapositivas para la presentación.");
+        return;
+      }
+
+      const pptx = new pptxgen();
+      pptx.layout = "LAYOUT_WIDE";
+      pptx.author = "Planeaciones Nautica";
+      pptx.subject = materiaSeleccionada;
+      pptx.title = contenidoIA.titulo || `${materiaSeleccionada} - ${temaLimpio}`;
+      pptx.company = "Universidad Maritima y Portuaria de Mexico";
+      pptx.theme = {
+        headFontFace: "Arial",
+        bodyFontFace: "Arial",
+      };
+
+      const colores = {
+        azul: "071A33",
+        dorado: "C8A45D",
+        blanco: "FFFFFF",
+        gris: "F4F6F8",
+        texto: "1F2937",
+      };
+
+      const agregarTitulo = (titulo: string, subtitulo?: string) => {
+        const slide = pptx.addSlide();
+        slide.background = { color: colores.blanco };
+        slide.addShape(pptx.ShapeType.rect, {
+          x: 0,
+          y: 0,
+          w: 13.333,
+          h: 0.28,
+          fill: { color: colores.dorado },
+          line: { color: colores.dorado },
+        });
+        slide.addText(titulo, {
+          x: 0.6,
+          y: 0.45,
+          w: 12.1,
+          h: 0.45,
+          fontFace: "Arial",
+          fontSize: 22,
+          bold: true,
+          color: colores.azul,
+          margin: 0,
+          fit: "shrink",
+        });
+        if (subtitulo) {
+          slide.addText(subtitulo, {
+            x: 0.6,
+            y: 0.96,
+            w: 12.1,
+            h: 0.35,
+            fontSize: 11,
+            color: "64748B",
+            margin: 0,
+          });
+        }
+
+        return slide;
+      };
+
+      const agregarContenido = (diapositiva: DiapositivaIA, subtitulo?: string) => {
+        const slide = agregarTitulo(diapositiva.titulo, subtitulo);
+        slide.addShape(pptx.ShapeType.roundRect, {
+          x: 0.75,
+          y: 1.45,
+          w: 11.8,
+          h: 4.8,
+          rectRadius: 0.08,
+          fill: { color: colores.gris },
+          line: { color: "E2E8F0" },
+        });
+        slide.addText(
+          diapositiva.contenido
+            .flatMap((punto) => dividirTexto(`• ${punto}`, 115))
+            .join("\n"),
+          {
+            x: 1.05,
+            y: 1.75,
+            w: 11.2,
+            h: 4.15,
+            fontSize: 17,
+            color: colores.texto,
+            fit: "shrink",
+            valign: "middle",
+          },
+        );
+      };
+
+      const agregarPortada = () => {
+        const portada = pptx.addSlide();
+        portada.background = { color: colores.azul };
+        portada.addShape(pptx.ShapeType.rect, {
+          x: 0,
+          y: 0,
+          w: 13.333,
+          h: 0.35,
+          fill: { color: colores.dorado },
+          line: { color: colores.dorado },
+        });
+        portada.addText("Universidad Maritima y Portuaria de Mexico", {
+          x: 0.75,
+          y: 0.85,
+          w: 11.8,
+          h: 0.35,
+          fontSize: 16,
+          bold: true,
+          color: colores.dorado,
+          margin: 0,
+        });
+        portada.addText("Escuela Nautica Mercante de Tampico", {
+          x: 0.75,
+          y: 1.25,
+          w: 11.8,
+          h: 0.3,
+          fontSize: 13,
+          color: colores.blanco,
+          margin: 0,
+        });
+        portada.addText(contenidoIA.titulo || temaLimpio, {
+          x: 0.75,
+          y: 2.05,
+          w: 11.8,
+          h: 1.25,
+          fontSize: 34,
+          bold: true,
+          color: colores.blanco,
+          fit: "shrink",
+          margin: 0,
+        });
+        portada.addText(
+          contenidoIA.subtitulo || `${materiaSeleccionada} | ${semestreSeleccionado}`,
+          {
+            x: 0.75,
+            y: 3.55,
+            w: 11.8,
+            h: 0.4,
+            fontSize: 16,
+            color: colores.dorado,
+            margin: 0,
+          },
+        );
+        portada.addText("Cap. de Altura Luis Gonzaga Priego Gonzalez", {
+          x: 0.75,
+          y: 6.55,
+          w: 11.8,
+          h: 0.25,
+          fontSize: 11,
+          color: "CBD5E1",
+          margin: 0,
+        });
+      };
+
+      diapositivas.forEach((diapositiva, index) => {
+        if (index === 0 || diapositiva.tipo === "portada") {
+          agregarPortada();
+          return;
+        }
+
+        agregarContenido(diapositiva, `${materiaSeleccionada} | ${tema.semana}`);
       });
-    };
 
-    const agregarParrafo = (titulo: string, texto: string, subtitulo?: string) => {
-      const slide = agregarTitulo(titulo, subtitulo);
-      slide.addShape(pptx.ShapeType.roundRect, {
-        x: 0.75,
-        y: 1.45,
-        w: 11.8,
-        h: 4.8,
-        rectRadius: 0.08,
-        fill: { color: colores.gris },
-        line: { color: "E2E8F0" },
+      await pptx.writeFile({
+        fileName: `${nombreArchivoSeguro(materiaSeleccionada)}-${nombreArchivoSeguro(
+          temaLimpio,
+        )}.pptx`,
       });
-      slide.addText(dividirTexto(texto, 110).join("\n"), {
-        x: 1.05,
-        y: 1.75,
-        w: 11.2,
-        h: 4.15,
-        fontSize: 17,
-        color: colores.texto,
-        fit: "shrink",
-        valign: "middle",
-      });
-    };
-
-    const portada = pptx.addSlide();
-    portada.background = { color: colores.azul };
-    portada.addShape(pptx.ShapeType.rect, {
-      x: 0,
-      y: 0,
-      w: 13.333,
-      h: 0.35,
-      fill: { color: colores.dorado },
-      line: { color: colores.dorado },
-    });
-    portada.addText("Universidad Maritima y Portuaria de Mexico", {
-      x: 0.75,
-      y: 0.85,
-      w: 11.8,
-      h: 0.35,
-      fontSize: 16,
-      bold: true,
-      color: colores.dorado,
-      margin: 0,
-    });
-    portada.addText("Escuela Nautica Mercante de Tampico", {
-      x: 0.75,
-      y: 1.25,
-      w: 11.8,
-      h: 0.3,
-      fontSize: 13,
-      color: colores.blanco,
-      margin: 0,
-    });
-    portada.addText(temaLimpio, {
-      x: 0.75,
-      y: 2.05,
-      w: 11.8,
-      h: 1.25,
-      fontSize: 34,
-      bold: true,
-      color: colores.blanco,
-      fit: "shrink",
-      margin: 0,
-    });
-    portada.addText(`${materiaSeleccionada} | ${semestreSeleccionado}`, {
-      x: 0.75,
-      y: 3.55,
-      w: 11.8,
-      h: 0.4,
-      fontSize: 16,
-      color: colores.dorado,
-      margin: 0,
-    });
-    portada.addText("Cap. de Altura Luis Gonzaga Priego Gonzalez", {
-      x: 0.75,
-      y: 6.55,
-      w: 11.8,
-      h: 0.25,
-      fontSize: 11,
-      color: "CBD5E1",
-      margin: 0,
-    });
-
-    agregarParrafo("Objetivo del tema", objetivo, tema.semana);
-    agregarParrafo(
-      "Introduccion",
-      `El tema ${temaLimpio} permite conectar los aprendizajes de ${materiaSeleccionada} con situaciones academicas, tecnicas y nauticas que fortalecen la formacion profesional del cadete.`,
-    );
-    agregarLista("Conceptos clave", conceptosClave);
-    agregarParrafo(
-      "Desarrollo",
-      `El desarrollo del tema se organiza mediante ${estrategia.toLowerCase()} La explicacion debe relacionar conceptos, procedimientos y criterios de aplicacion para que el cadete comprenda el uso del tema en contextos reales.`,
-    );
-    agregarLista("Desarrollo guiado", [
-      `Identificar los elementos principales de ${temaLimpio}.`,
-      "Relacionar la teoria con ejercicios o situaciones de clase.",
-      "Analizar errores frecuentes y criterios de solucion.",
-      "Aplicar el contenido en un ejemplo vinculado con la formacion nautica.",
-    ]);
-    agregarLista("Ejemplos", [
-      `Ejemplo 1: resolver una situacion basica relacionada con ${temaLimpio}.`,
-      "Ejemplo 2: interpretar el resultado y justificar el procedimiento.",
-      "Ejemplo 3: comparar una aplicacion academica con una aplicacion profesional.",
-    ]);
-    agregarLista("Actividad en clase", [
-      "Formar equipos de trabajo para analizar un caso breve.",
-      `Elaborar una evidencia relacionada con ${temaLimpio}.`,
-      "Presentar conclusiones y recibir retroalimentacion.",
-    ]);
-    agregarLista("Preguntas de repaso", [
-      `Que conceptos son indispensables para comprender ${temaLimpio}?`,
-      `Como se aplica ${temaLimpio} en ${materiaSeleccionada}?`,
-      "Que errores deben evitarse al resolver ejercicios del tema?",
-      "Que relacion tiene el tema con la siguiente sesion?",
-    ]);
-    agregarParrafo(
-      "Cierre",
-      `Para cerrar la sesion, los cadetes sintetizan los aprendizajes sobre ${temaLimpio}, identifican su utilidad y vinculan el contenido con los temas siguientes de la asignatura.`,
-    );
-    agregarParrafo("Bibliografia", fuentes);
-
-    await pptx.writeFile({
-      fileName: `${nombreArchivoSeguro(materiaSeleccionada)}-${nombreArchivoSeguro(
-        temaLimpio,
-      )}.pptx`,
-    });
+    } catch (error) {
+      console.log(error);
+      alert("Error generando presentación IA profesional");
+    } finally {
+      setTemaGenerando("");
+    }
   };
 
   return (
@@ -322,7 +335,7 @@ export default function PresentacionesPage() {
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-200">
               Selecciona semestre, materia, unidad y tema para generar una
-              presentacion PowerPoint de 10 a 15 diapositivas.
+              presentacion IA profesional de 10 a 15 diapositivas.
             </p>
           </div>
           <a
@@ -447,6 +460,7 @@ export default function PresentacionesPage() {
                           key={`${tema.semana}-${tema.tema}`}
                           type="button"
                           onClick={() => generarPresentacion(tema)}
+                          disabled={temaGenerando === `${tema.semana}-${tema.tema}`}
                           className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-[#c8a45d] hover:shadow-lg"
                         >
                           <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#c8a45d]">
@@ -456,7 +470,9 @@ export default function PresentacionesPage() {
                             {limpiarTema(tema.tema)}
                           </span>
                           <span className="mt-2 block text-sm text-slate-500">
-                            Clic para generar presentacion PPTX.
+                            {temaGenerando === `${tema.semana}-${tema.tema}`
+                              ? "Generando contenido IA y PPTX..."
+                              : "Clic para generar presentacion IA profesional."}
                           </span>
                         </button>
                       ))}
