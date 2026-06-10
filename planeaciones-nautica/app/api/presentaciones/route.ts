@@ -33,9 +33,8 @@ const extraerTextoRespuesta = (data: unknown) => {
 const limpiarJson = (texto: string) =>
   texto
     .trim()
-    .replace(/^```json\s*/i, "")
-    .replace(/^```\s*/i, "")
-    .replace(/```$/i, "")
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
     .trim();
 
 const extraerErrorOpenAI = (responseBody: unknown, status: number, statusText: string) => {
@@ -195,16 +194,39 @@ Formato JSON exacto:
   }
 
   const data = await response.json();
-  const texto = limpiarJson(extraerTextoRespuesta(data));
+  const contenido = extraerTextoRespuesta(data);
+  const texto = limpiarJson(contenido);
+
+  console.log("OPENAI RAW CONTENT:", contenido);
 
   try {
     const parsed = JSON.parse(texto);
     return Response.json(parsed);
-  } catch {
+  } catch (error) {
+    const parseError = {
+      message:
+        error instanceof Error
+          ? error.message
+          : "No se pudo parsear la respuesta de OpenAI.",
+      status: 502,
+      code: "invalid_json",
+      type: "parse_error",
+      response: {
+        contenidoRecibido: contenido,
+        contenidoLimpio: texto,
+        errorParseo:
+          error instanceof Error
+            ? { name: error.name, message: error.message, stack: error.stack }
+            : error,
+        respuestaOpenAICompleta: data,
+      },
+    };
+
+    console.error("OPENAI ERROR:", parseError);
+
     return Response.json(
       {
-        error: "La respuesta de OpenAI no tuvo formato JSON válido.",
-        raw: texto,
+        error: parseError,
       },
       { status: 502 },
     );
