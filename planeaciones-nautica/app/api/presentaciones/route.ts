@@ -7,6 +7,60 @@ type SolicitudPresentacion = {
   temasRelacionados?: string[];
 };
 
+const presentacionSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["titulo", "subtitulo", "diapositivas"],
+  properties: {
+    titulo: { type: "string" },
+    subtitulo: { type: "string" },
+    diapositivas: {
+      type: "array",
+      minItems: 15,
+      maxItems: 25,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["titulo", "contenido", "notas", "tipo", "fuentes"],
+        properties: {
+          titulo: { type: "string" },
+          contenido: {
+            type: "array",
+            minItems: 1,
+            items: { type: "string" },
+          },
+          notas: { type: "string" },
+          tipo: {
+            type: "string",
+            enum: [
+              "portada",
+              "objetivo",
+              "contenido",
+              "ejemplo",
+              "actividad",
+              "repaso",
+              "resumen",
+              "bibliografia",
+            ],
+          },
+          fuentes: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["titulo", "url"],
+              properties: {
+                titulo: { type: "string" },
+                url: { type: "string" },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+} as const;
+
 const extraerTextoRespuesta = (data: unknown) => {
   const response = data as {
     output_text?: string;
@@ -29,13 +83,6 @@ const extraerTextoRespuesta = (data: unknown) => {
       .join("\n") || ""
   );
 };
-
-const limpiarJson = (texto: string) =>
-  texto
-    .trim()
-    .replace(/```json/gi, "")
-    .replace(/```/g, "")
-    .trim();
 
 const extraerErrorOpenAI = (responseBody: unknown, status: number, statusText: string) => {
   const body = responseBody as {
@@ -101,36 +148,14 @@ Instrucciones obligatorias:
 4. Incluye contenido especifico del tema seleccionado, con precision academica y nivel universitario docente.
 5. Si el tema puede relacionarse con el ambito maritimo, nautico, portuario o de marina mercante, incluye ejemplos aplicados y casos de estudio.
 6. Para cada diapositiva de desarrollo, incluye de 4 a 7 puntos sustantivos con datos, explicaciones, formulas, pasos o criterios de interpretacion.
-7. Incluye al menos 2 diapositivas con tablas comparativas o esquemas textuales cuando aplique.
-8. Incluye diagramas descritos como pasos, procesos, relaciones causa-efecto o flujos.
-9. Sugiere imagenes reales relacionadas mediante URLs publicas y confiables cuando sea posible, preferentemente de Wikimedia Commons, NOAA, NASA, IMO, IHO, universidades, organismos publicos o fuentes oficiales. No inventes URLs.
-10. Incluye bibliografia automatica con URLs verificables en la ultima diapositiva.
-11. Devuelve SOLO JSON valido, sin markdown.
-12. La presentacion debe tener entre 15 y 25 diapositivas.
-13. La diapositiva 1 debe ser portada institucional.
-14. La diapositiva 2 debe ser objetivos de aprendizaje.
-15. Las diapositivas intermedias deben desarrollar el tema con profundidad suficiente para impartir clase.
-16. Incluye diapositivas para ejemplos aplicados, casos de estudio, actividad en clase, preguntas de repaso, conclusiones y bibliografia.
-
-Formato JSON exacto:
-{
-  "titulo": "string",
-  "subtitulo": "string",
-  "bibliografia": [
-    { "titulo": "string", "url": "string", "descripcion": "string" }
-  ],
-  "diapositivas": [
-    {
-      "tipo": "portada|objetivos|introduccion|conceptos|desarrollo|tabla|diagrama|formula|ejemplos|caso|actividad|preguntas|conclusiones|bibliografia",
-      "titulo": "string",
-      "contenido": ["string"],
-      "tabla": [["Encabezado 1", "Encabezado 2"], ["Dato 1", "Dato 2"]],
-      "imagenUrl": "string o null",
-      "pieImagen": "string o null",
-      "notas": "string"
-    }
-  ]
-}
+7. Incluye esquemas textuales, formulas, comparaciones y pasos dentro de los arreglos de contenido cuando aplique.
+8. Incluye bibliografia automatica con URLs verificables en la ultima diapositiva.
+9. La presentacion debe tener entre 15 y 25 diapositivas.
+10. La diapositiva 1 debe ser portada institucional.
+11. La diapositiva 2 debe ser objetivos de aprendizaje.
+12. Las diapositivas intermedias deben desarrollar el tema con profundidad suficiente para impartir clase.
+13. Incluye diapositivas para ejemplos aplicados, casos de estudio, actividad en clase, preguntas de repaso, conclusiones y bibliografia.
+14. Respeta estrictamente el esquema JSON solicitado por la API. No uses markdown ni bloques de codigo.
 `;
 
   let response: Response;
@@ -146,6 +171,14 @@ Formato JSON exacto:
         model: process.env.OPENAI_PRESENTACIONES_MODEL || "gpt-4o-mini",
         tools: [{ type: "web_search_preview" }],
         input: prompt,
+        text: {
+          format: {
+            type: "json_schema",
+            name: "presentacion_academica",
+            strict: true,
+            schema: presentacionSchema,
+          },
+        },
         temperature: 0.3,
       }),
     });
@@ -195,12 +228,11 @@ Formato JSON exacto:
 
   const data = await response.json();
   const contenido = extraerTextoRespuesta(data);
-  const texto = limpiarJson(contenido);
 
   console.log("OPENAI RAW CONTENT:", contenido);
 
   try {
-    const parsed = JSON.parse(texto);
+    const parsed = JSON.parse(contenido);
     return Response.json(parsed);
   } catch (error) {
     const parseError = {
@@ -213,7 +245,6 @@ Formato JSON exacto:
       type: "parse_error",
       response: {
         contenidoRecibido: contenido,
-        contenidoLimpio: texto,
         errorParseo:
           error instanceof Error
             ? { name: error.name, message: error.message, stack: error.stack }
