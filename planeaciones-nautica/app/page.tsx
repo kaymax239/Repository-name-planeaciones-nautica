@@ -31,6 +31,9 @@ type DiapositivaIA = {
   tipo: string;
   titulo: string;
   contenido: string[];
+  tabla?: string[][];
+  imagenUrl?: string | null;
+  pieImagen?: string | null;
   notas?: string;
 };
 
@@ -108,6 +111,29 @@ const formatearErrorOpenAI = (error: unknown) => {
       : JSON.stringify(error, null, 2);
 
   return resumen;
+};
+
+const obtenerImagenComoDataUri = async (url?: string | null) => {
+  if (!url) {
+    return null;
+  }
+
+  const response = await fetch(
+    `/api/presentaciones/imagen?url=${encodeURIComponent(url)}`,
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const blob = await response.blob();
+
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
 };
 
 const contieneAlgunaPalabra = (texto: string, palabras: string[]) => {
@@ -831,12 +857,15 @@ fecha: fechaInicio,
         return slide;
       };
 
-      const agregarContenido = (diapositiva: DiapositivaIA, subtitulo?: string) => {
+      const agregarContenido = async (
+        diapositiva: DiapositivaIA,
+        subtitulo?: string,
+      ) => {
         const slide = agregarEncabezado(diapositiva.titulo, subtitulo);
         slide.addShape(pptx.ShapeType.roundRect, {
           x: 0.75,
           y: 1.45,
-          w: 11.8,
+          w: diapositiva.imagenUrl ? 7.2 : 11.8,
           h: 4.8,
           rectRadius: 0.08,
           fill: { color: colores.gris },
@@ -849,7 +878,7 @@ fecha: fechaInicio,
           {
           x: 1.05,
           y: 1.75,
-          w: 11.2,
+          w: diapositiva.imagenUrl ? 6.6 : 11.2,
           h: 4.15,
           fontSize: 17,
           color: colores.texto,
@@ -857,6 +886,43 @@ fecha: fechaInicio,
           valign: "middle",
           },
         );
+
+        if (diapositiva.tabla && diapositiva.tabla.length > 0) {
+          const tablaTexto = diapositiva.tabla
+            .map((fila) => fila.join("  |  "))
+            .join("\n");
+          slide.addText(tablaTexto, {
+            x: 1.05,
+            y: 5.95,
+            w: 11.2,
+            h: 0.8,
+            fontSize: 10,
+            color: "475569",
+            fit: "shrink",
+          });
+        }
+
+        const imageData = await obtenerImagenComoDataUri(diapositiva.imagenUrl);
+        if (imageData) {
+          slide.addImage({
+            data: imageData,
+            x: 8.25,
+            y: 1.7,
+            w: 4.2,
+            h: 3.15,
+          });
+          if (diapositiva.pieImagen) {
+            slide.addText(diapositiva.pieImagen, {
+              x: 8.25,
+              y: 4.95,
+              w: 4.2,
+              h: 0.6,
+              fontSize: 8,
+              color: "64748B",
+              fit: "shrink",
+            });
+          }
+        }
       };
 
       const agregarPortada = () => {
@@ -923,14 +989,17 @@ fecha: fechaInicio,
         });
       };
 
-      diapositivas.forEach((diapositiva, index) => {
+      for (const [index, diapositiva] of diapositivas.entries()) {
         if (index === 0 || diapositiva.tipo === "portada") {
           agregarPortada();
-          return;
+          continue;
         }
 
-        agregarContenido(diapositiva, `${materiaSeleccionada} | Unidad ${unidad}`);
-      });
+        await agregarContenido(
+          diapositiva,
+          `${materiaSeleccionada} | Unidad ${unidad}`,
+        );
+      }
 
       await pptx.writeFile({
         fileName: `${nombreArchivoSeguro(materiaSeleccionada)}-unidad-${nombreArchivoSeguro(

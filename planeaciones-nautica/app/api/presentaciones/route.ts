@@ -96,17 +96,22 @@ Contexto:
 - Temas relacionados de la planeacion: ${(body.temasRelacionados || []).join("; ")}
 
 Instrucciones obligatorias:
-1. Antes de redactar, usa busqueda web para contrastar informacion reciente y fuentes confiables.
-2. Evita texto generico como "aprendizaje guiado", "trabajo colaborativo" o "el desarrollo del contenido se basa".
-3. Incluye contenido especifico del tema seleccionado, con precision academica.
-4. Si el tema puede relacionarse con el ambito maritimo, nautico, portuario o de marina mercante, incluye ejemplos aplicados.
-5. Devuelve SOLO JSON valido, sin markdown.
-6. La presentacion debe tener entre 10 y 15 diapositivas.
-7. La diapositiva 1 debe ser portada institucional.
-8. La diapositiva 2 debe ser objetivos de aprendizaje.
-9. Las diapositivas 3 a 10 deben desarrollar el tema con detalle.
-10. Incluye diapositivas para ejemplos aplicados, actividad en clase, preguntas de repaso, resumen y bibliografia.
-11. La ultima diapositiva debe ser Bibliografia con URLs.
+1. Antes de redactar, usa busqueda web real para contrastar informacion reciente y fuentes confiables.
+2. Extrae informacion actualizada del tema: conceptos, definiciones tecnicas, procedimientos, formulas, tablas, aplicaciones, ejemplos y referencias.
+3. Evita texto generico como "aprendizaje guiado", "trabajo colaborativo" o "el desarrollo del contenido se basa".
+4. Incluye contenido especifico del tema seleccionado, con precision academica y nivel universitario docente.
+5. Si el tema puede relacionarse con el ambito maritimo, nautico, portuario o de marina mercante, incluye ejemplos aplicados y casos de estudio.
+6. Para cada diapositiva de desarrollo, incluye de 4 a 7 puntos sustantivos con datos, explicaciones, formulas, pasos o criterios de interpretacion.
+7. Incluye al menos 2 diapositivas con tablas comparativas o esquemas textuales cuando aplique.
+8. Incluye diagramas descritos como pasos, procesos, relaciones causa-efecto o flujos.
+9. Sugiere imagenes reales relacionadas mediante URLs publicas y confiables cuando sea posible, preferentemente de Wikimedia Commons, NOAA, NASA, IMO, IHO, universidades, organismos publicos o fuentes oficiales. No inventes URLs.
+10. Incluye bibliografia automatica con URLs verificables en la ultima diapositiva.
+11. Devuelve SOLO JSON valido, sin markdown.
+12. La presentacion debe tener entre 15 y 25 diapositivas.
+13. La diapositiva 1 debe ser portada institucional.
+14. La diapositiva 2 debe ser objetivos de aprendizaje.
+15. Las diapositivas intermedias deben desarrollar el tema con profundidad suficiente para impartir clase.
+16. Incluye diapositivas para ejemplos aplicados, casos de estudio, actividad en clase, preguntas de repaso, conclusiones y bibliografia.
 
 Formato JSON exacto:
 {
@@ -117,9 +122,12 @@ Formato JSON exacto:
   ],
   "diapositivas": [
     {
-      "tipo": "portada|objetivos|desarrollo|ejemplos|actividad|preguntas|resumen|bibliografia",
+      "tipo": "portada|objetivos|introduccion|conceptos|desarrollo|tabla|diagrama|formula|ejemplos|caso|actividad|preguntas|conclusiones|bibliografia",
       "titulo": "string",
       "contenido": ["string"],
+      "tabla": [["Encabezado 1", "Encabezado 2"], ["Dato 1", "Dato 2"]],
+      "imagenUrl": "string o null",
+      "pieImagen": "string o null",
       "notas": "string"
     }
   ]
