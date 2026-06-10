@@ -69,6 +69,29 @@ const dividirTexto = (texto: string, maximo: number) => {
   return lineas;
 };
 
+const formatearErrorOpenAI = (error: unknown) => {
+  const errorData = error as {
+    message?: unknown;
+    status?: unknown;
+    code?: unknown;
+    type?: unknown;
+  };
+  const resumen =
+    typeof error === "object" && error !== null
+      ? [
+          "OpenAI Error",
+          `Status: ${errorData.status ?? "N/A"}`,
+          `Code: ${errorData.code ?? "N/A"}`,
+          `Type: ${errorData.type ?? "N/A"}`,
+          `Message: ${errorData.message ?? "Error desconocido"}`,
+          "",
+          JSON.stringify(error, null, 2),
+        ].join("\n")
+      : JSON.stringify(error, null, 2);
+
+  return resumen;
+};
+
 export default function PresentacionesPage() {
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
@@ -137,9 +160,12 @@ export default function PresentacionesPage() {
 
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as
-          | { error?: string }
+          | { error?: unknown }
           | null;
-        alert(data?.error || "No se pudo generar el contenido IA.");
+        const error =
+          data?.error || "No se pudo generar el contenido IA.";
+        console.error("OPENAI ERROR:", error);
+        alert(formatearErrorOpenAI(error));
         return;
       }
 
@@ -315,8 +341,8 @@ export default function PresentacionesPage() {
         )}.pptx`,
       });
     } catch (error) {
-      console.log(error);
-      alert("Error generando presentación IA profesional");
+      console.error("OPENAI ERROR:", error);
+      alert(formatearErrorOpenAI(error));
     } finally {
       setTemaGenerando("");
     }

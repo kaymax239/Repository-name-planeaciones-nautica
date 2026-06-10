@@ -38,6 +38,28 @@ const limpiarJson = (texto: string) =>
     .replace(/```$/i, "")
     .trim();
 
+const extraerErrorOpenAI = (responseBody: unknown, status: number, statusText: string) => {
+  const body = responseBody as {
+    error?: {
+      message?: unknown;
+      code?: unknown;
+      type?: unknown;
+    };
+  };
+  const message =
+    typeof body?.error?.message === "string"
+      ? body.error.message
+      : statusText || "OpenAI no pudo generar la presentación.";
+
+  return {
+    message,
+    status,
+    code: typeof body?.error?.code === "string" ? body.error.code : null,
+    type: typeof body?.error?.type === "string" ? body.error.type : null,
+    response: responseBody,
+  };
+};
+
 export async function POST(request: Request) {
   const apiKey = process.env.OPENAI_API_KEY;
 
@@ -104,19 +126,41 @@ Formato JSON exacto:
 }
 `;
 
-  const response = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: process.env.OPENAI_PRESENTACIONES_MODEL || "gpt-4o-mini",
-      tools: [{ type: "web_search_preview" }],
-      input: prompt,
-      temperature: 0.3,
-    }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.OPENAI_PRESENTACIONES_MODEL || "gpt-4o-mini",
+        tools: [{ type: "web_search_preview" }],
+        input: prompt,
+        temperature: 0.3,
+      }),
+    });
+  } catch (error) {
+    const openAIError = {
+      message:
+        error instanceof Error
+          ? error.message
+          : "No se pudo conectar con OpenAI.",
+      status: 500,
+      code: null,
+      type: "network_error",
+      response:
+        error instanceof Error
+          ? { name: error.name, message: error.message, stack: error.stack }
+          : error,
+    };
+
+    console.error("OPENAI ERROR:", openAIError);
+
+    return Response.json({ error: openAIError }, { status: 502 });
+  }
 
   if (!response.ok) {
     const responseText = await response.text();
@@ -128,21 +172,13 @@ Formato JSON exacto:
       responseBody = responseText;
     }
 
-    const errorMessage =
-      typeof responseBody === "object" &&
-      responseBody !== null &&
-      "error" in responseBody &&
-      typeof (responseBody as { error?: { message?: unknown } }).error
-        ?.message === "string"
-        ? (responseBody as { error: { message: string } }).error.message
-        : response.statusText || "OpenAI no pudo generar la presentación.";
-    const openAIError = {
-      message: errorMessage,
-      status: response.status,
-      response: responseBody,
-    };
+    const openAIError = extraerErrorOpenAI(
+      responseBody,
+      response.status,
+      response.statusText,
+    );
 
-    console.error("OpenAI presentations error", openAIError);
+    console.error("OPENAI ERROR:", openAIError);
 
     return Response.json(
       { error: openAIError },
