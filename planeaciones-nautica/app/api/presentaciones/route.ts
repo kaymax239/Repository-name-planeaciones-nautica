@@ -119,9 +119,33 @@ Formato JSON exacto:
   });
 
   if (!response.ok) {
-    const detail = await response.text();
+    const responseText = await response.text();
+    let responseBody: unknown = responseText;
+
+    try {
+      responseBody = JSON.parse(responseText);
+    } catch {
+      responseBody = responseText;
+    }
+
+    const errorMessage =
+      typeof responseBody === "object" &&
+      responseBody !== null &&
+      "error" in responseBody &&
+      typeof (responseBody as { error?: { message?: unknown } }).error
+        ?.message === "string"
+        ? (responseBody as { error: { message: string } }).error.message
+        : response.statusText || "OpenAI no pudo generar la presentación.";
+    const openAIError = {
+      message: errorMessage,
+      status: response.status,
+      response: responseBody,
+    };
+
+    console.error("OpenAI presentations error", openAIError);
+
     return Response.json(
-      { error: "OpenAI no pudo generar la presentación.", detail },
+      { error: openAIError },
       { status: 502 },
     );
   }
