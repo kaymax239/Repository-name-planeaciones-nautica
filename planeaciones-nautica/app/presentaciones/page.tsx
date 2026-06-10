@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import pptxgen from "pptxgenjs";
 import { materiasPorSemestre } from "../data/materias";
 import { contenidosMaterias } from "../data/contenidosMaterias";
@@ -23,6 +23,9 @@ type DiapositivaIA = {
   tipo: string;
   titulo: string;
   contenido: string[];
+  tabla?: string[][];
+  imagenUrl?: string | null;
+  pieImagen?: string | null;
   notas?: string;
 };
 
@@ -92,6 +95,29 @@ const formatearErrorOpenAI = (error: unknown) => {
   return resumen;
 };
 
+const obtenerImagenComoDataUri = async (url?: string | null) => {
+  if (!url) {
+    return null;
+  }
+
+  const response = await fetch(
+    `/api/presentaciones/imagen?url=${encodeURIComponent(url)}`,
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const blob = await response.blob();
+
+  return await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(String(reader.result));
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+};
+
 export default function PresentacionesPage() {
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
@@ -117,6 +143,23 @@ export default function PresentacionesPage() {
       ]
     : [];
   const unidadActual = unidades.find((unidad) => unidad.id === unidadSeleccionada);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const semestre = params.get("semestre") || "";
+    const materia = params.get("materia") || "";
+    const materiasDelSemestre = semestre
+      ? materiasPorSemestre[semestre as keyof typeof materiasPorSemestre] || []
+      : [];
+
+    if (semestre && materiasDelSemestre.length > 0) {
+      setSemestreSeleccionado(semestre);
+    }
+
+    if (materia && materiasDelSemestre.includes(materia)) {
+      setMateriaSeleccionada(materia);
+    }
+  }, []);
 
   const seleccionarSemestre = (semestre: string) => {
     setSemestreSeleccionado(semestre);
@@ -234,12 +277,15 @@ export default function PresentacionesPage() {
         return slide;
       };
 
-      const agregarContenido = (diapositiva: DiapositivaIA, subtitulo?: string) => {
+      const agregarContenido = async (
+        diapositiva: DiapositivaIA,
+        subtitulo?: string,
+      ) => {
         const slide = agregarTitulo(diapositiva.titulo, subtitulo);
         slide.addShape(pptx.ShapeType.roundRect, {
           x: 0.75,
           y: 1.45,
-          w: 11.8,
+          w: diapositiva.imagenUrl ? 7.2 : 11.8,
           h: 4.8,
           rectRadius: 0.08,
           fill: { color: colores.gris },
@@ -252,7 +298,7 @@ export default function PresentacionesPage() {
           {
             x: 1.05,
             y: 1.75,
-            w: 11.2,
+            w: diapositiva.imagenUrl ? 6.6 : 11.2,
             h: 4.15,
             fontSize: 17,
             color: colores.texto,
@@ -260,6 +306,43 @@ export default function PresentacionesPage() {
             valign: "middle",
           },
         );
+
+        if (diapositiva.tabla && diapositiva.tabla.length > 0) {
+          const tablaTexto = diapositiva.tabla
+            .map((fila) => fila.join("  |  "))
+            .join("\n");
+          slide.addText(tablaTexto, {
+            x: 1.05,
+            y: 5.95,
+            w: 11.2,
+            h: 0.8,
+            fontSize: 10,
+            color: "475569",
+            fit: "shrink",
+          });
+        }
+
+        const imageData = await obtenerImagenComoDataUri(diapositiva.imagenUrl);
+        if (imageData) {
+          slide.addImage({
+            data: imageData,
+            x: 8.25,
+            y: 1.7,
+            w: 4.2,
+            h: 3.15,
+          });
+          if (diapositiva.pieImagen) {
+            slide.addText(diapositiva.pieImagen, {
+              x: 8.25,
+              y: 4.95,
+              w: 4.2,
+              h: 0.6,
+              fontSize: 8,
+              color: "64748B",
+              fit: "shrink",
+            });
+          }
+        }
       };
 
       const agregarPortada = () => {
@@ -326,14 +409,14 @@ export default function PresentacionesPage() {
         });
       };
 
-      diapositivas.forEach((diapositiva, index) => {
+      for (const [index, diapositiva] of diapositivas.entries()) {
         if (index === 0 || diapositiva.tipo === "portada") {
           agregarPortada();
-          return;
+          continue;
         }
 
-        agregarContenido(diapositiva, `${materiaSeleccionada} | ${tema.semana}`);
-      });
+        await agregarContenido(diapositiva, `${materiaSeleccionada} | ${tema.semana}`);
+      }
 
       await pptx.writeFile({
         fileName: `${nombreArchivoSeguro(materiaSeleccionada)}-${nombreArchivoSeguro(
@@ -440,6 +523,9 @@ export default function PresentacionesPage() {
                   <h2 className="mt-2 text-2xl font-black text-[#071a33]">
                     {materiaSeleccionada}
                   </h2>
+                  <p className="mt-1 text-sm font-bold uppercase tracking-[0.16em] text-slate-500">
+                    {semestreSeleccionado}
+                  </p>
                   {!datosMateria ? (
                     <p className="mt-4 rounded-2xl bg-amber-50 p-4 text-sm text-amber-800">
                       No hay contenidos registrados para esta materia.
