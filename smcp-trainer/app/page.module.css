@@ -166,6 +166,53 @@
   padding: 28px;
 }
 
+.scenarioSelector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.scenarioTab {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid #dbe4ef;
+  border-radius: 18px;
+  background: #ffffff;
+  color: #0f172a;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.scenarioTab span {
+  color: #0284c7;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.scenarioTab strong {
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.scenarioTab small {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.activeScenarioTab {
+  border-color: #0284c7;
+  background: #e0f2fe;
+  box-shadow: 0 14px 32px rgba(2, 132, 199, 0.18);
+}
+
 .sectionHeader {
   display: grid;
   gap: 8px;
@@ -266,6 +313,17 @@
 
 .cadetLine span {
   color: #0369a1;
+}
+
+.officerLine {
+  margin-right: 24px;
+  margin-left: 24px;
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.officerLine span {
+  color: #334155;
 }
 
 .answerList {
@@ -411,6 +469,30 @@
   transition: width 240ms ease;
 }
 
+.progressStats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  border: 1px solid #dbe4ef;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.progressStats span {
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.progressStats strong {
+  color: #0f172a;
+  text-align: right;
+}
+
 .futurePanel ul {
   display: grid;
   gap: 10px;
@@ -421,7 +503,8 @@
 @media (hover: hover) and (pointer: fine) {
   .actionButton:hover,
   .actionButtonSecondary:hover,
-  .submitButton:hover:not(:disabled) {
+  .submitButton:hover:not(:disabled),
+  .scenarioTab:hover {
     transform: translateY(-2px);
   }
 
@@ -439,6 +522,10 @@
 
   .commandPanel {
     align-self: stretch;
+  }
+
+  .scenarioSelector {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -470,7 +557,8 @@
   }
 
   .captainLine,
-  .cadetLine {
+  .cadetLine,
+  .officerLine {
     margin-right: 0;
     margin-left: 0;
   }

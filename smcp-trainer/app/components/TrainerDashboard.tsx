@@ -5,35 +5,92 @@ import styles from "../page.module.css";
 import { plannedCapabilities, ranks, scenarios } from "../data/training";
 
 const initialRank = ranks[0];
-const firstScenario = scenarios[0];
 
 export default function TrainerDashboard() {
-  const [selectedAnswer, setSelectedAnswer] = useState("");
-  const [submittedAnswer, setSubmittedAnswer] = useState("");
-  const [xp, setXp] = useState(0);
+  const [activeScenarioId, setActiveScenarioId] = useState(scenarios[0].id);
+  const [selectedAnswers, setSelectedAnswers] = useState<
+    Record<string, string>
+  >({});
+  const [submittedAnswers, setSubmittedAnswers] = useState<
+    Record<string, string>
+  >({});
+  const [completedScenarioIds, setCompletedScenarioIds] = useState<string[]>(
+    [],
+  );
+
+  const activeScenario =
+    scenarios.find((scenario) => scenario.id === activeScenarioId) ??
+    scenarios[0];
+
+  const selectedAnswer = selectedAnswers[activeScenario.id] ?? "";
+  const submittedAnswer = submittedAnswers[activeScenario.id] ?? "";
+  const xp = useMemo(
+    () =>
+      scenarios
+        .filter((scenario) => completedScenarioIds.includes(scenario.id))
+        .reduce((total, scenario) => total + scenario.xpReward, 0),
+    [completedScenarioIds],
+  );
 
   const isSubmitted = submittedAnswer.length > 0;
   const isCorrect =
-    submittedAnswer === firstScenario.question.correctOptionId && isSubmitted;
+    submittedAnswer === activeScenario.question.correctOptionId && isSubmitted;
+
+  const currentRank = useMemo(
+    () =>
+      ranks.reduce(
+        (current, rank) => (xp >= rank.xpRequired ? rank : current),
+        initialRank,
+      ),
+    [xp],
+  );
 
   const nextRank = useMemo(
     () => ranks.find((rank) => rank.xpRequired > xp),
     [xp],
   );
 
+  const progressPercent = useMemo(() => {
+    if (!nextRank) {
+      return 100;
+    }
+
+    const rankSpan = nextRank.xpRequired - currentRank.xpRequired;
+    const earnedInRank = xp - currentRank.xpRequired;
+
+    return Math.round((earnedInRank / rankSpan) * 100);
+  }, [currentRank, nextRank, xp]);
+
+  function handleSelectAnswer(optionId: string) {
+    setSelectedAnswers((currentAnswers) => ({
+      ...currentAnswers,
+      [activeScenario.id]: optionId,
+    }));
+  }
+
+  function handleSelectScenario(scenarioId: string) {
+    setActiveScenarioId(scenarioId);
+  }
+
   function handleSubmit() {
     if (!selectedAnswer) {
       return;
     }
 
-    setSubmittedAnswer(selectedAnswer);
+    setSubmittedAnswers((currentAnswers) => ({
+      ...currentAnswers,
+      [activeScenario.id]: selectedAnswer,
+    }));
 
-    if (selectedAnswer === firstScenario.question.correctOptionId) {
-      setXp(firstScenario.xpReward);
-      return;
+    if (
+      selectedAnswer === activeScenario.question.correctOptionId &&
+      !completedScenarioIds.includes(activeScenario.id)
+    ) {
+      setCompletedScenarioIds((currentIds) => [
+        ...currentIds,
+        activeScenario.id,
+      ]);
     }
-
-    setXp(0);
   }
 
   return (
@@ -66,7 +123,7 @@ export default function TrainerDashboard() {
         <aside className={styles.commandPanel} aria-label="Current profile">
           <div>
             <span className={styles.panelLabel}>Current Rank</span>
-            <strong>{initialRank.title}</strong>
+            <strong>{currentRank.title}</strong>
           </div>
           <div>
             <span className={styles.panelLabel}>XP</span>
@@ -76,35 +133,72 @@ export default function TrainerDashboard() {
             <span className={styles.panelLabel}>Next Rank</span>
             <strong>{nextRank?.title ?? "Master Mariner"}</strong>
           </div>
+          <div>
+            <span className={styles.panelLabel}>Progress</span>
+            <strong>{progressPercent}%</strong>
+          </div>
         </aside>
       </section>
 
       <section className={styles.grid} id="training">
         <article className={styles.scenarioCard} id="scenarios">
+          <div className={styles.scenarioSelector}>
+            {scenarios.map((scenario, index) => {
+              const isActive = scenario.id === activeScenario.id;
+              const isComplete = completedScenarioIds.includes(scenario.id);
+
+              return (
+                <button
+                  className={`${styles.scenarioTab} ${
+                    isActive ? styles.activeScenarioTab : ""
+                  }`}
+                  key={scenario.id}
+                  onClick={() => handleSelectScenario(scenario.id)}
+                  type="button"
+                >
+                  <span>Scenario {String(index + 1).padStart(2, "0")}</span>
+                  <strong>{scenario.title}</strong>
+                  <small>
+                    {scenario.xpReward} XP
+                    {isComplete ? " earned" : " available"}
+                  </small>
+                </button>
+              );
+            })}
+          </div>
+
           <div className={styles.sectionHeader}>
-            <p className={styles.eyebrow}>Scenario 01</p>
-            <h2>{firstScenario.title}</h2>
-            <span>{firstScenario.category}</span>
+            <p className={styles.eyebrow}>Active simulator scenario</p>
+            <h2>{activeScenario.title}</h2>
+            <span>{activeScenario.category}</span>
           </div>
 
           <div className={styles.statusBar}>
-            <span>Difficulty: {firstScenario.difficulty}</span>
-            <span>Reward: {firstScenario.xpReward} XP</span>
+            <span>Difficulty: {activeScenario.difficulty}</span>
+            <span>Reward: {activeScenario.xpReward} XP</span>
+            <span>
+              Status:{" "}
+              {completedScenarioIds.includes(activeScenario.id)
+                ? "Completed"
+                : "Ready"}
+            </span>
           </div>
 
           <div className={styles.situationBlock}>
             <h3>Situation</h3>
-            <p>{firstScenario.situation}</p>
+            <p>{activeScenario.situation}</p>
           </div>
 
           <div className={styles.rolePlay}>
             <h3>Role play</h3>
-            {firstScenario.rolePlay.map((line, index) => (
+            {activeScenario.rolePlay.map((line, index) => (
               <div
                 className={`${styles.dialogueLine} ${
                   line.speaker === "Captain"
                     ? styles.captainLine
-                    : styles.cadetLine
+                    : line.speaker === "Officer"
+                      ? styles.officerLine
+                      : styles.cadetLine
                 }`}
                 key={`${line.speaker}-${index}`}
               >
@@ -115,9 +209,9 @@ export default function TrainerDashboard() {
           </div>
 
           <div className={styles.quiz}>
-            <h3>{firstScenario.question.prompt}</h3>
+            <h3>{activeScenario.question.prompt}</h3>
             <div className={styles.answerList}>
-              {firstScenario.question.options.map((option) => (
+              {activeScenario.question.options.map((option) => (
                 <label
                   className={`${styles.answerOption} ${
                     selectedAnswer === option.id ? styles.selectedOption : ""
@@ -129,7 +223,7 @@ export default function TrainerDashboard() {
                     name="scenario-answer"
                     value={option.id}
                     checked={selectedAnswer === option.id}
-                    onChange={() => setSelectedAnswer(option.id)}
+                    onChange={() => handleSelectAnswer(option.id)}
                   />
                   <span>{option.text}</span>
                 </label>
@@ -155,8 +249,8 @@ export default function TrainerDashboard() {
                 <strong>{isCorrect ? "Correct" : "Incorrect"}</strong>
                 <p>
                   {isCorrect
-                    ? firstScenario.question.correctFeedback
-                    : firstScenario.question.incorrectFeedback}
+                    ? activeScenario.question.correctFeedback
+                    : activeScenario.question.incorrectFeedback}
                 </p>
               </div>
             ) : null}
@@ -166,12 +260,12 @@ export default function TrainerDashboard() {
         <aside className={styles.sideColumn}>
           <section className={styles.rankPanel} id="rank">
             <div className={styles.sectionHeader}>
-              <p className={styles.eyebrow}>My Rank</p>
-              <h2>Rank ladder</h2>
+              <p className={styles.eyebrow}>Training Path</p>
+              <h2>Rank progression</h2>
             </div>
             <ol className={styles.rankList}>
               {ranks.map((rank) => {
-                const isCurrent = rank.title === initialRank.title;
+                const isCurrent = rank.title === currentRank.title;
                 const isUnlocked = xp >= rank.xpRequired;
 
                 return (
@@ -193,14 +287,29 @@ export default function TrainerDashboard() {
           <section className={styles.progressPanel} id="progress">
             <div className={styles.sectionHeader}>
               <p className={styles.eyebrow}>Progress</p>
-              <h2>Basic XP</h2>
+              <h2>Simulator dashboard</h2>
             </div>
-            <div className={styles.xpMeter} aria-label={`${xp} XP earned`}>
-              <span style={{ width: `${Math.min(xp, 100)}%` }} />
+            <div className={styles.progressStats}>
+              <span>Current XP</span>
+              <strong>{xp}</strong>
+            </div>
+            <div className={styles.progressStats}>
+              <span>Current Rank</span>
+              <strong>{currentRank.title}</strong>
+            </div>
+            <div className={styles.progressStats}>
+              <span>Next Rank</span>
+              <strong>{nextRank?.title ?? "Complete"}</strong>
+            </div>
+            <div
+              className={styles.xpMeter}
+              aria-label={`${progressPercent}% progress to next rank`}
+            >
+              <span style={{ width: `${progressPercent}%` }} />
             </div>
             <p>
-              All users begin as <strong>{initialRank.title}</strong>. Complete
-              scenarios to earn XP and prepare for future rank advancement.
+              Progress to next rank: <strong>{progressPercent}%</strong>. All
+              users begin as <strong>{initialRank.title}</strong>.
             </p>
           </section>
 

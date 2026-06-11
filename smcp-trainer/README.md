@@ -8,11 +8,14 @@ English classes in a simulator style.
 - Main screen with the title "SMCP Trainer"
 - Professional maritime bridge-style visual theme
 - Main actions: Start Training, Scenarios, My Rank, Progress
-- First scenario: "Fire in the Engine Room"
-- English situation, Captain/Cadet role play, multiple-choice question, submit
-  action, Correct/Incorrect result, and basic XP
-- Initial rank ladder from Cadet Recruit to Master Mariner
-- Every user starts as Cadet Recruit
+- Three starter scenarios: "Fire in the Engine Room", "Man Overboard", and
+  "Pilot Boarding"
+- English situations, Captain/Officer/Cadet role play, multiple-choice
+  questions, submit action, Correct/Incorrect result, short feedback, and XP
+  rewards
+- Training Path from Cadet Recruit to Master Mariner
+- Current XP, current rank, next rank, and percentage progress
+- Every user starts as Cadet Recruit and all progress is local
 
 ## Future structure
 
