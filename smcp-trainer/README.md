@@ -7,10 +7,13 @@ English classes in a simulator style.
 
 - Main screen with the title "SMCP Trainer"
 - Professional maritime bridge-style visual theme
-- Main actions: Start Training, Scenarios, My Rank, Progress
 - Two main training routes:
   - Deck / Navigation Simulator
   - Marine Engineering Simulator
+- Clean home page with only the title, short subtitle, and route cards
+- Dedicated route pages:
+  - `/deck`
+  - `/engineering`
 - Deck / Navigation scenarios: "Fire in the Engine Room", "Man Overboard",
   "Pilot Boarding", "Collision Avoidance", and "VHF Communication"
 - Marine Engineering scenarios: "Auxiliary Generator Failure", "High
