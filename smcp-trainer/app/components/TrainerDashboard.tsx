@@ -2,33 +2,103 @@
 
 import { useMemo, useState } from "react";
 import styles from "../page.module.css";
-import { plannedCapabilities, ranks, scenarios } from "../data/training";
+import { plannedCapabilities, trainingRoutes } from "../data/training";
+import type { Rank, TrainingRoute } from "../data/training";
 
-const initialRank = ranks[0];
+type RouteId = TrainingRoute["id"];
+type AnswersByScenario = Record<string, string>;
+type CompletedScenariosByRoute = Record<RouteId, string[]>;
+
+const initialRoute = trainingRoutes[0];
+
+function getInitialCompletedScenarios(): CompletedScenariosByRoute {
+  return trainingRoutes.reduce((routes, route) => {
+    routes[route.id] = [];
+    return routes;
+  }, {} as CompletedScenariosByRoute);
+}
+
+function getRouteXp(route: TrainingRoute, completedScenarioIds: string[]) {
+  return route.scenarios
+    .filter((scenario) => completedScenarioIds.includes(scenario.id))
+    .reduce((total, scenario) => total + scenario.xpReward, 0);
+}
+
+function getCurrentRank(ranks: Rank[], xp: number) {
+  return ranks.reduce(
+    (current, rank) => (xp >= rank.xpRequired ? rank : current),
+    ranks[0],
+  );
+}
+
+function getNextRank(ranks: Rank[], xp: number) {
+  return ranks.find((rank) => rank.xpRequired > xp);
+}
+
+function getProgressPercent(
+  currentRank: Rank,
+  nextRank: Rank | undefined,
+  xp: number,
+) {
+  if (!nextRank) {
+    return 100;
+  }
+
+  const rankSpan = nextRank.xpRequired - currentRank.xpRequired;
+  const earnedInRank = xp - currentRank.xpRequired;
+
+  return Math.round((earnedInRank / rankSpan) * 100);
+}
 
 export default function TrainerDashboard() {
-  const [activeScenarioId, setActiveScenarioId] = useState(scenarios[0].id);
-  const [selectedAnswers, setSelectedAnswers] = useState<
-    Record<string, string>
-  >({});
-  const [submittedAnswers, setSubmittedAnswers] = useState<
-    Record<string, string>
-  >({});
-  const [completedScenarioIds, setCompletedScenarioIds] = useState<string[]>(
-    [],
+  const [activeRouteId, setActiveRouteId] = useState<RouteId>(initialRoute.id);
+  const [activeScenarioIds, setActiveScenarioIds] = useState<
+    Record<RouteId, string>
+  >({
+    "deck-navigation": trainingRoutes[0].scenarios[0].id,
+    "marine-engineering": trainingRoutes[1].scenarios[0].id,
+  });
+  const [selectedAnswers, setSelectedAnswers] = useState<AnswersByScenario>({});
+  const [submittedAnswers, setSubmittedAnswers] = useState<AnswersByScenario>(
+    {},
   );
+  const [completedScenarioIds, setCompletedScenarioIds] =
+    useState<CompletedScenariosByRoute>(getInitialCompletedScenarios);
 
+  const activeRoute =
+    trainingRoutes.find((route) => route.id === activeRouteId) ?? initialRoute;
+
+  const activeScenarioId =
+    activeScenarioIds[activeRoute.id] ?? activeRoute.scenarios[0].id;
   const activeScenario =
-    scenarios.find((scenario) => scenario.id === activeScenarioId) ??
-    scenarios[0];
+    activeRoute.scenarios.find((scenario) => scenario.id === activeScenarioId) ??
+    activeRoute.scenarios[0];
 
+  const activeCompletedScenarioIds = completedScenarioIds[activeRoute.id] ?? [];
   const selectedAnswer = selectedAnswers[activeScenario.id] ?? "";
   const submittedAnswer = submittedAnswers[activeScenario.id] ?? "";
-  const xp = useMemo(
+  const routeXp = getRouteXp(activeRoute, activeCompletedScenarioIds);
+  const currentRank = getCurrentRank(activeRoute.ranks, routeXp);
+  const nextRank = getNextRank(activeRoute.ranks, routeXp);
+  const progressPercent = getProgressPercent(currentRank, nextRank, routeXp);
+
+  const routeStats = useMemo(
     () =>
-      scenarios
-        .filter((scenario) => completedScenarioIds.includes(scenario.id))
-        .reduce((total, scenario) => total + scenario.xpReward, 0),
+      trainingRoutes.map((route) => {
+        const completedIds = completedScenarioIds[route.id] ?? [];
+        const xp = getRouteXp(route, completedIds);
+        const current = getCurrentRank(route.ranks, xp);
+        const next = getNextRank(route.ranks, xp);
+
+        return {
+          route,
+          completedCount: completedIds.length,
+          xp,
+          currentRank: current,
+          nextRank: next,
+          progressPercent: getProgressPercent(current, next, xp),
+        };
+      }),
     [completedScenarioIds],
   );
 
@@ -36,40 +106,22 @@ export default function TrainerDashboard() {
   const isCorrect =
     submittedAnswer === activeScenario.question.correctOptionId && isSubmitted;
 
-  const currentRank = useMemo(
-    () =>
-      ranks.reduce(
-        (current, rank) => (xp >= rank.xpRequired ? rank : current),
-        initialRank,
-      ),
-    [xp],
-  );
+  function handleSelectRoute(routeId: RouteId) {
+    setActiveRouteId(routeId);
+  }
 
-  const nextRank = useMemo(
-    () => ranks.find((rank) => rank.xpRequired > xp),
-    [xp],
-  );
-
-  const progressPercent = useMemo(() => {
-    if (!nextRank) {
-      return 100;
-    }
-
-    const rankSpan = nextRank.xpRequired - currentRank.xpRequired;
-    const earnedInRank = xp - currentRank.xpRequired;
-
-    return Math.round((earnedInRank / rankSpan) * 100);
-  }, [currentRank, nextRank, xp]);
+  function handleSelectScenario(scenarioId: string) {
+    setActiveScenarioIds((currentScenarioIds) => ({
+      ...currentScenarioIds,
+      [activeRoute.id]: scenarioId,
+    }));
+  }
 
   function handleSelectAnswer(optionId: string) {
     setSelectedAnswers((currentAnswers) => ({
       ...currentAnswers,
       [activeScenario.id]: optionId,
     }));
-  }
-
-  function handleSelectScenario(scenarioId: string) {
-    setActiveScenarioId(scenarioId);
   }
 
   function handleSubmit() {
@@ -84,12 +136,15 @@ export default function TrainerDashboard() {
 
     if (
       selectedAnswer === activeScenario.question.correctOptionId &&
-      !completedScenarioIds.includes(activeScenario.id)
+      !activeCompletedScenarioIds.includes(activeScenario.id)
     ) {
-      setCompletedScenarioIds((currentIds) => [
-        ...currentIds,
-        activeScenario.id,
-      ]);
+      setCompletedScenarioIds((currentCompletedIds) => ({
+        ...currentCompletedIds,
+        [activeRoute.id]: [
+          ...(currentCompletedIds[activeRoute.id] ?? []),
+          activeScenario.id,
+        ],
+      }));
     }
   }
 
@@ -99,9 +154,35 @@ export default function TrainerDashboard() {
         <div className={styles.heroContent}>
           <p className={styles.eyebrow}>Maritime English Simulator</p>
           <h1 id="page-title">SMCP Trainer</h1>
+
+          <div className={styles.routeCards} aria-label="Training routes">
+            {routeStats.map((stats) => {
+              const isActive = stats.route.id === activeRoute.id;
+
+              return (
+                <button
+                  className={`${styles.routeCard} ${
+                    isActive ? styles.activeRouteCard : ""
+                  }`}
+                  key={stats.route.id}
+                  onClick={() => handleSelectRoute(stats.route.id)}
+                  type="button"
+                >
+                  <span>{stats.route.shortTitle}</span>
+                  <strong>{stats.route.title}</strong>
+                  <p>{stats.route.summary}</p>
+                  <small>
+                    {stats.completedCount}/{stats.route.scenarios.length}{" "}
+                    scenarios completed
+                  </small>
+                </button>
+              );
+            })}
+          </div>
+
           <p className={styles.heroCopy}>
-            Practice Standard Marine Communication Phrases through structured
-            bridge-style role play, emergency scenarios, and rank progression.
+            Practice Standard Marine Communication Phrases through route-based
+            deck and engineering simulations with separate local progress.
           </p>
 
           <div className={styles.primaryActions} aria-label="Main actions">
@@ -122,16 +203,20 @@ export default function TrainerDashboard() {
 
         <aside className={styles.commandPanel} aria-label="Current profile">
           <div>
+            <span className={styles.panelLabel}>Active Route</span>
+            <strong>{activeRoute.shortTitle}</strong>
+          </div>
+          <div>
             <span className={styles.panelLabel}>Current Rank</span>
             <strong>{currentRank.title}</strong>
           </div>
           <div>
-            <span className={styles.panelLabel}>XP</span>
-            <strong>{xp}</strong>
+            <span className={styles.panelLabel}>Route XP</span>
+            <strong>{routeXp}</strong>
           </div>
           <div>
             <span className={styles.panelLabel}>Next Rank</span>
-            <strong>{nextRank?.title ?? "Master Mariner"}</strong>
+            <strong>{nextRank?.title ?? currentRank.title}</strong>
           </div>
           <div>
             <span className={styles.panelLabel}>Progress</span>
@@ -142,10 +227,18 @@ export default function TrainerDashboard() {
 
       <section className={styles.grid} id="training">
         <article className={styles.scenarioCard} id="scenarios">
+          <div className={styles.sectionHeader}>
+            <p className={styles.eyebrow}>Active training route</p>
+            <h2>{activeRoute.title}</h2>
+            <span>{activeRoute.scenarios.length} local scenarios</span>
+          </div>
+
           <div className={styles.scenarioSelector}>
-            {scenarios.map((scenario, index) => {
+            {activeRoute.scenarios.map((scenario, index) => {
               const isActive = scenario.id === activeScenario.id;
-              const isComplete = completedScenarioIds.includes(scenario.id);
+              const isComplete = activeCompletedScenarioIds.includes(
+                scenario.id,
+              );
 
               return (
                 <button
@@ -178,7 +271,7 @@ export default function TrainerDashboard() {
             <span>Reward: {activeScenario.xpReward} XP</span>
             <span>
               Status:{" "}
-              {completedScenarioIds.includes(activeScenario.id)
+              {activeCompletedScenarioIds.includes(activeScenario.id)
                 ? "Completed"
                 : "Ready"}
             </span>
@@ -198,7 +291,9 @@ export default function TrainerDashboard() {
                     ? styles.captainLine
                     : line.speaker === "Officer"
                       ? styles.officerLine
-                      : styles.cadetLine
+                      : line.speaker === "Engineer"
+                        ? styles.engineerLine
+                        : styles.cadetLine
                 }`}
                 key={`${line.speaker}-${index}`}
               >
@@ -258,40 +353,14 @@ export default function TrainerDashboard() {
         </article>
 
         <aside className={styles.sideColumn}>
-          <section className={styles.rankPanel} id="rank">
-            <div className={styles.sectionHeader}>
-              <p className={styles.eyebrow}>Training Path</p>
-              <h2>Rank progression</h2>
-            </div>
-            <ol className={styles.rankList}>
-              {ranks.map((rank) => {
-                const isCurrent = rank.title === currentRank.title;
-                const isUnlocked = xp >= rank.xpRequired;
-
-                return (
-                  <li
-                    className={`${styles.rankItem} ${
-                      isCurrent ? styles.currentRank : ""
-                    } ${isUnlocked ? styles.unlockedRank : ""}`}
-                    key={rank.title}
-                  >
-                    <span>{rank.title}</span>
-                    <small>{rank.xpRequired} XP</small>
-                    <p>{rank.description}</p>
-                  </li>
-                );
-              })}
-            </ol>
-          </section>
-
           <section className={styles.progressPanel} id="progress">
             <div className={styles.sectionHeader}>
               <p className={styles.eyebrow}>Progress</p>
-              <h2>Simulator dashboard</h2>
+              <h2>{activeRoute.shortTitle}</h2>
             </div>
             <div className={styles.progressStats}>
               <span>Current XP</span>
-              <strong>{xp}</strong>
+              <strong>{routeXp}</strong>
             </div>
             <div className={styles.progressStats}>
               <span>Current Rank</span>
@@ -308,9 +377,36 @@ export default function TrainerDashboard() {
               <span style={{ width: `${progressPercent}%` }} />
             </div>
             <p>
-              Progress to next rank: <strong>{progressPercent}%</strong>. All
-              users begin as <strong>{initialRank.title}</strong>.
+              Progress to next rank: <strong>{progressPercent}%</strong>. This
+              XP belongs only to the <strong>{activeRoute.shortTitle}</strong>{" "}
+              route.
             </p>
+          </section>
+
+          <section className={styles.rankPanel} id="rank">
+            <div className={styles.sectionHeader}>
+              <p className={styles.eyebrow}>Training Path</p>
+              <h2>Rank progression</h2>
+            </div>
+            <ol className={styles.rankList}>
+              {activeRoute.ranks.map((rank) => {
+                const isCurrent = rank.title === currentRank.title;
+                const isUnlocked = routeXp >= rank.xpRequired;
+
+                return (
+                  <li
+                    className={`${styles.rankItem} ${
+                      isCurrent ? styles.currentRank : ""
+                    } ${isUnlocked ? styles.unlockedRank : ""}`}
+                    key={rank.title}
+                  >
+                    <span>{rank.title}</span>
+                    <small>{rank.xpRequired} XP</small>
+                    <p>{rank.description}</p>
+                  </li>
+                );
+              })}
+            </ol>
           </section>
 
           <section className={styles.futurePanel}>
