@@ -1375,16 +1375,14 @@ fecha: fechaInicio,
                       semestre y temas ya seleccionados.
                     </p>
 
-                    <button
-                      type="button"
-                      onClick={generarPresentacionPowerPoint}
-                      disabled={generandoPresentacion}
+                    <a
+                      href={`/presentaciones?semestre=${encodeURIComponent(
+                        semestreSeleccionado,
+                      )}&materia=${encodeURIComponent(materiaSeleccionada)}`}
                       className="mt-4 w-full rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52]"
                     >
-                      {generandoPresentacion
-                        ? "Generando Presentación IA..."
-                        : "Generar Presentación IA Profesional"}
-                    </button>
+                      Presentaciones IA
+                    </a>
                   </div>
                 </div>
               </div>
