@@ -1,417 +1,792 @@
-export const contenidosSemestre5 = {
-  "PMR V": {
-    objetivoGeneral:
-      "Aplicar procedimientos avanzados de prevención, control y respuesta ante riesgos marítimos para fortalecer la seguridad operacional, la toma de decisiones y la protección de la vida humana en el mar.",
-    fuentes:
-      "International Maritime Organization. (2017). STCW Convention and Code. IMO Publishing. International Maritime Organization. (2020). SOLAS Consolidated Edition. IMO Publishing. International Maritime Organization. (2019). International Safety Management Code.",
-    unidad: "V",
-    objetivoEspecifico:
-      "Aplicar procedimientos avanzados de prevención, control y respuesta ante riesgos marítimos, fortaleciendo la toma de decisiones, la seguridad operacional y la protección de la vida humana en el mar.",
-    estrategia:
-      "Aprendizaje guiado, análisis de casos, simulación de escenarios, resolución de problemas y trabajo colaborativo.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la prevención y manejo avanzado de riesgos marítimos." },
-      { semana: "Semana 2", tema: "Identificación de peligros en operaciones marítimas y portuarias." },
-      { semana: "Semana 3", tema: "Evaluación de riesgos a bordo y medidas preventivas." },
-      { semana: "Semana 4", tema: "Procedimientos de seguridad operacional en buques." },
-      { semana: "Semana 5", tema: "Control de emergencias marítimas y organización de la respuesta." },
-      { semana: "Semana 6", tema: "Planes de contingencia y roles del personal a bordo." },
-      { semana: "Semana 7", tema: "Prevención de incendios y manejo inicial de incidentes." },
-      { semana: "Semana 8", tema: "Equipos de seguridad, señalización y comunicación de emergencia." },
-      { semana: "Semana 9", tema: "Primeros auxilios y atención inicial en situaciones de emergencia." },
-      { semana: "Semana 10", tema: "Supervivencia en el mar y abandono seguro de la embarcación." },
-      { semana: "Semana 11", tema: "Búsqueda y rescate: principios básicos y coordinación." },
-      { semana: "Semana 12", tema: "Prevención de la contaminación marina durante emergencias." },
-      { semana: "Semana 13", tema: "Gestión del factor humano en situaciones críticas." },
-      { semana: "Semana 14", tema: "Análisis de accidentes marítimos y lecciones aprendidas." },
-      { semana: "Semana 15", tema: "Simulación de escenarios de emergencia a bordo." },
-      { semana: "Semana 16", tema: "Aplicación de procedimientos integrales de respuesta ante riesgos." },
-      { semana: "Semana 17", tema: "Repaso general y preparación de evaluación integradora." },
-      { semana: "Semana 18", tema: "Evaluación integradora de PMR V." },
-    ],
-  },
+// PN — V Semestre (PPE_LPN_FIDENA_2022).
+// FUENTE DE VERDAD: PDFs oficiales FIDENA. Objetivos específicos: alta confianza;
+// sin match limpio => "Pendiente de revisión". Bibliografía: mejor esfuerzo (revisar).
+import type { ProgramaOficial } from "../tipos";
 
-  "Maniobras I": {
-    objetivoGeneral:
-      "Aplicar fundamentos y procedimientos de maniobra marítima para operar embarcaciones de forma segura en atraque, desatraque, fondeo, navegación restringida y situaciones de emergencia.",
-    fuentes:
-      "International Maritime Organization. (2017). STCW Convention and Code. IMO Publishing. Bowditch, N. (2019). The American Practical Navigator. National Geospatial-Intelligence Agency. House, D. J. (2012). Ship Handling: Theory and Practice. Routledge.",
-    unidad: "V",
-    objetivoEspecifico:
-      "Aplicar los fundamentos de maniobra de embarcaciones, considerando seguridad, condiciones operativas y procedimientos básicos de navegación.",
-    estrategia:
-      "Aprendizaje guiado, análisis de casos, simulación, resolución de problemas y ejercicios prácticos.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a las maniobras marítimas y principios básicos de seguridad." },
-      { semana: "Semana 2", tema: "Elementos de gobierno, propulsión y control de la embarcación." },
-      { semana: "Semana 3", tema: "Efectos del timón, hélice, viento y corriente durante la maniobra." },
-      { semana: "Semana 4", tema: "Maniobras básicas de avance, giro, parada y marcha atrás." },
-      { semana: "Semana 5", tema: "Procedimientos de atraque y desatraque en condiciones normales." },
-      { semana: "Semana 6", tema: "Uso de cabos, amarras y defensas durante maniobras portuarias." },
-      { semana: "Semana 7", tema: "Comunicación y coordinación del equipo durante maniobras." },
-      { semana: "Semana 8", tema: "Maniobras en espacios reducidos y control de la embarcación." },
-      { semana: "Semana 9", tema: "Fondeo: preparación, ejecución y vigilancia del ancla." },
-      { semana: "Semana 10", tema: "Levar ancla y recuperación segura del equipo de fondeo." },
-      { semana: "Semana 11", tema: "Maniobras con apoyo de remolcadores y personal de cubierta." },
-      { semana: "Semana 12", tema: "Maniobras de hombre al agua y recuperación inicial." },
-      { semana: "Semana 13", tema: "Maniobras preventivas ante riesgo de colisión." },
-      { semana: "Semana 14", tema: "Reglas básicas de gobierno y navegación durante maniobras." },
-      { semana: "Semana 15", tema: "Análisis de maniobras en casos prácticos y simulados." },
-      { semana: "Semana 16", tema: "Integración de procedimientos de maniobra segura." },
-      { semana: "Semana 17", tema: "Repaso general y preparación de evaluación integradora." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Maniobras I." },
-    ],
-  },
-
-  "Liderazgo": {
-    objetivoGeneral:
-      "Desarrollar competencias de liderazgo, comunicación, trabajo en equipo y toma de decisiones para fortalecer el desempeño profesional en contextos marítimos y operativos.",
-    fuentes:
-      "Northouse, P. G. (2021). Leadership: Theory and Practice. Sage. Yukl, G. (2013). Leadership in Organizations. Pearson. International Maritime Organization. (2017). STCW Convention and Code. IMO Publishing.",
-    unidad: "V",
-    objetivoEspecifico:
-      "Desarrollar habilidades de liderazgo, trabajo en equipo y toma de decisiones en contextos marítimos y profesionales, fortaleciendo la responsabilidad y la comunicación efectiva.",
-    estrategia:
-      "Aprendizaje colaborativo, análisis de casos, dinámicas grupales, reflexión y resolución de problemas.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción al liderazgo y su importancia en el ámbito marítimo." },
-      { semana: "Semana 2", tema: "Características y competencias del líder efectivo." },
-      { semana: "Semana 3", tema: "Estilos de liderazgo y su aplicación práctica." },
-      { semana: "Semana 4", tema: "Trabajo en equipo y construcción de confianza." },
-      { semana: "Semana 5", tema: "Comunicación efectiva y escucha activa." },
-      { semana: "Semana 6", tema: "Motivación y desempeño del equipo de trabajo." },
-      { semana: "Semana 7", tema: "Resolución de conflictos y negociación." },
-      { semana: "Semana 8", tema: "Toma de decisiones en ambientes operativos." },
-      { semana: "Semana 9", tema: "Liderazgo bajo presión y manejo del estrés." },
-      { semana: "Semana 10", tema: "Ética profesional y responsabilidad del líder." },
-      { semana: "Semana 11", tema: "Planeación y organización del trabajo." },
-      { semana: "Semana 12", tema: "Delegación de funciones y supervisión." },
-      { semana: "Semana 13", tema: "Liderazgo multicultural y relaciones humanas." },
-      { semana: "Semana 14", tema: "Liderazgo aplicado al contexto marítimo y náutico." },
-      { semana: "Semana 15", tema: "Análisis de casos de liderazgo en operaciones marítimas." },
-      { semana: "Semana 16", tema: "Desarrollo de habilidades personales de liderazgo." },
-      { semana: "Semana 17", tema: "Repaso general y preparación de evaluación integradora." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Liderazgo." },
-    ],
-  },
-
-  "Química": {
-    objetivoGeneral:
-      "Aplicar principios fundamentales de química para comprender materiales, reacciones, corrosión, combustibles, agua y procesos relacionados con el ámbito marítimo.",
-    fuentes:
-      "Brown, T. L., LeMay, H. E., Bursten, B. E., Murphy, C. J., & Woodward, P. M. (2018). Química: La ciencia central. Pearson. Chang, R., & Goldsby, K. (2016). Química. McGraw-Hill. Petrucci, R. H., Herring, F. G., Madura, J. D., & Bissonnette, C. (2017). Química general. Pearson.",
-    unidad: "V",
-    objetivoEspecifico:
-      "Aplicar principios fundamentales de química para comprender fenómenos físicos, materiales y procesos relacionados con el ámbito marítimo y científico.",
-    estrategia:
-      "Aprendizaje guiado, experimentación, resolución de problemas, análisis de casos y trabajo colaborativo.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la química y su relación con el ámbito marítimo." },
-      { semana: "Semana 2", tema: "Materia, propiedades y cambios físicos y químicos." },
-      { semana: "Semana 3", tema: "Estructura atómica y modelos atómicos." },
-      { semana: "Semana 4", tema: "Tabla periódica y propiedades de los elementos." },
-      { semana: "Semana 5", tema: "Enlaces químicos y formación de compuestos." },
-      { semana: "Semana 6", tema: "Nomenclatura básica de compuestos químicos." },
-      { semana: "Semana 7", tema: "Reacciones químicas y clasificación." },
-      { semana: "Semana 8", tema: "Balanceo de ecuaciones químicas." },
-      { semana: "Semana 9", tema: "Conceptos básicos de estequiometría." },
-      { semana: "Semana 10", tema: "Soluciones, concentración y mezclas." },
-      { semana: "Semana 11", tema: "Ácidos, bases y escala de pH." },
-      { semana: "Semana 12", tema: "Procesos de oxidación y reducción." },
-      { semana: "Semana 13", tema: "Corrosión y protección de materiales metálicos." },
-      { semana: "Semana 14", tema: "Química del agua y contaminación marina." },
-      { semana: "Semana 15", tema: "Aplicaciones de la química en operaciones marítimas." },
-      { semana: "Semana 16", tema: "Resolución de problemas químicos aplicados." },
-      { semana: "Semana 17", tema: "Repaso general y preparación de evaluación integradora." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Química." },
-    ],
-  },
-
-  "Electrotecnia": {
-    objetivoGeneral:
-      "Aplicar principios de electricidad, circuitos, medición, seguridad y máquinas eléctricas para comprender sistemas eléctricos utilizados en contextos técnicos, industriales y marítimos.",
-    fuentes:
-      "Boylestad, R. L. (2016). Introducción al análisis de circuitos. Pearson. Floyd, T. L. (2015). Principios de circuitos eléctricos. Pearson. Chapman, S. J. (2012). Máquinas eléctricas. McGraw-Hill.",
-    unidad: "V",
-    objetivoEspecifico:
-      "Aplicar los principios básicos de electricidad y circuitos eléctricos para comprender sistemas eléctricos utilizados en contextos técnicos, industriales y marítimos.",
-    estrategia:
-      "Aprendizaje guiado, resolución de problemas, prácticas demostrativas, análisis de circuitos y trabajo colaborativo.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la electrotecnia y aplicaciones en el ámbito marítimo." },
-      { semana: "Semana 2", tema: "Magnitudes eléctricas básicas: tensión, corriente, resistencia y potencia." },
-      { semana: "Semana 3", tema: "Ley de Ohm y su aplicación en circuitos eléctricos." },
-      { semana: "Semana 4", tema: "Circuitos eléctricos en serie, paralelo y mixtos." },
-      { semana: "Semana 5", tema: "Resistencia equivalente y distribución de corriente y voltaje." },
-      { semana: "Semana 6", tema: "Potencia eléctrica, energía y eficiencia." },
-      { semana: "Semana 7", tema: "Corriente directa y corriente alterna." },
-      { semana: "Semana 8", tema: "Instrumentos de medición eléctrica y uso del multímetro." },
-      { semana: "Semana 9", tema: "Seguridad eléctrica y prevención de accidentes." },
-      { semana: "Semana 10", tema: "Magnetismo y principios de electromagnetismo." },
-      { semana: "Semana 11", tema: "Transformadores: funcionamiento básico y aplicaciones." },
-      { semana: "Semana 12", tema: "Motores eléctricos y generadores: principios de operación." },
-      { semana: "Semana 13", tema: "Sistemas de distribución eléctrica a bordo." },
-      { semana: "Semana 14", tema: "Protecciones eléctricas: fusibles, interruptores y relevadores." },
-      { semana: "Semana 15", tema: "Lectura e interpretación básica de diagramas eléctricos." },
-      { semana: "Semana 16", tema: "Diagnóstico básico de fallas en circuitos eléctricos." },
-      { semana: "Semana 17", tema: "Repaso general y preparación de evaluación integradora." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Electrotecnia." },
-    ],
-  },
-
-  "Navegación III": {
-    objetivoGeneral:
-      "Planear, ejecutar y verificar derrotas marítimas mediante el uso de cartas náuticas, publicaciones, instrumentos, equipos electrónicos y procedimientos de guardia para una navegación segura.",
-    fuentes:
-      "Bowditch, N. (2019). The American Practical Navigator. National Geospatial-Intelligence Agency. UK Hydrographic Office. (2023). Admiralty Manual of Navigation. International Maritime Organization. (2017). STCW Convention and Code. IMO Publishing.",
-    unidad: "III",
-    objetivoEspecifico:
-      "Aplicar conocimientos avanzados de navegación marítima para planear, ejecutar y verificar derrotas, utilizando cartas náuticas, publicaciones, instrumentos de navegación y procedimientos seguros de guardia en el puente.",
-    estrategia:
-      "Aprendizaje guiado, resolución de problemas náuticos, análisis de casos, ejercicios con cartas náuticas, simulación de situaciones de navegación y trabajo colaborativo.",
-    semanas: [
-      { semana: "Semana 1", tema: "Repaso de navegación costera y oceánica." },
-      { semana: "Semana 2", tema: "Planeación de derrota, selección de rutas y publicaciones náuticas." },
-      { semana: "Semana 3", tema: "Cartas náuticas, avisos a los navegantes y correcciones." },
-      { semana: "Semana 4", tema: "Determinación de posición por métodos visuales, electrónicos y estimados." },
-      { semana: "Semana 5", tema: "Rumbos, demoras, marcaciones y enfilaciones." },
-      { semana: "Semana 6", tema: "Cálculo de derrota, distancia, velocidad y ETA." },
-      { semana: "Semana 7", tema: "Navegación con corrientes, abatimiento y deriva." },
-      { semana: "Semana 8", tema: "Ayudas a la navegación y sistemas de separación de tráfico." },
-      { semana: "Semana 9", tema: "Guardia de navegación en el puente." },
-      { semana: "Semana 10", tema: "Uso de radar, AIS, GPS y equipos electrónicos." },
-      { semana: "Semana 11", tema: "Evaluación de riesgos: aguas restringidas, baja visibilidad y tráfico." },
-      { semana: "Semana 12", tema: "Navegación segura cerca de costa, canales y fondeaderos." },
-      { semana: "Semana 13", tema: "Reglas internacionales para prevenir abordajes." },
-      { semana: "Semana 14", tema: "Emergencias en navegación: pérdida de posición y falla de equipos." },
-      { semana: "Semana 15", tema: "Integración del plan de viaje completo." },
-      { semana: "Semana 16", tema: "Ejercicios prácticos de navegación." },
-      { semana: "Semana 17", tema: "Repaso general y análisis de casos." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Navegación III." },
-    ],
-  },
-
-  "Ética Profesional": {
-    objetivoGeneral:
-      "Analizar principios éticos, valores profesionales y responsabilidades del personal naval mercante para fortalecer la toma de decisiones responsables en el ámbito marítimo.",
-    fuentes:
-      "Cortina, A. (2013). ¿Para qué sirve realmente la ética? Paidós. Savater, F. (2008). Ética para Amador. Ariel. International Maritime Organization. (2017). STCW Convention and Code. IMO Publishing.",
-    unidad: "I",
-    objetivoEspecifico:
-      "Analizar los principios éticos y valores profesionales aplicables al desempeño del personal naval mercante, fortaleciendo la toma de decisiones responsables en el ámbito marítimo.",
-    estrategia:
-      "Análisis de casos, reflexión guiada, discusión grupal, aprendizaje colaborativo y resolución de situaciones profesionales.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la ética profesional y formación marítima." },
-      { semana: "Semana 2", tema: "Valores fundamentales del ejercicio profesional." },
-      { semana: "Semana 3", tema: "Ética personal, social y profesional." },
-      { semana: "Semana 4", tema: "Principios éticos aplicados al contexto marítimo." },
-      { semana: "Semana 5", tema: "Responsabilidad profesional del oficial mercante." },
-      { semana: "Semana 6", tema: "Toma de decisiones éticas." },
-      { semana: "Semana 7", tema: "Dilemas éticos en navegación y operación marítima." },
-      { semana: "Semana 8", tema: "Normas de conducta profesional a bordo." },
-      { semana: "Semana 9", tema: "Comunicación y comportamiento ético." },
-      { semana: "Semana 10", tema: "Respeto a la autoridad y disciplina." },
-      { semana: "Semana 11", tema: "Ética en la seguridad marítima." },
-      { semana: "Semana 12", tema: "Responsabilidad ambiental y contaminación marina." },
-      { semana: "Semana 13", tema: "Confidencialidad y responsabilidad documental." },
-      { semana: "Semana 14", tema: "Corrupción y negligencia profesional." },
-      { semana: "Semana 15", tema: "Código de ética profesional." },
-      { semana: "Semana 16", tema: "Análisis de casos éticos." },
-      { semana: "Semana 17", tema: "Integración de valores profesionales." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Ética Profesional." },
-    ],
-  },
-
-  "Mecánica de Fluidos": {
-    objetivoGeneral:
-      "Aplicar principios de la mecánica de fluidos para analizar el comportamiento de líquidos y gases en sistemas marítimos, hidráulicos y de ingeniería naval.",
-    fuentes:
-      "Mott, R. L. (2015). Mecánica de fluidos. Pearson Educación. White, F. M. (2016). Fluid Mechanics. McGraw-Hill. Streeter, V. L., Wylie, E. B., & Bedford, K. W. (2010). Mecánica de fluidos. McGraw-Hill.",
-    unidad: "I",
-    objetivoEspecifico:
-      "Aplicar los principios fundamentales de la mecánica de fluidos para analizar el comportamiento de líquidos y gases en sistemas marítimos y de ingeniería naval.",
-    estrategia:
-      "Aprendizaje guiado, resolución de problemas, ejercicios prácticos, demostraciones y análisis aplicado a sistemas marítimos.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la mecánica de fluidos y propiedades básicas." },
-      { semana: "Semana 2", tema: "Densidad, peso específico y gravedad específica." },
-      { semana: "Semana 3", tema: "Viscosidad y tensión superficial." },
-      { semana: "Semana 4", tema: "Presión en fluidos y principios fundamentales." },
-      { semana: "Semana 5", tema: "Presión atmosférica y medición de presión." },
-      { semana: "Semana 6", tema: "Hidrostática y equilibrio de fluidos." },
-      { semana: "Semana 7", tema: "Principio de Pascal y aplicaciones." },
-      { semana: "Semana 8", tema: "Principio de Arquímedes y flotación." },
-      { semana: "Semana 9", tema: "Hidrodinámica y movimiento de fluidos." },
-      { semana: "Semana 10", tema: "Caudal y ecuación de continuidad." },
-      { semana: "Semana 11", tema: "Ecuación de Bernoulli y aplicaciones." },
-      { semana: "Semana 12", tema: "Flujo laminar y turbulento." },
-      { semana: "Semana 13", tema: "Pérdidas de energía en tuberías y conductos." },
-      { semana: "Semana 14", tema: "Bombas y sistemas hidráulicos marítimos." },
-      { semana: "Semana 15", tema: "Aplicaciones de fluidos en ingeniería naval." },
-      { semana: "Semana 16", tema: "Análisis de casos y resolución de problemas." },
-      { semana: "Semana 17", tema: "Repaso general y ejercicios integradores." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Mecánica de Fluidos." },
-    ],
-  },
-
-  "Motores I": {
-    objetivoGeneral:
-      "Analizar el funcionamiento, componentes, ciclos y sistemas principales de motores marítimos para comprender su operación, mantenimiento y diagnóstico básico.",
-    fuentes:
-      "Heywood, J. B. (2018). Internal Combustion Engine Fundamentals. McGraw-Hill. Pounder, C. C. (2009). Pounder's Marine Diesel Engines and Gas Turbines. Butterworth-Heinemann. Taylor, D. A. (1996). Introduction to Marine Engineering. Butterworth-Heinemann.",
-    unidad: "I",
-    objetivoEspecifico:
-      "Analizar el funcionamiento, componentes y principios operativos de los motores empleados en la ingeniería marítima.",
-    estrategia:
-      "Aprendizaje guiado, análisis técnico, resolución de problemas, ejercicios prácticos y estudio aplicado a maquinaria naval.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a los motores marítimos y clasificación general." },
-      { semana: "Semana 2", tema: "Principios básicos de funcionamiento de motores térmicos." },
-      { semana: "Semana 3", tema: "Motores de combustión interna y externa." },
-      { semana: "Semana 4", tema: "Ciclos termodinámicos aplicados a motores." },
-      { semana: "Semana 5", tema: "Ciclo Otto y sus aplicaciones." },
-      { semana: "Semana 6", tema: "Ciclo Diesel y motores marítimos." },
-      { semana: "Semana 7", tema: "Partes principales del motor y funciones." },
-      { semana: "Semana 8", tema: "Sistema de admisión y escape." },
-      { semana: "Semana 9", tema: "Sistema de combustible e inyección." },
-      { semana: "Semana 10", tema: "Sistema de lubricación." },
-      { semana: "Semana 11", tema: "Sistema de enfriamiento." },
-      { semana: "Semana 12", tema: "Potencia, rendimiento y eficiencia del motor." },
-      { semana: "Semana 13", tema: "Combustibles utilizados en motores marítimos." },
-      { semana: "Semana 14", tema: "Operación segura y monitoreo de motores." },
-      { semana: "Semana 15", tema: "Mantenimiento preventivo y correctivo básico." },
-      { semana: "Semana 16", tema: "Diagnóstico de fallas comunes." },
-      { semana: "Semana 17", tema: "Repaso general y resolución de problemas." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Motores I." },
-    ],
-  },
-
-  "Máquinas Marinas Auxiliares": {
-    objetivoGeneral:
-      "Analizar el funcionamiento, operación y mantenimiento básico de las máquinas y sistemas auxiliares empleados en embarcaciones marítimas.",
-    fuentes:
-      "Taylor, D. A. (1996). Introduction to Marine Engineering. Butterworth-Heinemann. McGeorge, H. D. (2015). Marine Auxiliary Machinery. Butterworth-Heinemann. Pounder, C. C. (2009). Pounder's Marine Diesel Engines and Gas Turbines. Butterworth-Heinemann.",
-    unidad: "I",
-    objetivoEspecifico:
-      "Analizar el funcionamiento y operación de las máquinas y sistemas auxiliares empleados en embarcaciones marítimas.",
-    estrategia:
-      "Aprendizaje guiado, análisis técnico, ejercicios prácticos y resolución de problemas aplicados a maquinaria naval.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a las máquinas marinas auxiliares." },
-      { semana: "Semana 2", tema: "Clasificación y función de equipos auxiliares." },
-      { semana: "Semana 3", tema: "Sistemas de bombeo marítimo." },
-      { semana: "Semana 4", tema: "Bombas centrífugas y de desplazamiento positivo." },
-      { semana: "Semana 5", tema: "Sistemas de tuberías y válvulas." },
-      { semana: "Semana 6", tema: "Compresores y sistemas de aire comprimido." },
-      { semana: "Semana 7", tema: "Sistemas hidráulicos marítimos." },
-      { semana: "Semana 8", tema: "Separadores y purificadores." },
-      { semana: "Semana 9", tema: "Calderas auxiliares y generación de vapor." },
-      { semana: "Semana 10", tema: "Intercambiadores de calor." },
-      { semana: "Semana 11", tema: "Sistemas de refrigeración marítima." },
-      { semana: "Semana 12", tema: "Producción y tratamiento de agua." },
-      { semana: "Semana 13", tema: "Sistemas de combustible y lubricación auxiliar." },
-      { semana: "Semana 14", tema: "Operación segura de maquinaria auxiliar." },
-      { semana: "Semana 15", tema: "Mantenimiento preventivo y correctivo." },
-      { semana: "Semana 16", tema: "Diagnóstico de fallas y análisis técnico." },
-      { semana: "Semana 17", tema: "Repaso general y resolución de problemas." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Máquinas Marinas Auxiliares." },
-    ],
-  },
-
-  "Taller IV": {
-    objetivoGeneral:
-      "Aplicar procedimientos técnicos de taller relacionados con mantenimiento, reparación, inspección y operación de maquinaria marítima mediante prácticas supervisadas.",
-    fuentes:
-      "Taylor, D. A. (1996). Introduction to Marine Engineering. Butterworth-Heinemann. Mobley, R. K. (2002). An Introduction to Predictive Maintenance. Butterworth-Heinemann. International Maritime Organization. (2017). STCW Convention and Code. IMO Publishing.",
-    unidad: "I",
-    objetivoEspecifico:
-      "Aplicar procedimientos técnicos y prácticas relacionadas con mantenimiento, reparación y operación de maquinaria marítima mediante actividades de taller.",
-    estrategia:
-      "Aprendizaje práctico, ejercicios supervisados, demostraciones técnicas y resolución de problemas aplicados.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción al Taller IV y normas de seguridad." },
-      { semana: "Semana 2", tema: "Herramientas, instrumentos y equipos de taller." },
-      { semana: "Semana 3", tema: "Lectura e interpretación de diagramas técnicos." },
-      { semana: "Semana 4", tema: "Técnicas básicas de mantenimiento." },
-      { semana: "Semana 5", tema: "Ajuste y alineación de componentes." },
-      { semana: "Semana 6", tema: "Desmontaje y montaje de mecanismos." },
-      { semana: "Semana 7", tema: "Lubricación y control de desgaste." },
-      { semana: "Semana 8", tema: "Inspección técnica y diagnóstico inicial." },
-      { semana: "Semana 9", tema: "Prácticas con sistemas mecánicos marítimos." },
-      { semana: "Semana 10", tema: "Prácticas con sistemas hidráulicos." },
-      { semana: "Semana 11", tema: "Prácticas con sistemas neumáticos." },
-      { semana: "Semana 12", tema: "Mantenimiento preventivo en taller." },
-      { semana: "Semana 13", tema: "Mantenimiento correctivo y reparación básica." },
-      { semana: "Semana 14", tema: "Control de calidad y seguridad operacional." },
-      { semana: "Semana 15", tema: "Solución de fallas comunes." },
-      { semana: "Semana 16", tema: "Prácticas integradoras de taller." },
-      { semana: "Semana 17", tema: "Repaso y evaluación práctica." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Taller IV." },
-    ],
-  },
-
-  "Comunicación Visual": {
-    objetivoGeneral:
-      "Aplicar principios de comunicación visual, composición, simbología y herramientas gráficas para interpretar y transmitir información técnica en contextos marítimos y profesionales.",
-    fuentes:
-      "Dondis, D. A. (2017). La sintaxis de la imagen. Gustavo Gili. Munari, B. (2016). Diseño y comunicación visual. Gustavo Gili. Costa, J. (2014). Diseñar para los ojos. Costa Punto Com.",
-    unidad: "I",
-    objetivoEspecifico:
-      "Aplicar principios y técnicas de comunicación visual para la interpretación y transmisión efectiva de información en contextos marítimos y profesionales.",
-    estrategia:
-      "Aprendizaje guiado, análisis visual, ejercicios prácticos, trabajo colaborativo y resolución de problemas comunicativos.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la comunicación visual y su importancia." },
-      { semana: "Semana 2", tema: "Elementos básicos del lenguaje visual." },
-      { semana: "Semana 3", tema: "Percepción visual y comunicación gráfica." },
-      { semana: "Semana 4", tema: "Color, forma y composición." },
-      { semana: "Semana 5", tema: "Simbología y señales visuales." },
-      { semana: "Semana 6", tema: "Comunicación visual en entornos marítimos." },
-      { semana: "Semana 7", tema: "Interpretación de diagramas y esquemas." },
-      { semana: "Semana 8", tema: "Mapas conceptuales y representación gráfica." },
-      { semana: "Semana 9", tema: "Diseño de mensajes visuales." },
-      { semana: "Semana 10", tema: "Infografías y comunicación técnica." },
-      { semana: "Semana 11", tema: "Tipografía y organización visual." },
-      { semana: "Semana 12", tema: "Herramientas digitales de comunicación visual." },
-      { semana: "Semana 13", tema: "Presentación visual de información marítima." },
-      { semana: "Semana 14", tema: "Análisis de materiales visuales." },
-      { semana: "Semana 15", tema: "Proyecto de comunicación visual." },
-      { semana: "Semana 16", tema: "Desarrollo y revisión del proyecto." },
-      { semana: "Semana 17", tema: "Presentación y retroalimentación." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Comunicación Visual." },
-    ],
-  },
-
+export const contenidosSemestre5: Record<string, ProgramaOficial> = {
   "Educación Física V": {
-    objetivoGeneral:
-      "Fortalecer la condición física, coordinación, disciplina corporal y hábitos saludables mediante actividades físicas y deportivas aplicadas a la formación integral del cadete.",
-    fuentes:
-      "Bompa, T. O., & Buzzichelli, C. (2019). Periodización del entrenamiento deportivo. Paidotribo. Blázquez Sánchez, D. (2017). La educación física. INDE. Secretaría de Educación Pública. (2017). Aprendizajes clave para la educación integral: Educación Física.",
-    unidad: "V",
-    objetivoEspecifico:
-      "Fortalecer la condición física, coordinación y hábitos saludables mediante actividades físicas y deportivas aplicadas al contexto marítimo.",
-    estrategia:
-      "Aprendizaje práctico, actividades deportivas, ejercicios físicos, trabajo colaborativo y evaluación continua del desempeño físico.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción al curso y evaluación diagnóstica física." },
-      { semana: "Semana 2", tema: "Calentamiento, movilidad y prevención de lesiones." },
-      { semana: "Semana 3", tema: "Capacidades físicas básicas: resistencia." },
-      { semana: "Semana 4", tema: "Capacidades físicas básicas: fuerza." },
-      { semana: "Semana 5", tema: "Capacidades físicas básicas: velocidad." },
-      { semana: "Semana 6", tema: "Capacidades físicas básicas: flexibilidad." },
-      { semana: "Semana 7", tema: "Coordinación motriz y equilibrio." },
-      { semana: "Semana 8", tema: "Ejercicios funcionales y acondicionamiento físico." },
-      { semana: "Semana 9", tema: "Trabajo cardiovascular y resistencia aeróbica." },
-      { semana: "Semana 10", tema: "Trabajo anaeróbico y potencia física." },
-      { semana: "Semana 11", tema: "Deportes y trabajo en equipo." },
-      { semana: "Semana 12", tema: "Disciplina física y hábitos saludables." },
-      { semana: "Semana 13", tema: "Actividad física aplicada al entorno marítimo." },
-      { semana: "Semana 14", tema: "Circuitos físicos y entrenamiento integral." },
-      { semana: "Semana 15", tema: "Prácticas deportivas supervisadas." },
-      { semana: "Semana 16", tema: "Seguimiento y mejora del rendimiento físico." },
-      { semana: "Semana 17", tema: "Repaso y evaluación práctica." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Educación Física V." },
+    "clave": "C0011",
+    "nombre": "Educación Física V",
+    "tipo": "Práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 3,
+      "teoricas": 0,
+      "practicas": 54,
+      "independientes": 0,
+      "total": 54
+    },
+    "objetivoGeneral": "Realizar movimientos físicos para el desarrollo de la percepción y mejora de la coordinación motriz fina y gruesa en el desempeño de cualquier función.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Percepción y coordinación motriz",
+        "objetivoEspecifico": "Ejecutar movimientos físicos de forma adecuada, desarrollando la percepción y coordinación motriz, psicomotriz, para favorecer la ubicación en el espacio, tiempo, equilibrio y lateralidad.",
+        "subtemas": [
+          "1.1 Movimiento físicos.",
+          "1.2 Ubicación espacial.",
+          "1.3 Coordinación motriz y psicomotriz.",
+          "1.4 Equilibrio.",
+          "1.5 Lateralidad."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Desarrollo físico integral",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Fuerza muscular.",
+          "2.2 Resistencia cardiorespiratoria.",
+          "2.3 Flexibilidad articular y muscular."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Concentración",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Fútbol.",
+          "3.2 Juegos de concentración.",
+          "3.3 Básquetbol.",
+          "3.4 Voleibol."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Condición física",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Fuerza.",
+          "4.2 Vigor.",
+          "4.3 Flexibilidad."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Natación",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "5.1 Técnica.",
+          "5.2 Flotación.",
+          "5.3 Nado libre.",
+          "5.4 Nado en grupo.",
+          "5.5 Sobrevivencia."
+        ],
+        "transversal": false
+      }
     ],
+    "bibliografia": [],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.8_C0011.pdf"
   },
+  "Ética Profesional": {
+    "clave": "C0104",
+    "nombre": "Ética Profesional",
+    "tipo": "Teórica",
+    "horas": {
+      "semanas": 5,
+      "porSemana": 4,
+      "teoricas": 20,
+      "practicas": 0,
+      "independientes": 0,
+      "total": 20
+    },
+    "objetivoGeneral": "Aplicar la Ética utilizando la reflexión como cualidad que permite la comprensión de los códigos morales establecidos, para la correcta y congruente toma de decisiones..",
+    "unidades": [
+      {
+        "numero": 2,
+        "tema": "El juicio",
+        "objetivoEspecifico": "Comprender los conceptos de Filosofía y Ética, a través del análisis del procedimiento humano en situaciones diversas, para valorar su importancia.",
+        "subtemas": [
+          "2.1 Concepto de juicio",
+          "2.2 Tipos de juicio.",
+          "2.3 Tipos de razonamiento."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Ética y Moral",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Diferencia entre Ética y Moral",
+          "3.2 La Moral y sus implicaciones en la vida del hombre.",
+          "3.3 La reflexión ética."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Ética y profesión",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Contexto laboral de la Gente de Mar.",
+          "4.2 Responsabilidad social y ética de la Gente de Mar.",
+          "4.3 Los valores de la Gente de Mar",
+          "4.4 Acción Ética: Toma de decisiones"
+        ],
+        "transversal": false
+      }
+    ],
+    "bibliografia": [],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.9_C0104.pdf"
+  },
+  "Liderazgo": {
+    "clave": "C0105",
+    "nombre": "Liderazgo",
+    "tipo": "Teórica",
+    "horas": {
+      "semanas": 5,
+      "porSemana": 4,
+      "teoricas": 20,
+      "practicas": 0,
+      "independientes": 0,
+      "total": 20
+    },
+    "objetivoGeneral": "Utilizar e identificar el liderazgo, analizando las cualidades, atributos y ventajas que ofrece en la vida profesional.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "El liderazgo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "1.1 Concepto de liderazgo.",
+          "1.2 Características del líder.",
+          "1.3 Tipos de liderazgo.",
+          "1.4 Ejemplos de liderazgo."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Autoconciencia",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Inteligencia emocional y cociente intelectual.",
+          "2.2 Inteligencia emocional: autoconciencia, manejo de emociones, intelectual, en la ejecución del liderazgo. interpretación de emociones, empatía, uso de emociones.",
+          "2.3 Motivación extrínseca e intrínseca."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Elementos del liderazgo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Hábitos.",
+          "3.2 Actitud proactiva.",
+          "3.3 Trabajo en equipo.",
+          "3.4 Comunicación efectiva. Autocrítica y renovación."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Estrategias de planeación y operación",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Estrategias para identificar problemas.",
+          "4.2 Estrategias para planear y operar acciones y resolver problemas. ejercicios concretos, para alcanzar",
+          "4.3 Estrategias para resolver los problemas: Ganar-ganar, sinergia. metas y objetivos de un proyecto."
+        ],
+        "transversal": false
+      }
+    ],
+    "bibliografia": [],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.10_C0105-.pdf"
+  },
+  "Comunicación Visual": {
+    "clave": "COV535",
+    "nombre": "Comunicación Visual",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 4,
+      "teoricas": 54,
+      "practicas": 18,
+      "independientes": 0,
+      "total": 72
+    },
+    "objetivoGeneral": "Conocer y utilizar el significado de las diferentes señales visuales empleadas en la navegación, para realizar una navegación segura.",
+    "unidades": [
+      {
+        "numero": 4,
+        "tema": "Reglamento Internacional para prevenir abordajes en la Comprender las reglas para prevenir mar (COLREG)",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Parte A. Generalidades.",
+          "4.2 Parte B. Reglas de rumbo y gobierno.",
+          "4.3 Parte C. Luces y marcas.",
+          "4.4 Parte D. Señales acústicas y luminosas.",
+          "4.5 Parte E. Exenciones."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "R.I.P.A. Reglamento Internacional para OMI OMI 2007",
+      "prevenir los abordajes en la mar y Sistema",
+      "de balizamiento marítimo.",
+      "Simulador identificación de buques y luces",
+      "Manual Básico de Sistemas de MASCAREÑAS y Pérez Iñigo, Carlos Universidad 2011",
+      "Comunicaciones Marítimas. de Cádiz",
+      "Comunicaciones Náuticas FIGUERAS, Manuel Ediciones 2003",
+      "Tutor"
+    ],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.6_COV535-.pdf"
+  },
+  "Maniobras I": {
+    "clave": "MAN533",
+    "nombre": "Maniobras I",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 4,
+      "teoricas": 54,
+      "practicas": 18,
+      "independientes": 10,
+      "total": 82
+    },
+    "objetivoGeneral": "Conocer los equipos que determinan la maniobrabilidad de un buque, considerando los factores internos y externos que intervienen, para mantener la seguridad de la embarcación.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Timones",
+        "objetivoEspecifico": "Describir los principios y efectos del timón, analizando sus tipos y variantes, para operar de forma segura los sistemas de gobierno principal y de emergencia.",
+        "subtemas": [
+          "1.1 Principios y efectos.",
+          "1.2 Tipos.",
+          "1.3 Maquinillas.",
+          "1.4 Timón de emergencia.",
+          "1.5 Efectos de la eslora."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Sistema de propulsión",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Tipos de propulsión.",
+          "2.2 Máquinas de propulsión.",
+          "2.3 Hélices, tipos y principios.",
+          "2.4 Corrientes generadas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Círculo de evolución y distancia de parada",
+        "objetivoEspecifico": "Aplicar los principios del sistema de gobierno y propulsión, así como los factores que intervienen, analizando el comportamiento del buque y los factores que influyen, para realizar maniobras seguras.",
+        "subtemas": [
+          "3.1 Interacción entre el sistema de propulsión y de gobierno.",
+          "3.2 Factores externos para maniobrar.",
+          "3.3 Factores resultantes de la embarcación. Centro de pivoteo."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Casco",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Tipos.",
+          "4.2 Efectos.",
+          "4.3 El bulbo.",
+          "4.4 Corrientes generales."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Efecto por bajo fondo",
+        "objetivoEspecifico": "Analizar los efectos relacionados a las aguas poco profundas y el efecto de recodo, identificando casos, para una navegación segura en canales.",
+        "subtemas": [
+          "5.1 Efectos por bajo fondo o squat.",
+          "5.2 Efectos de recodo.",
+          "5.3 Interacción."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Equipo y maniobra de fondeo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "6.1 Anclas y cadenas.",
+          "6.2 Winches.",
+          "6.3 Preparativos para la maniobra de fondeo.",
+          "6.4 Funciones del oficial en estación de maniobra. fondear de forma segura.",
+          "6.5 Maniobra con un ancla.",
+          "6.6 Maniobra con dos anclas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 7,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Convenio Internacional sobre la seguridad OMI OMI 2012",
+      "de los contenedores. 1972 CSC",
+      "Fragata Libros",
+      "Fundamentos de Maniobra del Tratado de BARBUDO Escobar, Ignacio Náuticos",
+      "Maniobra Torno I",
+      "Maniobra a bordo y en la Mar del Tratado de BARBUDO Escobar, Ignacio Fragata Libros 2004",
+      "4",
+      "Náuticos"
+    ],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.4_MAN533.pdf"
+  },
+  "Meteorología II": {
+    "clave": "MET532",
+    "nombre": "Meteorología II",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 4,
+      "teoricas": 48,
+      "practicas": 24,
+      "independientes": 10,
+      "total": 82
+    },
+    "objetivoGeneral": "Capaz de leer e interpretar boletines meteorológicos, entendiendo el estado del tiempo imperante, determinando el seguimiento de una travesía de acuerdo con la información disponible, para una navegación segura, evitando riesgo y peligro a la tripulación, estructura del buque y carga.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Estado del tiempo",
+        "objetivoEspecifico": "Identificar las masas de aire en mar y tierra, describiendo su cambio, al viajar por el océano, para la interpretación del estado del tiempo de acuerdo a los tipos de masas de aire. Trazar la distribución de vientos y presiones en diferentes épocas del año, realizar la descripción del avance de los frentes.",
+        "subtemas": [
+          "1.1 El estado del tiempo asociado con las principales masas de aire.",
+          "1.2 Tipos de masas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Anticiclones y ciclones extratropicales",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Borrascas (depresiones), tipos y características.",
+          "2.2 Ciclo de vida, desarrollo y madurez.",
+          "2.3 Cambios del tiempo al paso de las depresiones y oclusiones. Características del frente caliente, sector caliente, frente frío y con ayuda de un diagrama, para oclusión.",
+          "2.4 Gota fría, definición y características.",
+          "2.5 Anticiclones y dorsales."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Ciclones tropicales",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Generalidades.",
+          "3.2 Regiones de formación, localización.",
+          "3.3 Trayectoria, movimiento circulatorio, desplazamiento y etapas. hemisferios), definiendo la trayectoria y",
+          "3.4 Ciclo de vida, formación, desarrollo, madurez y vejez.",
+          "3.5 Semicírculos: peligroso y navegable.",
+          "3.6 Síntomas de ciclón.",
+          "3.7 Formas de situar ciclones.",
+          "3.8 Maniobra de ciclones tropicales."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Análisis y previsión del tiempo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Tiempo actual y futuro.",
+          "4.2 Estaciones meteorológicas.",
+          "4.3 Claves meteorológicas.",
+          "4.4 Mapas del tiempo, símbolos.",
+          "4.5 Interpretación de cartas sinópticas",
+          "4.6 Propósito de MAFOR."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Boletines meteorológicos",
+        "objetivoEspecifico": "Interpretar los diferentes tipos de boletines meteorológicos explicando las fuentes de información disponibles en el ramo marítimo, para actualizar los datos recibidos por los medios de comunicación meteorológica.",
+        "subtemas": [
+          "5.1 Tipos de boletines, formatos.",
+          "5.2 Contenido.",
+          "5.3 Boletines regionales y nacionales.",
+          "5.4 Boletines trasmitidos por fax y satélite.",
+          "5.5 Sinopsis"
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Cartas Meteorológicas",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "6.1 Uso de Cartas meteorológicas.",
+          "6.2 Símbolos."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 7,
+        "tema": "Previsión del estado del tiempo abordo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "7.1 Registro del estado del tiempo abordo.",
+          "7.2 Códigos y abreviaturas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 8,
+        "tema": "El tiempo abordo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "8.1 Navegación meteorológica.",
+          "8.2 Pilots Charts.",
+          "8.3 Derrota óptima."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 9,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Meteorología",
+      "Manual de Meteorología Marina HOPKINS, E. J. WHITAKER, Libros Cúpula 2004",
+      "Meteorología y estrategia",
+      "R.",
+      "TIBBS, CHRlS Ediciones Tutor 2007",
+      "BERNOT, Jean-Ives Juventud 2006",
+      "5"
+    ],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.3_MET532.pdf"
+  },
+  "Navegación III": {
+    "clave": "NAV530",
+    "nombre": "Navegación III",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 6,
+      "teoricas": 64,
+      "practicas": 44,
+      "independientes": 12,
+      "total": 120
+    },
+    "objetivoGeneral": "Conocer y comprender los principios de las Derrota Loxodrómica y Ortodrómica, así como los componentes de un Radar convencional y APRA, además de su interacción con los aparatos que alimentan el Sistema (giroscópica, G.P.S., corredera, AIS, etc.) y los factores que afectan la detección así como el uso correcto del mismo, para desarrollar una navegación eficiente y segura.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Tipos de Derrota",
+        "objetivoEspecifico": "Desarrollar Derrota Loxodrómica y Ortodrómica, aplicando la respectiva información obtenida a través de fórmulas matemáticas y tablas de navegación, para el correcto desarrollo de un navegación.",
+        "subtemas": [
+          "1.1 Loxodrómica.",
+          "1.2 Ortodrómica."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Radar",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Principios básicos del Radar.",
+          "2.2 Manejo del Radar Convencional.",
+          "2.3 Movimientos Relativo y Verdadero.",
+          "2.4 Marcaciones."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Radar APRA",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Normas de funcionamiento de los APRA establecidos por la OMI. en la adquisición de blancos y",
+          "3.2 Manejo del Radar APRA.",
+          "3.3 Ajuste y conservación de la imagen de un APRA.",
+          "3.4 Interpretación de la imagen del Radar en diferentes movimientos y interacción con otros sistemas de presentaciones.",
+          "3.5 Adquisición manual y automática de los blancos, información obtenida y sus respectivas limitaciones.",
+          "3.6 Errores de interpretación de los datos sobre blancos.",
+          "3.7 Presentaciones en pantalla y tipo de movimientos: Proa arriba; Rumbo arriba; Norte arriba; Movimiento verdadero; Movimiento relativo.",
+          "3.8 Uso de Parallel Index.Semicírculos: peligroso y navegable.",
+          "3.9 Detección y explicación de errores de los datos presentados. datos."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Navegación Electrónica Manual del RODRÍGUEZ, R. UPC 2001",
+      "operador de ARPA",
+      "Empleo del Radar en el Mar AVIS, Robert Editorial Tutor 2001",
+      "Problemas de Navegación MOREU CURBERA, José Autor-Editor 1997",
+      "María"
+    ],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.1_NAV530.pdf"
+  },
+  "Prácticas Marineras V": {
+    "clave": "PMR536",
+    "nombre": "Prácticas Marineras V",
+    "tipo": "Práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 3,
+      "teoricas": 18,
+      "practicas": 36,
+      "independientes": 0,
+      "total": 54
+    },
+    "objetivoGeneral": "Conocer el manejo de botes salvavidas y embarcaciones menores, adquiriendo destrezas para aplicar diversos conocimientos en el mantenimiento de la embarcación.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Aparejos",
+        "objetivoEspecifico": "Identificar los aparejos de acuerdo a su uso, explicando su nomenclatura, para su uso en diversas operaciones del buque.",
+        "subtemas": [
+          "1.1 Uso y nomenclatura.",
+          "1.2 Guarnido."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Cambios de amarre",
+        "objetivoEspecifico": "Describir el uso de los cabos de amarre y empleo de la tiradera durante las maniobras de atraque, analizando la distribución de los mismos para su correcto uso.",
+        "subtemas": [
+          "2.1 Uso durante el atraque.",
+          "2.2 Empleo de la tiradera."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Maniobras a son de mar",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Procedimientos de trincado.",
+          "3.2 Equipos a revisar.",
+          "3.3 Anclas y cadenas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Piquetas y rasquetas",
+        "objetivoEspecifico": "Utilizar adecuadamente las piquetas y rasquetas, mediante la preparación de superficies, para aplicar recubrimientos.",
+        "subtemas": [
+          "4.1 Selección y uso."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Pinturas y solventes",
+        "objetivoEspecifico": "Utilizar de forma correcta los minios y esmaltes, mediante la preparación adecuada, para aplicarlo sobre superficies.",
+        "subtemas": [
+          "5.1 Aplicación de minios.",
+          "5.2 Aplicación de esmaltes sobre minios."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Maniobras de fondeo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "6.1 Preparativos para fondear.",
+          "6.2 Ancla a la pendura.",
+          "6.3 Fondo al ancla."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 7,
+        "tema": "Accesorios para manejo de la carga",
+        "objetivoEspecifico": "Identificar los accesorios más utilizados durante las operaciones de carga, conociendo sus ventajas, para manejo de bultos.",
+        "subtemas": [
+          "7.1 Estrobos.",
+          "7.2 Eslingas.",
+          "7.3 Accesorios varios."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 8,
+        "tema": "Plumas y grúas",
+        "objetivoEspecifico": "Describir la operación de las diferentes plumas y grúas a bordo del buque, aplicando medidas de seguridad, para la correcta operación de la carga/descarga.",
+        "subtemas": [
+          "8.1 Operación y manejo.",
+          "8.2 Medidas de seguridad."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 9,
+        "tema": "Tapa escotillas",
+        "objetivoEspecifico": "Explicar la abertura y cierre de las tapa escotillas, siguiendo las medidas de seguridad, para evitar accidentes de trabajo.",
+        "subtemas": [
+          "9.1 Abertura y cerrado.",
+          "9.2 Medidas de seguridad."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 10,
+        "tema": "Anclas y cadenas amarre a boya.",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [],
+        "transversal": false
+      },
+      {
+        "numero": 11,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Manual de conocimientos marineros JOSÉ REAL, Domingo",
+      "Arte de la maniobra del buque GÓMEZ, Victorio R. Guardacostas B.A. 2002",
+      "Centro de 1989",
+      "4",
+      "capitanes de Ultramar y",
+      "Oficiales de la Marina",
+      "Mercante B. A.",
+      "Manual del Marino MULLER, Krauss Victor Leru 1994"
+    ],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.7_PMR536.pdf"
+  },
+  "Química": {
+    "clave": "QUH534",
+    "nombre": "Química",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 4,
+      "teoricas": 36,
+      "practicas": 36,
+      "independientes": 6,
+      "total": 78
+    },
+    "objetivoGeneral": "Conocer la composición, estructura de la sustancia y relaciones que ocurren entre ellas, identificando las características químicas del agua, combustible y lubricantes para el control de sus parámetros.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Introducción a la Química",
+        "objetivoEspecifico": "Definir los conceptos químicos usados en la composición de la materia y sus combinaciones, para identificarlos entre sí.",
+        "subtemas": [
+          "1.1 Definiciones.",
+          "1.2 Diferencia entre mezcla y compuesto.",
+          "1.3 Significado de: solución, solubilidad, solución saturada, suspensión, precipitación."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Acidez y alcalinidad",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Composición de un átomo.",
+          "2.2 Resultado de la pérdida o ganancia de electrones en un átomo. electrones, planteando el significado de",
+          "2.3 Potencial hidrógeno.",
+          "2.4 Acidez y alcalinidad.",
+          "2.5 Indicadores de Potencial de Hidrógeno."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Corrosión",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Formación del hidróxido al sumergir el hierro en una solución ácida.",
+          "3.2 Efectos del oxígeno disuelto y una alta acidez en la polarización. superficies de hierro expuestas a",
+          "3.3 Límites de alcalinidad y contenido de oxígeno disuelto en el agua oxidación y efectos galvánicos. de calderas.",
+          "3.4 Proceso de corrosión.",
+          "3.5 Materiales comunes que producen películas protectoras de la oxidación.",
+          "3.6 Causas de corrosión.",
+          "3.7 Celdas galvánicas.",
+          "3.8 Electrolitos.",
+          "3.9 Definición de ánodo. mar. velocidad del agua de mar. más tiempo."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Análisis y tratamiento del agua",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Control del PH en soluciones acuosas con mínimo rango de corrosividad.",
+          "4.2 Sustancias químicas usadas como aditivos.",
+          "4.3 Control de gases disueltos en el agua.",
+          "4.4 Métodos de acondicionamiento del agua usada en plantas de potencia marítima.",
+          "4.5 Sales metálicas contenidas en el agua de suministro.",
+          "4.6 Métodos estandarizados para la determinación de sales disueltas en una cantidad específica de agua.",
+          "4.7 Unidades estandarizadas para la medición del contenido de sales disueltas en el agua.",
+          "4.8 Sales metálicas encontradas en agua dulce/mar.",
+          "4.9 Definiciones: dureza permanente y temporal. de calderas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Combustibles y lubricantes",
+        "objetivoEspecifico": "Describir adecuadamente los buques, sus temperaturas de inflamación, la temperatura máxima admisible de cada uno, sus propiedades necesarias para prevenir y evitar contingencias.",
+        "subtemas": [
+          "5.1 Contenidos medios de carbón, hidrógeno, azufre y cenizas en los hidrocarburos usados a bordo de los siguientes combustibles: petróleo, diáfano, diesel marino y combustóleo.",
+          "5.2 Punto de inflamación de combustibles y lubricantes marinos.",
+          "5.3 Punto de inflamación de los siguientes hidrocarburos: petróleo, mecánicas y las precauciones diáfano, diesel marino, combustóleo y aceite lubricante.",
+          "5.4 Temperatura máxima de operación del combustóleo.",
+          "5.5 Precauciones para evitar la combustión accidental de aceites combustibles a bordo.",
+          "5.6 Viscosidad.",
+          "5.7 Determinación del punto de inflamación y de la viscosidad de combustibles y lubricantes.",
+          "5.8 Determinación del contenido de agua en aceites y lubricantes."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Química, un curso moderno SMOOT CECSA 2002",
+      "Química general",
+      "Química general universitaria WENTWORTH, Wayne BECKER. R. S. Reverte 2000",
+      "KEENAN CECSA 2006"
+    ],
+    "fuente": "PPE_LPN_FIDENA_2022-_05-SEM_LPN_S5.5_QUH534.pdf"
+  }
 };

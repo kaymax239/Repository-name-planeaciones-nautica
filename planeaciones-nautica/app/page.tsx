@@ -1,8 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { materiasPorSemestre } from "./data/materias";
-import { contenidosMaterias } from "./data/contenidosMaterias";
+import { materiasPorSemestre, materiasPorSemestreMN } from "./data/materias";
+import {
+  contenidosMaterias,
+  contenidosMateriasMN,
+} from "./data/contenidosMaterias";
+import {
+  distribuirFechas,
+  etiquetaSemanaF32,
+  EXAMENES,
+  formatearRango,
+} from "./data/calendario";
+import {
+  criteriosEvaluacion,
+  generacionPorSemestre,
+  textoPuntuacionesF32,
+} from "./data/evaluacion";
+import { distribuirPrograma } from "./data/distribucion";
+import { esProgramaOficial } from "./data/tipos";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import pptxgen from "pptxgenjs";
@@ -244,6 +260,7 @@ const construirDatosAvanceProgramatico = ({
   periodoEscolar,
   mesReportado,
   escuela,
+  licenciatura,
 }: {
   materia: string;
   datosMateria?: DatosMateria;
@@ -253,6 +270,7 @@ const construirDatosAvanceProgramatico = ({
   periodoEscolar: string;
   mesReportado: MesReportado;
   escuela: string;
+  licenciatura: string;
 }) => {
   const semanasAvance = obtenerSemanasAvance(datosMateria, mesReportado);
   const temasSubtemasCubiertos = semanasAvance
@@ -281,7 +299,7 @@ const construirDatosAvanceProgramatico = ({
     mes: mesReportado,
     anio: obtenerAnioPeriodo(periodoEscolar),
     docente,
-    licenciatura: "Licenciatura en Piloto Naval",
+    licenciatura,
     semestre,
     grupo,
     periodoReportado: `${mesReportado} ${obtenerAnioPeriodo(periodoEscolar)}`,
@@ -478,6 +496,7 @@ const construirDatosExamen = ({
 };
 
 export default function Home() {
+  const [carrera, setCarrera] = useState<"PN" | "MN">("PN");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
 
@@ -488,6 +507,11 @@ export default function Home() {
   const [mesReportado, setMesReportado] =
     useState<MesReportado>("Julio-Agosto");
   const [generandoPresentacion, setGenerandoPresentacion] = useState(false);
+  const [generandoPlaneacion, setGenerandoPlaneacion] = useState(false);
+  const [mensajePlaneacion, setMensajePlaneacion] = useState<{
+    tipo: "exito" | "error";
+    texto: string;
+  } | null>(null);
 
   const periodo = "Julio-Diciembre 2026";
   const escuelaNautica =
@@ -498,7 +522,21 @@ export default function Home() {
   const horasTeoricas = "18";
   const horasIndependientes = "0";
 
-  const menu = materiasPorSemestre;
+  const menu = carrera === "MN" ? materiasPorSemestreMN : materiasPorSemestre;
+  const fuenteContenidos =
+    carrera === "MN" ? contenidosMateriasMN : contenidosMaterias;
+  // Horas reales de la materia seleccionada (del programa oficial PDF).
+  const horasMateria = fuenteContenidos[materiaSeleccionada]?.horas;
+  const licenciatura =
+    carrera === "MN"
+      ? "Licenciatura en Maquinista Naval"
+      : "Licenciatura en Piloto Naval";
+
+  const seleccionarCarrera = (c: "PN" | "MN") => {
+    setCarrera(c);
+    setSemestreSeleccionado("");
+    setMateriaSeleccionada("");
+  };
   const inputClass =
     "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#c8a45d] focus:ring-2 focus:ring-[#c8a45d]/30";
   const readOnlyClass =
@@ -525,8 +563,19 @@ export default function Home() {
   };
 
   const generarWord = async () => {
+    setGenerandoPlaneacion(true);
+    setMensajePlaneacion(null);
     try {
+      if (!materiaSeleccionada) {
+        throw new Error("Selecciona una asignatura antes de generar la planeación.");
+      }
+
       const response = await fetch("/templates/F-32.docx");
+      if (!response.ok) {
+        throw new Error(
+          `No se pudo cargar la plantilla F-32 (HTTP ${response.status}). Verifica que exista en public/templates/F-32.docx.`,
+        );
+      }
       const content = await response.arrayBuffer();
 
       const zip = new PizZip(content);
@@ -537,84 +586,157 @@ export default function Home() {
       });
 
       const datosMateria =
-        contenidosMaterias[
-          materiaSeleccionada as keyof typeof contenidosMaterias
-        ] as DatosMateria | undefined;
+        fuenteContenidos[materiaSeleccionada] as unknown;
 
-      const semanas = (datosMateria?.semanas || []).map(
-        (s: SemanaMateria, index, semanasMateria) => ({
-          semana: s.semana,
-          tema: s.tema,
-          secuencia: generarSecuenciaDidactica(
-            materiaSeleccionada,
-            s,
-            datosMateria,
-            semanasMateria[index + 1]?.tema,
-          ),
-          recursos:
-            "Computadora, presentación, material didáctico y recursos digitales.",
-          producto: "Actividad, evidencia y participación.",
-          evaluacion: "Lista de cotejo, participación y evaluación formativa.",
-        }),
-      );
+      const generacion = generacionPorSemestre(semestreSeleccionado);
+      const puntuaciones = textoPuntuacionesF32("teorico-practica", generacion);
+      const criterios = criteriosEvaluacion("teorico-practica", generacion);
+      const porcentaje = (incluye: string) =>
+        String(
+          criterios.find((c) => c.nombre.includes(incluye))?.porcentaje ?? "",
+        );
+
+      type DatosRender = {
+        asignatura: string;
+        clave: string;
+        claveAsignatura: string;
+        claveAsignaturaCurso: string;
+        horasTotales: string;
+        horasTeoricas: string;
+        horasPracticas: string;
+        horasIndependientes: string;
+        horasPorSemana: string;
+        horasSemana: string;
+        horasXSemana: string;
+        objetivoGeneral: string;
+        unidadBloques: unknown;
+        fuentes: string;
+      };
+
+      let datosRender: DatosRender;
+
+      if (esProgramaOficial(datosMateria)) {
+        // FUENTE DE VERDAD: programa oficial PDF (1.er semestre PN).
+        const p = datosMateria;
+        datosRender = {
+          asignatura: p.nombre,
+          clave: p.clave,
+          claveAsignatura: p.clave,
+          claveAsignaturaCurso: p.clave,
+          horasTotales: String(p.horas.total),
+          horasTeoricas: String(p.horas.teoricas),
+          horasPracticas: String(p.horas.practicas),
+          horasIndependientes: String(p.horas.independientes),
+          horasPorSemana: String(p.horas.porSemana),
+          horasSemana: String(p.horas.porSemana),
+          horasXSemana: String(p.horas.porSemana),
+          objetivoGeneral: p.objetivoGeneral,
+          unidadBloques: distribuirPrograma(p, puntuaciones),
+          fuentes: p.bibliografia.length
+            ? p.bibliografia.join("\n")
+            : "Pendiente de revisión.",
+        };
+      } else {
+        // Legacy: contenido genérico (semestres III, V y VII).
+        const dm = datosMateria as DatosMateria | undefined;
+        const fechasSemanas = distribuirFechas(dm?.semanas?.length || 0);
+        const semanas = (dm?.semanas || []).map(
+          (s: SemanaMateria, index, semanasMateria) => ({
+            semana: fechasSemanas[index]
+              ? etiquetaSemanaF32(fechasSemanas[index])
+              : s.semana,
+            tema: s.tema,
+            secuencia: generarSecuenciaDidactica(
+              materiaSeleccionada,
+              s,
+              dm,
+              semanasMateria[index + 1]?.tema,
+            ),
+            recursos:
+              "Computadora, presentación, material didáctico y recursos digitales.",
+            producto: "Actividad, evidencia y participación.",
+            evaluacion: puntuaciones,
+          }),
+        );
+        datosRender = {
+          asignatura: materiaSeleccionada,
+          clave: materiaSeleccionada,
+          claveAsignatura: materiaSeleccionada,
+          claveAsignaturaCurso: materiaSeleccionada,
+          horasTotales,
+          horasTeoricas,
+          horasPracticas: "0",
+          horasIndependientes,
+          horasPorSemana,
+          horasSemana: horasPorSemana,
+          horasXSemana: horasPorSemana,
+          objetivoGeneral:
+            dm?.objetivoEspecifico || "Objetivo general de la asignatura.",
+          unidadBloques: [
+            {
+              unidad: dm?.unidad || "I",
+              objetivoEspecifico:
+                dm?.objetivoEspecifico || "Objetivo específico de la unidad.",
+              estrategia:
+                dm?.estrategia ||
+                "Aprendizaje guiado, explicación docente y actividades colaborativas.",
+              semanas,
+            },
+          ],
+          fuentes: "Bibliografía y materiales de consulta.",
+        };
+      }
 
       doc.render({
-        asignatura: materiaSeleccionada,
-        escuela:"Tampico",
-
+        escuela: "Tampico",
+        licenciatura,
         periodo,
         escuelaNautica,
-        horasPorSemana,
-        horasTotales,
-        horasTeoricas,
-        horasIndependientes,
-        claveAsignatura: materiaSeleccionada,
-horasPracticas: "0",
-clave: materiaSeleccionada,
-claveAsignaturaCurso: materiaSeleccionada,
-horasSemana: horasPorSemana,
-horasXSemana: horasPorSemana,
-
-        objetivoGeneral:
-          datosMateria?.objetivoEspecifico ||
-          "Objetivo general de la asignatura.",
-
-        unidadBloques: [
-          {
-            unidad: datosMateria?.unidad || "I",
-
-            objetivoEspecifico:
-              datosMateria?.objetivoEspecifico ||
-              "Objetivo específico de la unidad.",
-
-            estrategia:
-              datosMateria?.estrategia ||
-              "Aprendizaje guiado, explicación docente y actividades colaborativas.",
-
-            semanas,
-          },
-        ],
-
+        ...datosRender,
         docente,
         grupo,
         grupoAsignatura: grupo,
         cadetes,
         fechaInicio,
         nombreDocente: docente,
-numeroCadetes: cadetes,
-fecha: fechaInicio,
+        numeroCadetes: cadetes,
+        fecha: fechaInicio,
 
-        fuentes: "Bibliografía y materiales de consulta.",
+        // Plan de evaluación (hoja de fechas de exámenes del F-32)
+        fechaParcial1: formatearRango(EXAMENES.parcial1),
+        fechaParcial2: formatearRango(EXAMENES.parcial2),
+        pctConocimiento: porcentaje("Conocimiento"),
+        pctActividades: porcentaje("Actividades"),
+        pctParticipacion: porcentaje("Participaciones"),
       });
 
       const blob = doc.getZip().generate({
         type: "blob",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
 
-      saveAs(blob, `F32_${materiaSeleccionada || "Planeacion"}.docx`);
+      const partesNombre = [semestreSeleccionado, materiaSeleccionada, grupo, periodo]
+        .map((parte) => nombreArchivoSeguro(parte || ""))
+        .filter(Boolean);
+      const nombreArchivo = `F32_${partesNombre.join("_") || "planeacion"}.docx`;
+
+      saveAs(blob, nombreArchivo);
+
+      setMensajePlaneacion({
+        tipo: "exito",
+        texto: `Planeación generada y descargada: ${nombreArchivo}`,
+      });
     } catch (error) {
-      console.log(error);
-      alert("Error generando F-32");
+      console.error("Error generando F-32:", error);
+      const detalle =
+        error instanceof Error ? error.message : "Error desconocido.";
+      setMensajePlaneacion({
+        tipo: "error",
+        texto: `No se pudo generar la planeación F-32. ${detalle}`,
+      });
+    } finally {
+      setGenerandoPlaneacion(false);
     }
   };
 
@@ -631,9 +753,7 @@ fecha: fechaInicio,
       });
 
       const datosMateria =
-        contenidosMaterias[
-          materiaSeleccionada as keyof typeof contenidosMaterias
-        ] as DatosMateria | undefined;
+        fuenteContenidos[materiaSeleccionada] as DatosMateria | undefined;
 
       doc.render(
         construirDatosAvanceProgramatico({
@@ -645,6 +765,7 @@ fecha: fechaInicio,
           periodoEscolar: periodo,
           mesReportado,
           escuela: escuelaNautica,
+          licenciatura,
         }),
       );
 
@@ -681,9 +802,7 @@ fecha: fechaInicio,
       });
 
       const datosMateria =
-        contenidosMaterias[
-          materiaSeleccionada as keyof typeof contenidosMaterias
-        ] as DatosMateria | undefined;
+        fuenteContenidos[materiaSeleccionada] as DatosMateria | undefined;
 
       doc.render(
         construirDatosExamen({
@@ -720,9 +839,7 @@ fecha: fechaInicio,
     try {
       setGenerandoPresentacion(true);
       const datosMateria =
-        contenidosMaterias[
-          materiaSeleccionada as keyof typeof contenidosMaterias
-        ] as DatosMateria | undefined;
+        fuenteContenidos[materiaSeleccionada] as DatosMateria | undefined;
       const temas = datosMateria?.semanas || [];
 
       if (!datosMateria || temas.length === 0) {
@@ -1054,9 +1171,32 @@ fecha: fechaInicio,
                     Selecciona un semestre
                   </h2>
                   <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                    Elige el semestre para consultar únicamente sus asignaturas
-                    y continuar con la captura de la planeación F-32.
+                    Elige la carrera y el semestre para consultar únicamente sus
+                    asignaturas y continuar con la captura de la planeación F-32.
                   </p>
+
+                  <div className="mt-6 flex flex-wrap justify-center gap-3">
+                    {(
+                      [
+                        ["PN", "Piloto Naval"],
+                        ["MN", "Maquinista Naval"],
+                      ] as const
+                    ).map(([valor, etiqueta]) => (
+                      <button
+                        key={valor}
+                        type="button"
+                        onClick={() => seleccionarCarrera(valor)}
+                        aria-pressed={carrera === valor}
+                        className={`rounded-2xl px-6 py-3 text-sm font-black uppercase tracking-[0.16em] shadow-sm transition ${
+                          carrera === valor
+                            ? "bg-[#071a33] text-white"
+                            : "border border-[#071a33]/30 bg-white text-[#071a33] hover:border-[#071a33]"
+                        }`}
+                      >
+                        {etiqueta}
+                      </button>
+                    ))}
+                  </div>
 
                   <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     {semestres.map((semestre) => (
@@ -1271,25 +1411,25 @@ fecha: fechaInicio,
                   <div className="grid grid-cols-2 gap-3">
                     <input
                       className={readOnlyClass}
-                      value={`Horas/semana: ${horasPorSemana}`}
+                      value={`Horas/semana: ${horasMateria?.porSemana ?? horasPorSemana}`}
                       readOnly
                     />
 
                     <input
                       className={readOnlyClass}
-                      value={`Horas totales: ${horasTotales}`}
+                      value={`Horas totales: ${horasMateria?.total ?? horasTotales}`}
                       readOnly
                     />
 
                     <input
                       className={readOnlyClass}
-                      value={`Horas teóricas: ${horasTeoricas}`}
+                      value={`Horas teóricas: ${horasMateria?.teoricas ?? horasTeoricas}`}
                       readOnly
                     />
 
                     <input
                       className={readOnlyClass}
-                      value={`Independientes: ${horasIndependientes}`}
+                      value={`Horas prácticas: ${horasMateria?.practicas ?? "0"}`}
                       readOnly
                     />
                   </div>
@@ -1298,9 +1438,12 @@ fecha: fechaInicio,
                     <button
                       type="button"
                       onClick={generarWord}
-                      className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a]"
+                      disabled={generandoPlaneacion}
+                      className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Generar planeación F-32
+                      {generandoPlaneacion
+                        ? "Generando planeación..."
+                        : "Generar planeación F-32"}
                     </button>
 
                     <button
@@ -1311,6 +1454,19 @@ fecha: fechaInicio,
                       Generar Avance Programático F-51
                     </button>
                   </div>
+
+                  {mensajePlaneacion && (
+                    <div
+                      role="alert"
+                      className={`rounded-2xl border px-5 py-4 text-sm font-semibold ${
+                        mensajePlaneacion.tipo === "exito"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                          : "border-red-200 bg-red-50 text-red-800"
+                      }`}
+                    >
+                      {mensajePlaneacion.texto}
+                    </div>
+                  )}
 
                   <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
                     <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">

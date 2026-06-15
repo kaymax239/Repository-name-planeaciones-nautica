@@ -1,253 +1,943 @@
-export const contenidosSemestre1 = {
-  "Álgebra I": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Aplicar los fundamentos del álgebra en la solución de problemas matemáticos básicos y contextualizados al ámbito académico y marítimo.",
-    estrategia:
-      "Aprendizaje guiado, resolución de ejercicios, trabajo colaborativo y aplicación de problemas prácticos.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción al álgebra y lenguaje algebraico." },
-      { semana: "Semana 2", tema: "Números reales y operaciones fundamentales." },
-      { semana: "Semana 3", tema: "Propiedades de los números reales." },
-      { semana: "Semana 4", tema: "Expresiones algebraicas y simplificación." },
-      { semana: "Semana 5", tema: "Leyes de los exponentes." },
-      { semana: "Semana 6", tema: "Productos notables." },
-      { semana: "Semana 7", tema: "Factorización básica." },
-      { semana: "Semana 8", tema: "Factorización por agrupación y trinomios." },
-      { semana: "Semana 9", tema: "Fracciones algebraicas." },
-      { semana: "Semana 10", tema: "Ecuaciones lineales de una variable." },
-      { semana: "Semana 11", tema: "Problemas aplicados con ecuaciones lineales." },
-      { semana: "Semana 12", tema: "Sistemas de ecuaciones lineales." },
-      { semana: "Semana 13", tema: "Métodos de solución de sistemas de ecuaciones." },
-      { semana: "Semana 14", tema: "Ecuaciones cuadráticas." },
-      { semana: "Semana 15", tema: "Funciones algebraicas básicas." },
-      { semana: "Semana 16", tema: "Aplicaciones algebraicas en contextos técnicos." },
-      { semana: "Semana 17", tema: "Repaso general e integración de contenidos." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Álgebra I." },
-    ],
-  },
+// Programas oficiales 1.er Semestre Piloto Naval (PPE_LPN_FIDENA_2022). FUENTE DE VERDAD: PDFs.
+// Objetivos específicos: solo alta confianza; sin match limpio => "Pendiente de revisión".
+import type { ProgramaOficial } from "../tipos";
 
-  "Física I": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Aplicar los principios básicos de la física para interpretar fenómenos naturales y resolver problemas relacionados con el movimiento, las fuerzas y la energía.",
-    estrategia:
-      "Aprendizaje basado en problemas, experimentación básica, análisis de fenómenos físicos y resolución de ejercicios.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la física y su importancia en el ámbito marítimo." },
-      { semana: "Semana 2", tema: "Magnitudes físicas, unidades y sistemas de medición." },
-      { semana: "Semana 3", tema: "Conversión de unidades y notación científica." },
-      { semana: "Semana 4", tema: "Vectores y escalares." },
-      { semana: "Semana 5", tema: "Operaciones con vectores." },
-      { semana: "Semana 6", tema: "Movimiento rectilíneo uniforme." },
-      { semana: "Semana 7", tema: "Movimiento rectilíneo uniformemente acelerado." },
-      { semana: "Semana 8", tema: "Caída libre y movimiento vertical." },
-      { semana: "Semana 9", tema: "Leyes de Newton." },
-      { semana: "Semana 10", tema: "Aplicación de fuerzas y diagramas de cuerpo libre." },
-      { semana: "Semana 11", tema: "Trabajo mecánico." },
-      { semana: "Semana 12", tema: "Energía cinética y energía potencial." },
-      { semana: "Semana 13", tema: "Conservación de la energía." },
-      { semana: "Semana 14", tema: "Potencia y rendimiento." },
-      { semana: "Semana 15", tema: "Cantidad de movimiento e impulso." },
-      { semana: "Semana 16", tema: "Aplicaciones de la física en situaciones náuticas." },
-      { semana: "Semana 17", tema: "Repaso general de conceptos físicos." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Física I." },
+export const contenidosSemestre1: Record<string, ProgramaOficial> = {
+  "Transporte Marítimo": {
+    "clave": "TMO101",
+    "nombre": "Transporte Marítimo",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 5,
+      "teoricas": 70,
+      "practicas": 20,
+      "independientes": 10,
+      "total": 100
+    },
+    "objetivoGeneral": "Identificar la nomenclatura de los diferentes tipos de buque, los elementos estructurales, así como los equipos de maniobra y fondeo, realizando actividades teórico/prácticas, para relacionarse con el ámbito marítimo.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Antecedentes del Transporte Marítimo",
+        "objetivoEspecifico": "Conocer la importancia de la actividad marítima, a través de la historia, describiendo las diferentes etapas de la navegación en el mundo, así como el desarrollo comercial marítimo hasta nuestros días.",
+        "subtemas": [
+          "1.1 Historia antigua de la navegación.",
+          "1.2 Historia moderna de la navegación."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Transporte Marítimo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Tipos de buque y sus particularidades.",
+          "2.2 Fundamentos básicos del transporte marítimo.",
+          "2.3 La comercialización del transporte marítimo.",
+          "2.4 La interrelación entre el transporte marítimo, el puerto y los otros medios de transporte.",
+          "2.5 El transporte marítimo como parte de la cadena del transporte multimodal.",
+          "2.6 Demanda del transporte marítimo en México y en el extranjero."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Organismos Internacionales que regulan la Marina Mercante Nacional",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 OMI (Organización Marítima Internacional).",
+          "3.2 OIT (Organización Internacional del Trabajo).",
+          "3.3 UIT (Unión Internacional de Telecomunicaciones).",
+          "3.4 OMM (Organización Meteorológica Mundial)."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Desarrollo de la propulsión Naval",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Cambio de la madera por el hierro.",
+          "4.2 Primer buque de vapor.",
+          "4.3 Aparición de la turbina.",
+          "4.4 Motores de combustión interna.",
+          "4.5 Propulsión eléctrica."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Dimensiones y elementos del Buque",
+        "objetivoEspecifico": "Describir e identificar los elementos de un buque, mediante el uso de planos, diagramas o modelos a escala de embarcaciones mercantes, para conocer su nomenclatura.",
+        "subtemas": [
+          "5.1 Definición de buque.",
+          "5.2 Dimensiones principales del buque.",
+          "5.3 Nomenclatura del buque.",
+          "5.4 Interpretación del comportamiento en planos."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Refuerzos de Proa y Popa",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "6.1 Refuerzos adicionales en proa y popa, para reforzar estructuralmente y soportar los golpes de mar.",
+          "6.2 Construcción de la roda.",
+          "6.3 Construcción del codaste en buques de una y dos hélices. mar.",
+          "6.4 Construcción de los diferentes tipos de proa y popa, mostrando sus conexiones estructurales."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 7,
+        "tema": "Equipo de carga/descarga",
+        "objetivoEspecifico": "Identificar y describir la distribución de los componentes usados en maniobras de atraque/desatraque y fondeo, analizando sus operaciones en forma segura.",
+        "subtemas": [
+          "7.1 Estanqueidad en las tapa escotillas mecánicas modernas. componentes usados en maniobras de",
+          "7.2 Estanqueidad en accesos.",
+          "7.3 Limpieza de las tapa escotillas.",
+          "7.4 Pontones portátiles.",
+          "7.5 Tapa escotillas hidráulicas.",
+          "7.6 Descripción de la construcción de grúas y plumas de carga.",
+          "7.7 Descripción de la construcción de mástiles y king posts. Forma de soportar su base."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 8,
+        "tema": "Equipo de maniobra",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "8.1 Descripción del equipo de fondeo.",
+          "8.2 Descripción de equipo de amarre.",
+          "8.3 Distribución típica de amarre y fondeo en el castillo, gateras características e implicaciones, para las de amarre.",
+          "8.4 Descripción y uso de los winches de tensión constante.",
+          "8.5 Descripción del sistema de gobierno.",
+          "8.6 Descripción del sistema de propulsión."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 9,
+        "tema": "Tanques de lastre, agua dulce y combustible.",
+        "objetivoEspecifico": "Identificar y describir la distribución y capacidad de tanques en el buque, así como tubos sonda y respiraderos, desarrollando actividades teórico/prácticas, pasar a su eficiente aplicación.",
+        "subtemas": [
+          "9.1 Distribución de tanques.",
+          "9.2 Disposición y construcción de tubos sonda.",
+          "9.3 Distribución y construcción de respiraderos de tanques."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 10,
+        "tema": "Líneas de Carga y Marca de calados",
+        "objetivoEspecifico": "Distinguir y ubicar escalas de calados y líneas de carga, interpretándolas en diagramas o imágenes, para obtener una lectura correcta.",
+        "subtemas": [
+          "10.1 Escalas de calados, lugares donde se marcan.",
+          "10.2 Definición de francobordo.",
+          "10.3 Líneas y marcas de carga.",
+          "10.4 Desplazamiento.",
+          "10.5 Lectura de calados."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 11,
+        "tema": "Esfuerzos en el buque",
+        "objetivoEspecifico": "Reconocer los tipos de esfuerzos flexionantes, identificando las causas que los producen, para su correcta comprensión.",
+        "subtemas": [
+          "11.1 Definición de quebranto y arrufo.",
+          "11.2 Causas que provocan el quebranto y el arrufo.",
+          "11.3 Identificación de equipos que determinan esfuerzos."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 12,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
     ],
-  },
-
-  "Electricidad I": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Comprender los fundamentos de la electricidad mediante el análisis de conceptos básicos, circuitos eléctricos y aplicaciones técnicas iniciales.",
-    estrategia:
-      "Aprendizaje guiado, prácticas demostrativas, análisis de circuitos básicos y resolución de problemas.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la electricidad y su importancia técnica." },
-      { semana: "Semana 2", tema: "Carga eléctrica y estructura de la materia." },
-      { semana: "Semana 3", tema: "Corriente eléctrica, voltaje y resistencia." },
-      { semana: "Semana 4", tema: "Ley de Ohm." },
-      { semana: "Semana 5", tema: "Potencia eléctrica y energía eléctrica." },
-      { semana: "Semana 6", tema: "Circuitos eléctricos básicos." },
-      { semana: "Semana 7", tema: "Circuitos en serie." },
-      { semana: "Semana 8", tema: "Circuitos en paralelo." },
-      { semana: "Semana 9", tema: "Circuitos mixtos." },
-      { semana: "Semana 10", tema: "Instrumentos de medición eléctrica." },
-      { semana: "Semana 11", tema: "Uso básico del multímetro." },
-      { semana: "Semana 12", tema: "Conductores, aislantes y materiales eléctricos." },
-      { semana: "Semana 13", tema: "Seguridad eléctrica básica." },
-      { semana: "Semana 14", tema: "Simbología eléctrica." },
-      { semana: "Semana 15", tema: "Diagramas eléctricos básicos." },
-      { semana: "Semana 16", tema: "Aplicaciones de electricidad en sistemas marítimos." },
-      { semana: "Semana 17", tema: "Repaso general de Electricidad I." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Electricidad I." },
+    "bibliografia": [
+      "Romero, Rosa. Logística del Transporte. Marge Books, 2003.",
+      "León, Alex; Romero, Rosa; Ocampo, José (Cap.). Cultura Marítima. ENV, 2002.",
+      "Transporte Marítimo. Marge Books, 2002."
     ],
+    "fuente": "LPN_S1.1_TMO101.pdf"
   },
-
+  "Álgebra": {
+    "clave": "ALG103",
+    "nombre": "Álgebra",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 4,
+      "teoricas": 36,
+      "practicas": 36,
+      "independientes": 8,
+      "total": 80
+    },
+    "objetivoGeneral": "Obtener los conocimientos matemáticos básicos, mediante la resolución de ejercicios y actividades, que permitan resolver algebraicamente problemáticas inherentes a la profesión.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Álgebra Elemental",
+        "objetivoEspecifico": "Relacionar la aritmética y el álgebra mediante letras y números, interpretando fórmulas y utilizando el lenguaje algebraico, para la correcta resolución de problemas.",
+        "subtemas": [
+          "1.1 Conceptos fundamentales de álgebra.",
+          "1.2 Expresiones algebraicas.",
+          "1.3 Exponentes y radicales.",
+          "1.4 Operaciones algebraicas básicas.",
+          "1.5 Productos notables.",
+          "1.6 Factorización.",
+          "1.7 Operaciones con fracciones algebraicas.",
+          "1.8 Teorema del binomio."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Ecuaciones, desigualdades y números complejos",
+        "objetivoEspecifico": "Establecer la existencia de los números complejos, resolviendo una ecuación de segundo grado que se ajusta al discriminante negativo, para realizar operaciones básicas con los mismos.",
+        "subtemas": [
+          "2.1 Ecuaciones lineales y aplicación.",
+          "2.2 Ecuaciones con literales.",
+          "2.3 Desigualdades.",
+          "2.4 Ecuaciones cuadráticas.",
+          "2.5 Números complejos (operaciones).",
+          "2.6 Forma polar y exponencial de un número complejo.",
+          "2.7 Teorema Moivre."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Logaritmos",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Funciones exponenciales.",
+          "3.2 Funciones logarítmicas.",
+          "3.3 Gráficas de funciones logarítmicas.",
+          "3.4 Logaritmos vulgares y naturales.",
+          "3.5 Ecuaciones exponenciales y logarítmicas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Matrices y determinantes",
+        "objetivoEspecifico": "Utilizar adecuadamente las propiedades de las matrices, así como las operaciones entre ellas, utilizando arreglos con números solamente, para aplicarlos en sistemas de ecuaciones lineales.",
+        "subtemas": [
+          "4.1 Definición de matriz, notación y orden.",
+          "4.2 Operaciones con matrices.",
+          "4.3 Clasificación de las matrices.",
+          "4.4 Transformaciones elementales por renglón.",
+          "4.5 Obtención de la inversa de una matriz.",
+          "4.6 Definición de una matriz.",
+          "4.7 Propiedades de las determinantes.",
+          "4.8 Inversa de una matriz cuadrada a través de la adjunta."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Sistemas de Ecuaciones y desigualdades",
+        "objetivoEspecifico": "Resolver sistemas de ecuaciones con método de determinantes, Gauss, Gauss-Jordan y matriz inversa, para Resolver sistemas de desigualdades con dos variables, utilizando el plano cartesiano, para solucionar problemas de programación lineal.",
+        "subtemas": [
+          "5.1 Clasificación de los sistemas de ecuaciones lineales y dos o más variables, aplicando el tipos de solución.",
+          "5.2 Interpretación geométrica de las soluciones.",
+          "5.3 Métodos de solución de un sistema de ecuaciones solucionar problemas determinados. lineales: Gauss, Gauss-Jordan, Inversa de una matriz, regla de Cramer.",
+          "5.4 Sistemas de desigualdades.",
+          "5.5 Programación lineal."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Álgebra Vectorial",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "6.1 Vectores.",
+          "6.2 Adición de vectores.",
+          "6.3 Producto de dos vectores. (punto y cruz)",
+          "6.4 Resolución de problemas con fuerza, velocidad y aceleración."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 7,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Swokowski, Earl W. Álgebra y Trigonometría con Geometría Analítica. Grupo Iberoamérica, 1988.",
+      "Baldor, Aurelio. Álgebra. Publicaciones Culturales, 2009.",
+      "Rees, Paul; Sparks, Fred. Álgebra. Reverté, 2003."
+    ],
+    "fuente": "LPN_S1.3_ALG103.pdf"
+  },
+  "Física": {
+    "clave": "FIS104",
+    "nombre": "Física",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 4,
+      "teoricas": 36,
+      "practicas": 36,
+      "independientes": 6,
+      "total": 78
+    },
+    "objetivoGeneral": "Obtener los principios básicos de la Física, mediante el estudio, análisis y desarrollo de conceptos, teorías y leyes propios de esta disciplina, para resolver problemas concretos inherentes a la profesión.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Mecánica",
+        "objetivoEspecifico": "Utilizar las magnitudes fundamentales así en conversiones del al Sistema Inglés y Internacional, en la resolución de Relación entre velocidad angular constante y velocidad tangencial constante. Concepto de velocidad angular, velocidad instantánea y velocidad media.",
+        "subtemas": [
+          "1.1 Mediciones",
+          "1.1.1 Magnitudes fundamentales y derivadas del Sistema como las derivadas Internacional y unidades.",
+          "1.1.2 Magnitudes fundamentales y derivadas del Sistema Sistema Internacional Inglés.",
+          "1.1.3 Múltiplos y submúltiplos del Sistema Internacional y de éste al Sistema del Sistema Inglés.",
+          "1.1.4 Magnitudes escalares y vectoriales.",
+          "1.1.5 Suma gráfica y analítica (componentes) de vectores. problemas.",
+          "1.2 Cinemática en una dimensión",
+          "1.2.1 Concepto de velocidad, velocidad media, aceleración y sus unidades.",
+          "1.2.2 Concepto de movimiento uniformemente acelerado.",
+          "1.2.3 Características de movimiento en caída libre y en tiro vertical.",
+          "1.3 Cinemática en dos dimensiones",
+          "1.3.1 Características de un objeto con movimiento horizontal.",
+          "1.3.2 Características del tiro parabólico.",
+          "1.4 Movimiento circular",
+          "1.4.1 Relación entre desplazamiento angular y lineal, partiendo de la definición de radián. Concepto de aceleración angular constante como cambio de la velocidad angular de un cuerpo. Concepto de fuerza centrífuga y fuerza centrípeta.",
+          "1.5 Leyes de Newton",
+          "1.5.1 Primera, segunda y tercera Ley de Newton.",
+          "1.5.2 Ley de la Gravitación Universal.",
+          "1.5.3 Experimento de Cavendish para determinar el valor G y el fenómeno de las mareas.",
+          "1.5.4 Concepto de campo gravitacional.",
+          "1.5.5 Aplicaciones de la Ley de la Gravitación Universal."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Trabajo",
+        "objetivoEspecifico": "Relacionar el trabajo, la energía y la potencia, mediante ejercicios y deducciones algebráicas, para resolver problemas aparentemente ajenos entre sí.",
+        "subtemas": [
+          "2.1 Trabajo, energía y potencia",
+          "2.1.1 Concepto de trabajo mecánico, sus unidades y el efecto de las fuerzas de fricción en su realización.",
+          "2.1.2 Problemas relacionados con trabajo mecánico utilizando análisis dimensional.",
+          "2.1.3 Concepto de energía mecánica y su división en energía cinética, potencia, unidades y el principio de con conceptos conservación de la energía.",
+          "2.1.4 Problemas sobre la conservación de la energía, utilizando análisis dimensional.",
+          "2.1.5 Concepto de potencia y problemas que la involucran con el trabajo y la velocidad.",
+          "2.2 Impulso y cantidad de movimiento",
+          "2.2.1 Concepto de impulso, expresión matemática que lo define y problemas.",
+          "2.2.2 Concepto de cantidad de movimiento, su expresión matemática y problemas.",
+          "2.2.3 Cambio en la cantidad de movimiento originada por un impulso.",
+          "2.2.4 Movimiento de un sistema, tanto de masa constante como de masa variable (cohetes) ft=mv",
+          "2.2.5 Principio de conservación de la cantidad de movimiento.",
+          "2.2.6 Choques elásticos e inelásticos.",
+          "2.2.7 Concepto de coeficiente de restitución."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Estado físico de los cuerpos.",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Propiedades de la materia.",
+          "3.1.1 Cohesión y adhesión.",
+          "3.1.2 Densidad, densidad relativa y peso específico relativo. ejercicios y",
+          "3.1.3 Principio de Arquímedes.",
+          "3.1.4 Elasticidad y Ley de Hook.",
+          "3.1.5 Límite de elasticidad y módulo de Young.",
+          "3.2 Calor y temperatura. y conversiones entre ellas. de dilatación."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Ondas",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Movimiento ondulatorio.",
+          "4.1.1 Concepto de onda mecánica.",
+          "4.1.2 Movimiento ondulatorio periódico y el significado de ondulatorio al los términos: frecuencia, periodo, longitud de onda, relacionarlo con el amplitud de onda, velocidad.",
+          "4.1.3 Diferencia entre onda transversal y onda longitudinal. comprender",
+          "4.1.4 Ondas estacionarias.",
+          "4.1.5 Resonancia y efecto Doopler.",
+          "4.1.6 Interferencia de ondas (superposición)."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Alonso, M. y Finn, E. J. Física. Addison-Wesley Interamericana, 1995.",
+      "Serway. Física. McGraw-Hill, 1992.",
+      "Burbano, S.; Burbano, E.; Gracia, C. Física General. Tebar, 2004.",
+      "Eisberg; Lerner. Física. Fundamentos y Aplicaciones. McGraw-Hill, 1983.",
+      "Gettys; Keller; Skove. Física Clásica y Moderna. McGraw-Hill, 1991.",
+      "Goldemberg. Física general y experimental. Interamericana, 1972.",
+      "Melissinos, A. C.; Lobkowicz, F. Physics for Scientist and Engineers. W. B. Saunders & Co, 1975.",
+      "Tipler, P. A. Física. Reverté, 1994."
+    ],
+    "fuente": "LPN_S1.4_FIS104.pdf"
+  },
   "Dibujo de Ingeniería": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Interpretar y elaborar dibujos técnicos básicos mediante el uso de normas, instrumentos y principios de representación gráfica aplicados a la ingeniería.",
-    estrategia:
-      "Práctica guiada, elaboración de láminas, interpretación de planos y trabajo individual supervisado.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción al dibujo técnico y dibujo de ingeniería." },
-      { semana: "Semana 2", tema: "Materiales, instrumentos y normas básicas de dibujo." },
-      { semana: "Semana 3", tema: "Tipos de líneas y rotulación técnica." },
-      { semana: "Semana 4", tema: "Escalas y formatos de presentación." },
-      { semana: "Semana 5", tema: "Trazos geométricos básicos." },
-      { semana: "Semana 6", tema: "Construcciones geométricas aplicadas." },
-      { semana: "Semana 7", tema: "Proyecciones ortogonales." },
-      { semana: "Semana 8", tema: "Vistas principales de objetos." },
-      { semana: "Semana 9", tema: "Representación de piezas simples." },
-      { semana: "Semana 10", tema: "Acotaciones básicas." },
-      { semana: "Semana 11", tema: "Cortes y secciones." },
-      { semana: "Semana 12", tema: "Perspectiva isométrica." },
-      { semana: "Semana 13", tema: "Interpretación de planos técnicos." },
-      { semana: "Semana 14", tema: "Simbología técnica básica." },
-      { semana: "Semana 15", tema: "Aplicaciones del dibujo en ingeniería marítima." },
-      { semana: "Semana 16", tema: "Elaboración de plano técnico integrador." },
-      { semana: "Semana 17", tema: "Revisión y corrección de láminas." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Dibujo de Ingeniería." },
+    "clave": "DII105",
+    "nombre": "Dibujo de Ingeniería",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 4,
+      "teoricas": 24,
+      "practicas": 48,
+      "independientes": 12,
+      "total": 84
+    },
+    "objetivoGeneral": "Identificar los fundamentos del dibujo aplicando su interpretación y elaboración en planos, diagramas de equipos y elementos estructurales del buque, utilizando programas de diseño asistido por computadora.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Introducción",
+        "objetivoEspecifico": "Interpretar la terminología de dibujo para el trazo de líneas.",
+        "subtemas": [
+          "1.1 El dibujo de ingeniería como medio de comunicación e técnico, utilizando el material adecuado interpretación.",
+          "1.2 Tipos de líneas usadas en dibujo de ingeniería.",
+          "1.3 Material y equipo (uso de software)."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Escalas y acotaciones",
+        "objetivoEspecifico": "Aplicar el uso de las escalas y acotaciones para la correcta gratificación de dibujos.",
+        "subtemas": [
+          "2.1 Tipos de escalas y su uso.",
+          "2.2 Tipos de acotaciones."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Problemas Geométricas",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Conocimientos básicos para la solución de problemas conocimientos geométricos para la geométricos."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Proyecciones ortogonales en primer cuadrante",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Principios y dibujos.",
+          "4.2 Cortes y secciones."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Proyección Isométrica",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "5.1 Principios y dibujos.",
+          "5.2 Cortes y secciones."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Simbología",
+        "objetivoEspecifico": "Identificar y dibujar los distintos símbolos utilizados en planos del ramo marítimo para su correcta interpretación Conocer la clasificación de la simbología y colores utilizados en buques para relacionarlos en su medio laboral.",
+        "subtemas": [
+          "6.1 Representación gráfica de los colores.",
+          "6.2 Símbolos topográficos y eléctricos.",
+          "6.3 Símbolos estándares en el ramo marítimo.",
+          "6.4 Símbolos básicos de instrumentos, válvula, conexiones y representación convencional.",
+          "6.5 Símbolos en los buques.",
+          "6.6 Representación convencional y clasificación de juntas.",
+          "6.7 Simbología de soldaduras y clasificación de juntas.",
+          "6.8 Clave de colores para identificación de tuberías en plantas de vapor, gas y diesel."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 7,
+        "tema": "Interpretación",
+        "objetivoEspecifico": "Interpretar la información proporcionada por planos cartográficos, para su comprensión y correcta aplicación.",
+        "subtemas": [
+          "7.1 Planos cartográficos.",
+          "7.2 Cartas terrestres.",
+          "7.3 Cartas marinas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 8,
+        "tema": "Tipos de plano",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "8.1 Ingeniería Civil.",
+          "8.2 Arquitectónicos.",
+          "8.3 Eléctricos.",
+          "8.4 Instalaciones eléctricas navales."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 9,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
     ],
-  },
-
-  "Expresión Oral y Escrita": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Desarrollar habilidades de comunicación oral y escrita mediante la producción de textos, exposiciones y actividades de comprensión aplicadas al contexto académico.",
-    estrategia:
-      "Lectura guiada, redacción progresiva, exposiciones orales, análisis de textos y retroalimentación continua.",
-    semanas: [
-      { semana: "Semana 1", tema: "Importancia de la comunicación oral y escrita." },
-      { semana: "Semana 2", tema: "Elementos del proceso comunicativo." },
-      { semana: "Semana 3", tema: "Funciones del lenguaje." },
-      { semana: "Semana 4", tema: "Tipos de textos." },
-      { semana: "Semana 5", tema: "Comprensión lectora básica." },
-      { semana: "Semana 6", tema: "Ideas principales y secundarias." },
-      { semana: "Semana 7", tema: "Resumen y paráfrasis." },
-      { semana: "Semana 8", tema: "Estructura del párrafo." },
-      { semana: "Semana 9", tema: "Coherencia y cohesión textual." },
-      { semana: "Semana 10", tema: "Ortografía y puntuación." },
-      { semana: "Semana 11", tema: "Redacción de textos académicos breves." },
-      { semana: "Semana 12", tema: "Planeación de una exposición oral." },
-      { semana: "Semana 13", tema: "Técnicas de expresión oral." },
-      { semana: "Semana 14", tema: "Uso de apoyos visuales en presentaciones." },
-      { semana: "Semana 15", tema: "Argumentación básica." },
-      { semana: "Semana 16", tema: "Producción de texto integrador." },
-      { semana: "Semana 17", tema: "Presentaciones orales y retroalimentación." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Expresión Oral y Escrita." },
+    "bibliografia": [
+      "Camberos, Alberto. Dibujo de Ingeniería. Porrúa, 1998.",
+      "Luzadder, Warren. Introducción al Dibujo de Ingeniería. CECSA, 1996.",
+      "Schneider, H.; Sappert, D. Manual Práctico de dibujo técnico. Reverté, 2010."
     ],
+    "fuente": "LPN_S1.5_DII105.pdf"
   },
-
-  "Transporte Marítimo I": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Identificar los fundamentos del transporte marítimo, su importancia económica, tipos de embarcaciones, operaciones básicas y elementos del sistema portuario.",
-    estrategia:
-      "Aprendizaje contextualizado, análisis de casos, revisión de conceptos marítimos y discusión guiada.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción al transporte marítimo." },
-      { semana: "Semana 2", tema: "Importancia del transporte marítimo en el comercio mundial." },
-      { semana: "Semana 3", tema: "Historia y evolución del transporte marítimo." },
-      { semana: "Semana 4", tema: "Tipos de buques mercantes." },
-      { semana: "Semana 5", tema: "Características generales de las embarcaciones." },
-      { semana: "Semana 6", tema: "Cargas marítimas y su clasificación." },
-      { semana: "Semana 7", tema: "Contenedores y transporte multimodal." },
-      { semana: "Semana 8", tema: "Puertos y terminales marítimas." },
-      { semana: "Semana 9", tema: "Operaciones portuarias básicas." },
-      { semana: "Semana 10", tema: "Agentes que intervienen en el transporte marítimo." },
-      { semana: "Semana 11", tema: "Documentación básica del transporte marítimo." },
-      { semana: "Semana 12", tema: "Seguridad en operaciones marítimas." },
-      { semana: "Semana 13", tema: "Normatividad marítima básica." },
-      { semana: "Semana 14", tema: "Rutas marítimas comerciales." },
-      { semana: "Semana 15", tema: "Impacto ambiental del transporte marítimo." },
-      { semana: "Semana 16", tema: "Aplicaciones del transporte marítimo en México." },
-      { semana: "Semana 17", tema: "Repaso general de Transporte Marítimo I." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Transporte Marítimo I." },
+  "Electricidad": {
+    "clave": "ELE106",
+    "nombre": "Electricidad",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 4,
+      "teoricas": 36,
+      "practicas": 36,
+      "independientes": 6,
+      "total": 78
+    },
+    "objetivoGeneral": "Aplicar los principios básicos de electricidad, Ley de Ohm y Kirchhoff en circuitos y redes eléctricas, para su correcto funcionamiento.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Electrostática",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "1.1 Definición de electricidad.",
+          "1.2 Tipos de electricidad.",
+          "1.3 Carga eléctrica.",
+          "1.4 Ley de Coulomb.",
+          "1.5 Campo eléctrico."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Electrodinámica",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Diferencia de potencial.",
+          "2.2 Corriente eléctrica.",
+          "2.3 Resistencia al paso de la corriente.",
+          "2.4 Resistividad.",
+          "2.5 Relación entre las dimensiones de un trozo de material y su resistencia.",
+          "2.6 Conductores y aislantes.",
+          "2.7 Resistencias de cuerpos de sección transversal y variable.",
+          "2.8 Coeficiente de temperatura de un resistor.",
+          "2.9 Termómetro de resistencia.",
+          "2.10 Código de colores.",
+          "2.11 Pilas.",
+          "2.12 Acumuladores."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Circuito eléctrico",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 La Ley de Ohm.",
+          "3.2 Leyes de Kirchhoff.",
+          "3.3 Circuito con resistencia en serie.",
+          "3.4 Circuitos con resistencias en paralelo.",
+          "3.5 Circuitos en serie/paralelo."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Conexiones eléctricas",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Resistencias en estrella.",
+          "4.2 Resistencias en delta.",
+          "4.3 Circuitos estrella y delta equivalentes."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Redes eléctricas",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "5.1 Concepto de red.",
+          "5.2 Determinación de la resistencia de una red entre nodos.",
+          "5.3 Determinación de la intensidad de la corriente en cada rama de la red."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
     ],
-  },
-
-  "PMR I": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Fortalecer la preparación marítima básica del cadete mediante el desarrollo de disciplina, responsabilidad, hábitos institucionales y conocimientos iniciales de la vida náutica.",
-    estrategia:
-      "Formación práctica, actividades disciplinarias, trabajo colaborativo, reflexión institucional y seguimiento de hábitos.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a la vida institucional y formación marítima." },
-      { semana: "Semana 2", tema: "Disciplina, responsabilidad y puntualidad." },
-      { semana: "Semana 3", tema: "Valores institucionales y conducta del cadete." },
-      { semana: "Semana 4", tema: "Organización personal y hábitos de estudio." },
-      { semana: "Semana 5", tema: "Presentación personal y normas de convivencia." },
-      { semana: "Semana 6", tema: "Trabajo en equipo y liderazgo básico." },
-      { semana: "Semana 7", tema: "Comunicación efectiva en el ambiente escolar." },
-      { semana: "Semana 8", tema: "Seguridad personal y prevención de riesgos." },
-      { semana: "Semana 9", tema: "Introducción a la cultura marítima." },
-      { semana: "Semana 10", tema: "Terminología náutica básica." },
-      { semana: "Semana 11", tema: "Estructura y organización de una institución náutica." },
-      { semana: "Semana 12", tema: "Responsabilidades del cadete en formación." },
-      { semana: "Semana 13", tema: "Ética y compromiso profesional." },
-      { semana: "Semana 14", tema: "Resolución de conflictos y convivencia." },
-      { semana: "Semana 15", tema: "Preparación para actividades académicas y prácticas." },
-      { semana: "Semana 16", tema: "Integración de aprendizajes de formación marítima." },
-      { semana: "Semana 17", tema: "Repaso y retroalimentación formativa." },
-      { semana: "Semana 18", tema: "Evaluación integradora de PMR I." },
+    "bibliografia": [
+      "Dawes, Chester L. Tratado de Electricidad volumen 1. CECSA, 2000.",
+      "Halliday y Resnick. Física volumen II. Gustavo Gili, S.A., 1998.",
+      "Serway, Raymond. Física volumen II. McGraw-Hill, 2002."
     ],
+    "fuente": "LPN_S1.6_ELE106.pdf"
   },
-
+  "Prácticas Marineras I": {
+    "clave": "PMR107",
+    "nombre": "Prácticas Marineras I",
+    "tipo": "Teórico-práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 3,
+      "teoricas": 18,
+      "practicas": 36,
+      "independientes": 0,
+      "total": 54
+    },
+    "objetivoGeneral": "Identificar la nomenclatura de los diferentes tipos de botes salvavidas, cabullería y Cabos de amarre, además del uso de dispositivos individuales de salvamento, a través de boga y natación, realizando actividades teórico-prácticas, para relacionarse con el ámbito marítimo.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Natación",
+        "objetivoEspecifico": "Practicar la natación utilizando dispositivos individuales de salvamento para la seguridad personal.",
+        "subtemas": [
+          "1.1 Flotación.",
+          "1.2 Uso correcto del Chaleco Salvavidas.",
+          "1.3 Nado libre.",
+          "1.4 Uso del aro salvavidas.",
+          "1.5 Colocación en el agua de los medios de salvamento.  Practicar y organizar equipos de boga en"
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Bote salvavidas",
+        "objetivoEspecifico": "Conocer tipos y accesorios de botes salvavidas, a través de reglas de SOLAS, para verificar el equipo que debe contener el bote. sus diferentes modalidades a bordo de botes salvavidas, para el buen desempeño y seguimiento de las órdenes.",
+        "subtemas": [
+          "2.1 Conocimientos generales.",
+          "2.2 Tipos de botes.",
+          "2.3 Nomenclatura de botes.",
+          "2.4 Accesorios."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Boga",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Organización del bote.",
+          "3.2 Órdenes para la boga.",
+          "3.3 Boga a Pareles.",
+          "3.4 Boga a la Tercio.",
+          "3.5 Boga a la Singa.",
+          "3.6 Boga a la Punta."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Cabuyería",
+        "objetivoEspecifico": "Conocer los diferentes tipos y materiales de cabuyería, utilizándolos en distintas áreas del buque, para su correcta aplicación.",
+        "subtemas": [
+          "4.1 Conceptos y definiciones.",
+          "4.2 Materiales y origen.",
+          "4.3 Constitución del Cabo.",
+          "4.4 Áreas de aplicación de los Cabos.",
+          "4.5 Diferentes tipos de Cabo."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Cabos de amarre",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "5.1 Distribución de Cabos de amarre.",
+          "5.2 Boza."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Danton, Graham. The theory and practice of seamanship. Routledge & Kegan Paul (UK), 2002.",
+      "Barbudo E., Ignacio. Tratado de maniobras tomo I. Fragata, 1998.",
+      "Mc Leod, William. The boatswain's manual. A.G.W. Miller, 2000."
+    ],
+    "fuente": "LPN_S1.7_PMR107-.pdf"
+  },
   "Educación Física I": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Desarrollar capacidades físicas básicas mediante actividades motrices, ejercicios de acondicionamiento y hábitos saludables aplicados a la formación integral del cadete.",
-    estrategia:
-      "Actividades prácticas, acondicionamiento físico progresivo, juegos organizados, evaluación física y trabajo colaborativo.",
-    semanas: [
-      { semana: "Semana 1", tema: "Diagnóstico físico inicial y normas de seguridad." },
-      { semana: "Semana 2", tema: "Calentamiento, movilidad articular y estiramiento." },
-      { semana: "Semana 3", tema: "Resistencia cardiovascular básica." },
-      { semana: "Semana 4", tema: "Fuerza general con peso corporal." },
-      { semana: "Semana 5", tema: "Velocidad y reacción." },
-      { semana: "Semana 6", tema: "Coordinación motriz." },
-      { semana: "Semana 7", tema: "Equilibrio y control corporal." },
-      { semana: "Semana 8", tema: "Flexibilidad y prevención de lesiones." },
-      { semana: "Semana 9", tema: "Circuitos de acondicionamiento físico." },
-      { semana: "Semana 10", tema: "Actividades recreativas y trabajo en equipo." },
-      { semana: "Semana 11", tema: "Fundamentos de deportes colectivos." },
-      { semana: "Semana 12", tema: "Higiene, salud y actividad física." },
-      { semana: "Semana 13", tema: "Capacidades físicas aplicadas a la vida náutica." },
-      { semana: "Semana 14", tema: "Disciplina física y hábitos saludables." },
-      { semana: "Semana 15", tema: "Prueba física parcial y retroalimentación." },
-      { semana: "Semana 16", tema: "Plan de mejora física individual." },
-      { semana: "Semana 17", tema: "Repaso práctico y preparación de evaluación." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Educación Física I." },
+    "clave": "C0011",
+    "nombre": "Educación Física I",
+    "tipo": "Práctica",
+    "horas": {
+      "semanas": 18,
+      "porSemana": 3,
+      "teoricas": 0,
+      "practicas": 54,
+      "independientes": 0,
+      "total": 54
+    },
+    "objetivoGeneral": "Realizar movimientos físicos para el desarrollo de la percepción y mejora de la coordinación motriz fina y gruesa en el desempeño de cualquier función.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Percepción y coordinación motriz",
+        "objetivoEspecifico": "Ejecutar movimientos físicos de forma adecuada, desarrollando la percepción y coordinación motriz, psicomotriz, para favorecer la ubicación en el espacio, tiempo, equilibrio y lateralidad.",
+        "subtemas": [
+          "1.1 Movimiento físicos.",
+          "1.2 Ubicación espacial.",
+          "1.3 Coordinación motriz y psicomotriz.",
+          "1.4 Equilibrio.",
+          "1.5 Lateralidad."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Desarrollo físico integral",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Fuerza muscular.",
+          "2.2 Resistencia cardiorespiratoria.",
+          "2.3 Flexibilidad articular y muscular."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Concentración",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Fútbol.",
+          "3.2 Juegos de concentración.",
+          "3.3 Básquetbol.",
+          "3.4 Voleibol."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Condición física",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 Fuerza.",
+          "4.2 Vigor.",
+          "4.3 Flexibilidad."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 5,
+        "tema": "Natación",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "5.1 Técnica.",
+          "5.2 Flotación.",
+          "5.3 Nado libre.",
+          "5.4 Nado en grupo.",
+          "5.5 Sobrevivencia."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
     ],
+    "bibliografia": [
+      "Alonso, V. Las actividades en la naturaleza. Curso de asesores Técnicos de Educación Física, 1990.",
+      "Álvarez del Villar, C. Preparación física del fútbol basada en el atletismo. Gymnos, 1987.",
+      "Anderson, B. Estirándose. Shelter Publication, 1980."
+    ],
+    "fuente": "LPN_S1.8_C0011.pdf"
   },
-
   "Estrategias de Aprendizaje": {
-    unidad: "I",
-    objetivoEspecifico:
-      "Aplicar estrategias de aprendizaje autónomo, organización académica y pensamiento crítico para mejorar el desempeño escolar del cadete.",
-    estrategia:
-      "Aprendizaje reflexivo, elaboración de organizadores gráficos, técnicas de estudio, trabajo colaborativo y autoevaluación.",
-    semanas: [
-      { semana: "Semana 1", tema: "Introducción a las estrategias de aprendizaje." },
-      { semana: "Semana 2", tema: "Estilos de aprendizaje y autoconocimiento académico." },
-      { semana: "Semana 3", tema: "Organización del tiempo y planificación de actividades." },
-      { semana: "Semana 4", tema: "Hábitos de estudio efectivos." },
-      { semana: "Semana 5", tema: "Técnicas de lectura comprensiva." },
-      { semana: "Semana 6", tema: "Subrayado, notas y toma de apuntes." },
-      { semana: "Semana 7", tema: "Resumen, síntesis y paráfrasis." },
-      { semana: "Semana 8", tema: "Mapas conceptuales y mapas mentales." },
-      { semana: "Semana 9", tema: "Cuadros comparativos y organizadores gráficos." },
-      { semana: "Semana 10", tema: "Memoria, atención y concentración." },
-      { semana: "Semana 11", tema: "Pensamiento crítico y solución de problemas." },
-      { semana: "Semana 12", tema: "Trabajo colaborativo y aprendizaje cooperativo." },
-      { semana: "Semana 13", tema: "Preparación para exámenes." },
-      { semana: "Semana 14", tema: "Manejo del estrés académico." },
-      { semana: "Semana 15", tema: "Uso responsable de recursos digitales para aprender." },
-      { semana: "Semana 16", tema: "Proyecto académico integrador." },
-      { semana: "Semana 17", tema: "Autoevaluación y plan de mejora personal." },
-      { semana: "Semana 18", tema: "Evaluación integradora de Estrategias de Aprendizaje." },
+    "clave": "C0099",
+    "nombre": "Estrategias de Aprendizaje",
+    "tipo": "Teórica",
+    "horas": {
+      "semanas": 5,
+      "porSemana": 4,
+      "teoricas": 20,
+      "practicas": 0,
+      "independientes": 0,
+      "total": 20
+    },
+    "objetivoGeneral": "Valorar la importancia de las estrategias de aprendizaje, poniéndolas en práctica adecuadamente, para un desempeño eficaz en los estudios.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Condiciones básicas para el estudio",
+        "objetivoEspecifico": "Identificar las condiciones básicas para el estudio, analizando las implicaciones del proceso de aprendizaje, para potenciar el rendimiento escolar.",
+        "subtemas": [
+          "1.1 Atribuciones.",
+          "1.2 Motivación.",
+          "1.3 Atención.",
+          "1.4 Área de estudio.",
+          "1.5 Lateralidad."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Manejo de información",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Resumen.",
+          "2.2 Síntesis.",
+          "2.3 La pregunta"
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Presentación gráfica de la información",
+        "objetivoEspecifico": "Elaborar organizadores gráficos, a través del análisis de textos y material de diversas fuentes, para sintetizar y potenciar el aprendizaje.",
+        "subtemas": [
+          "3.1 Organizadores gráficos.",
+          "3.2 Diagramas.",
+          "3.3 Mapas.",
+          "3.4 Esquemas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Técnicas de estudio",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "4.1 La técnica de los seis pasos.",
+          "4.2 Métodos de estudio individual.",
+          "4.3 Métodos de estudio en grupo."
+        ],
+        "transversal": false
+      }
     ],
+    "bibliografia": [
+      "Díaz Barriga, A. F.; Hernández, R. G. Estrategias docentes para un aprendizaje significativo. Mc Graw Hill, 1997.",
+      "Díaz Barriga, A. F.; Hernández, R. G. Estrategias docentes para un aprendizaje significativo (2.ª ed.). Mc Graw Hill, 1999."
+    ],
+    "fuente": "LPN_S1.9_C0099.pdf"
   },
+  "Expresión Oral y Escrita": {
+    "clave": "C0100",
+    "nombre": "Expresión Oral y Escrita",
+    "tipo": "Teórica",
+    "horas": {
+      "semanas": 5,
+      "porSemana": 4,
+      "teoricas": 20,
+      "practicas": 0,
+      "independientes": 0,
+      "total": 20
+    },
+    "objetivoGeneral": "UtilizaR el lenguaje como forma de comunicación, mediante la producción de textos y desempeño oral, para responder a las demandas del entorno social y laboral.",
+    "unidades": [
+      {
+        "numero": 1,
+        "tema": "Proceso de comunicación",
+        "objetivoEspecifico": "Conocer las características del proceso de la comunicación humana, analizando sus componentes, para valorar su importancia en todos los aspectos de la vida. Redactar textos aplicando reglas gramaticales, desarrollando el ejercicio de comunicación escrita de manera eficaz.",
+        "subtemas": [
+          "1.1 La comunicación humana, naturaleza y alcances.",
+          "1.2 El Proceso de la Comunicación.",
+          "1.3 Factores personales, físicos y semánticos.",
+          "1.4 Diferentes tipos de comunicación.",
+          "1.5 Características de la Expresión Escrita.",
+          "1.6 Características de la Expresión Oral."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Comunicación Escrita",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Lenguaje, lengua y habla.",
+          "2.2 Principales reglas ortográficas.",
+          "2.3 La oración gramatical: sujeto y predicado.",
+          "2.4 Las oraciones compuestas: coordinadas y subordinadas.",
+          "2.5 La idea principal en un texto.",
+          "2.6 Ubicación de las ideas secundarias en un texto.",
+          "2.7 Características generales de un texto.",
+          "2.8 Composición de los conceptos para expresar ideas."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Comunicación Oral",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "3.1 Características de la comunicación oral.",
+          "3.2 Comunicación verbal y no verbal.",
+          "3.3 La expresión verbal. Pronunciación, dicción, fluidez, pobreza de vocabulario y de expresión de ideas.",
+          "3.4 Empleo de frases vulgares y muletillas.",
+          "3.5 3.4 Saber escuchar.",
+          "3.6 3.5 Expresión oral de las ideas.",
+          "3.7 3.2 Organización para exponer las ideas.",
+          "3.8 3.3 Conocimiento de la audiencia a la que se dirige el tema.",
+          "3.9 3.4 Elección de códigos.",
+          "3.10 3.5 Condiciones ambientales de la emisión-recepción.",
+          "3.11 3.6 Elaboración de esquemas.",
+          "3.12 3.7 La exposición oral."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 4,
+        "tema": "Contenidos de actualidad en el sector marítimo portuario",
+        "objetivoEspecifico": "Unidad transversal: el docente incorpora contenidos o temas de actualidad del sector marítimo portuario (selección a cargo del profesor).",
+        "subtemas": [],
+        "transversal": true
+      }
+    ],
+    "bibliografia": [
+      "Zarzar Charur, Carlos. Ciencias de la Comunicación. Publicaciones Cultural, 2003.",
+      "Cuevas Salmones, María de Lourdes. Leer para aprender. Compañía Editorial Nueva Imagen, 2002.",
+      "Palacios Sierra, Margarita; Carrizal Arévalo, Valentina; Pérez Rodríguez, Yolanda. Taller de Lectura y Redacción. Pearson / Alhambra Mexicana, 1997."
+    ],
+    "fuente": "LPN_S1.10_C0100.pdf"
+  }
 };
