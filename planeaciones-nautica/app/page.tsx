@@ -23,6 +23,11 @@ import { esProgramaOficial } from "./data/tipos";
 // El botón usa la versión visual V2, resuelta bajo demanda desde el registro.
 import { obtenerPresentacion } from "./data/presentaciones/registro";
 import { generarPresentacionOficialV2 } from "./lib/pptxOficialV2";
+import {
+  construirPresentacionV2,
+  TEMA_UNIDAD_COMPLETA,
+} from "./lib/construirPresentacionV2";
+import { temasDeUnidad } from "./data/presentaciones/temas";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
@@ -440,6 +445,7 @@ export default function Home() {
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(1);
+  const [temaSeleccionado, setTemaSeleccionado] = useState(TEMA_UNIDAD_COMPLETA);
 
   const [docente, setDocente] = useState("");
   const [grupo, setGrupo] = useState("");
@@ -480,14 +486,30 @@ export default function Home() {
       ? programaMateria.unidades.map((u) => ({ numero: u.numero, tema: u.tema }))
       : [{ numero: 1, tema: "Unidad 1" }];
 
-  // Al cambiar de materia o carrera, regresar a la Unidad 1.
+  // Temas (subtemas oficiales) de la unidad elegida, para el segundo dropdown.
+  const temasUnidad = temasDeUnidad(
+    esProgramaOficial(programaMateria) ? programaMateria : undefined,
+    unidadSeleccionada,
+  );
+
+  // El botón se muestra para toda materia con programa oficial.
+  const materiaTienePrograma = esProgramaOficial(programaMateria);
+
+  // Al cambiar de materia o carrera, regresar a la Unidad 1 y "Unidad completa".
   useEffect(() => {
     setUnidadSeleccionada(1);
+    setTemaSeleccionado(TEMA_UNIDAD_COMPLETA);
     setMensajePresOficial(null);
   }, [materiaSeleccionada, carrera]);
 
-  // Presentación enriquecida disponible para la unidad elegida (o null).
-  const presentacionUnidad = obtenerPresentacion(
+  // Al cambiar de unidad, volver a "Unidad completa" (los temas cambian).
+  useEffect(() => {
+    setTemaSeleccionado(TEMA_UNIDAD_COMPLETA);
+  }, [unidadSeleccionada]);
+
+  // Presentación PREMIUM hand-authored para la unidad (o null). Tiene prioridad
+  // solo cuando se pide la unidad completa.
+  const presentacionPremium = obtenerPresentacion(
     carrera,
     materiaSeleccionada,
     unidadSeleccionada,
@@ -497,6 +519,11 @@ export default function Home() {
       ? "Licenciatura en Maquinista Naval"
       : "Licenciatura en Piloto Naval";
 
+  // "I SEMESTRE" -> "I Semestre" para mostrar en la portada.
+  const semestreBonito = semestreSeleccionado
+    ? semestreSeleccionado.replace(/\s*SEMESTRE\s*$/i, "").trim() + " Semestre"
+    : "";
+
   const seleccionarCarrera = (c: "PN" | "MN") => {
     setCarrera(c);
     setSemestreSeleccionado("");
@@ -505,7 +532,23 @@ export default function Home() {
 
   const generarPresentacionUnidad = async () => {
     // Resolución y construcción del PPTX SOLO al hacer clic (nada precargado).
-    const pres = obtenerPresentacion(carrera, materiaSeleccionada, unidadSeleccionada);
+    const unidadCompleta = temaSeleccionado === TEMA_UNIDAD_COMPLETA;
+
+    // 1) Premium hand-authored tiene prioridad para la unidad completa.
+    // 2) Si no, se construye dinámicamente desde el programa oficial.
+    const pres =
+      unidadCompleta && presentacionPremium
+        ? presentacionPremium
+        : esProgramaOficial(programaMateria)
+          ? construirPresentacionV2({
+              programa: programaMateria,
+              carrera: licenciatura,
+              semestre: semestreBonito,
+              unidadNumero: unidadSeleccionada,
+              tema: temaSeleccionado,
+            })
+          : null;
+
     if (!pres) return;
     setGenerandoPresOficial(true);
     setMensajePresOficial(null);
@@ -1317,8 +1360,27 @@ export default function Home() {
                       ))}
                     </select>
 
-                    {/* Paso 5 — Generar solo si la unidad tiene presentación V2 disponible. */}
-                    {presentacionUnidad ? (
+                    {/* Paso 5 — Selector de tema (subtemas oficiales de la unidad). */}
+                    <label className="mt-4 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      Tema
+                    </label>
+                    <select
+                      value={temaSeleccionado}
+                      onChange={(e) => setTemaSeleccionado(e.target.value)}
+                      className={`${inputClass} mt-2`}
+                    >
+                      <option value={TEMA_UNIDAD_COMPLETA}>
+                        Unidad completa (todos los temas)
+                      </option>
+                      {temasUnidad.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Paso 6 — Generar: visible para toda materia con programa oficial. */}
+                    {materiaTienePrograma ? (
                       <>
                         <button
                           type="button"
@@ -1345,7 +1407,7 @@ export default function Home() {
                       </>
                     ) : (
                       <div className="mt-4 w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center text-sm font-semibold text-slate-500">
-                        Presentación aún no disponible
+                        Selecciona una materia con programa oficial
                       </div>
                     )}
                   </div>

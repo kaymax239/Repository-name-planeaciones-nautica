@@ -25,6 +25,8 @@ export type DiapositivaV2 = {
   subtitulo?: string;
   bloques: BloqueV2[];
   layout?: "portada" | "contenido" | "cierre" | "divisor" | "transicion";
+  /** Mensaje final de la diapositiva de cierre (sustituye al texto por defecto). */
+  mensajeFinal?: string;
 };
 
 export type PresentacionV2 = {
@@ -34,6 +36,14 @@ export type PresentacionV2 = {
   carrera: string;
   semestre: string;
   diapositivas: DiapositivaV2[];
+  /** Tema/subtema específico (opcional). Solo informativo para el nombre de archivo. */
+  tema?: string;
+  /** Texto pequeño sobre el título de portada. Si se omite, se deriva de la unidad. */
+  kicker?: string;
+  /** Línea bajo el título de portada. Si se omite, se deriva del tema de la unidad. */
+  subtituloPortada?: string;
+  /** Nombre del .pptx a descargar. Si se omite, se deriva de clave + unidad. */
+  nombreArchivo?: string;
 };
 
 export type { Diapositiva };

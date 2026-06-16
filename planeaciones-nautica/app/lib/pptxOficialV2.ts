@@ -31,9 +31,26 @@ export async function generarPresentacionOficialV2(
     else renderContenido(pptx, d, pres, i + 1, total);
   });
 
-  const archivo = `Presentacion_${pres.clave}_U1_V2.pptx`;
+  const archivo = pres.nombreArchivo || `Presentacion_${pres.clave}_U${numeroUnidad(pres.unidad)}_V2.pptx`;
   await pptx.writeFile({ fileName: archivo });
   return archivo;
+}
+
+/* Deriva el número de unidad desde el texto "Unidad 1: ..." (fallback "1"). */
+function numeroUnidad(unidad: string): string {
+  return unidad.match(/unidad\s+(\d+)/i)?.[1] ?? "1";
+}
+
+/* Kicker y subtítulo de portada: usa los del deck si existen; si no, los deriva. */
+function portadaTextos(pres: PresentacionV2): { kicker: string; subtitulo: string } {
+  const m = pres.unidad.match(/unidad\s+(\d+)\s*[:.-]?\s*(.*)$/i);
+  const numero = m?.[1];
+  const temaUnidad = m?.[2]?.trim();
+  const kicker =
+    pres.kicker ??
+    `${pres.asignatura.toUpperCase()}${numero ? ` · UNIDAD ${numero}` : ""}`;
+  const subtitulo = pres.subtituloPortada ?? temaUnidad ?? pres.asignatura;
+  return { kicker, subtitulo };
 }
 
 /* ----------------------------- Portada moderna ---------------------------- */
@@ -76,10 +93,11 @@ function renderPortadaModerna(pptx: pptxgen, pres: PresentacionV2, meta: MetaPre
   s.addText(meta.escuela || "Escuela Náutica Mercante de Tampico", { x: 1.95, y: 1.26, w: 6.2, h: 0.3, fontSize: 11, color: "CBD5E1" });
 
   // Kicker + título grande
-  s.addText("ÁLGEBRA · UNIDAD 1", { x: 0.85, y: 2.7, w: 7.2, h: 0.35, fontSize: 14, bold: true, color: C.dorado, charSpacing: 3 });
-  s.addText(pres.asignatura, { x: 0.8, y: 3.05, w: 7.4, h: 1.3, fontSize: 60, bold: true, color: C.blanco });
+  const { kicker, subtitulo } = portadaTextos(pres);
+  s.addText(kicker, { x: 0.85, y: 2.7, w: 7.2, h: 0.35, fontSize: 14, bold: true, color: C.dorado, charSpacing: 3 });
+  s.addText(pres.asignatura, { x: 0.8, y: 3.05, w: 7.4, h: 1.3, fontSize: 60, bold: true, color: C.blanco, fit: "shrink" });
   s.addShape(pptx.ShapeType.rect, { x: 0.88, y: 4.45, w: 2.2, h: 0.05, fill: { color: C.dorado }, line: { type: "none" } });
-  s.addText("Álgebra Elemental", { x: 0.85, y: 4.62, w: 7.2, h: 0.55, fontSize: 22, color: "E2E8F0" });
+  s.addText(subtitulo, { x: 0.85, y: 4.62, w: 7.2, h: 0.55, fontSize: 22, color: "E2E8F0" });
 
   // Metadatos
   s.addText(`${pres.carrera}   ·   ${pres.semestre}   ·   Clave ${pres.clave}`, { x: 0.85, y: 5.5, w: 7.2, h: 0.35, fontSize: 12, color: "94A3B8" });
@@ -144,7 +162,7 @@ function renderCierre(pptx: pptxgen, d: DiapositivaV2, meta: MetaPresentacion) {
       y += 1.0;
     }
   }
-  s.addText("¡Gracias!  Continuamos con la Unidad 2.", { x: 0.85, y: 6.55, w: 8, h: 0.5, fontSize: 15, bold: true, color: C.dorado, valign: "middle" });
+  s.addText(d.mensajeFinal ?? "¡Gracias!  Continuamos con la Unidad 2.", { x: 0.85, y: 6.55, w: 8, h: 0.5, fontSize: 15, bold: true, color: C.dorado, valign: "middle" });
   s.addText(`Docente: ${meta.docente || "Por definir"}`, { x: 8.5, y: 6.55, w: 4.0, h: 0.5, fontSize: 12, color: "CBD5E1", align: "right", valign: "middle" });
 }
 
