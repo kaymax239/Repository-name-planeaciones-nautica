@@ -213,9 +213,42 @@ export const contenidosSemestre5: Record<string, ProgramaOficial> = {
     "objetivoGeneral": "Conocer y utilizar el significado de las diferentes señales visuales empleadas en la navegación, para realizar una navegación segura.",
     "unidades": [
       {
+        "numero": 1,
+        "tema": "Comunicación con Código Morse",
+        "objetivoEspecifico": "Comunicar mensajes de auxilio en Código Morse, a través del conocimiento del mismo y la práctica en la transmisión y recepción, para utilizar en caso de emergencia.",
+        "subtemas": [
+          "1.1 Identificación de letras y números con Código Morse.",
+          "1.2 Comunicación de mensajes de auxilio con Código Morse."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Código Internacional de Señales",
+        "objetivoEspecifico": "Comunicar mensajes específicos, utilizando el Código Internacional de Señales, para referenciar el conocimiento del entorno.",
+        "subtemas": [
+          "2.1 Identificación de letras y números en el Código Internacional de Señales.",
+          "2.2 Comunicación de mensajes con el Código Internacional de Señales."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 3,
+        "tema": "Sistema de Boyado Marítimo (IALA)",
+        "objetivoEspecifico": "Conocer e identificar el significado de las marcas diurnas y nocturnas de acuerdo a la región del Sistema de Boyado Marítimo, por medio de ayudas visuales a la navegación, para evitar situaciones de riesgo en áreas comprometidas.",
+        "subtemas": [
+          "3.1 Regiones de boyado A/B.",
+          "3.2 Marcas laterales.",
+          "3.3 Marcas cardinales.",
+          "3.4 Marcas de peligros aislados.",
+          "3.5 Marcas especiales."
+        ],
+        "transversal": false
+      },
+      {
         "numero": 4,
-        "tema": "Reglamento Internacional para prevenir abordajes en la Comprender las reglas para prevenir mar (COLREG)",
-        "objetivoEspecifico": "Pendiente de revisión",
+        "tema": "Reglamento Internacional para prevenir abordajes en la mar (COLREG)",
+        "objetivoEspecifico": "Comprender las reglas para prevenir abordajes en la mar, a través del análisis del Reglamento Internacional para Prevenir abordajes, desarrollando una guardia de puente segura.",
         "subtemas": [
           "4.1 Parte A. Generalidades.",
           "4.2 Parte B. Reglas de rumbo y gobierno.",
