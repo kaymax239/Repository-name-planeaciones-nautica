@@ -380,6 +380,19 @@ export const contenidosMN7: Record<string, ProgramaOficial> = {
     "objetivoGeneral": "Realizar movimientos físicos para el desarrollo de la percepción y mejora de la coordinación motriz fina y gruesa en el desempeño de cualquier función.",
     "unidades": [
       {
+        "numero": 1,
+        "tema": "Percepción y coordinación motriz",
+        "objetivoEspecifico": "Ejecutar movimientos físicos de forma adecuada, desarrollando la percepción y coordinación motriz, psicomotriz, para favorecer la ubicación en el espacio, tiempo, equilibrio y lateralidad.",
+        "subtemas": [
+          "1.1 Movimientos físicos.",
+          "1.2 Ubicación espacial.",
+          "1.3 Coordinación motriz y psicomotriz.",
+          "1.4 Equilibrio.",
+          "1.5 Lateralidad."
+        ],
+        "transversal": false
+      },
+      {
         "numero": 2,
         "tema": "Desarrollo físico integral",
         "objetivoEspecifico": "Ejecutar movimientos físicos de forma adecuada, desarrollando la percepción y coordinación motriz, psicomotriz, para favorecer la ubicación en el espacio, tiempo, equilibrio y lateralidad.",

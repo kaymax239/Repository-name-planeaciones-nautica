@@ -97,6 +97,20 @@ export const contenidosMN5: Record<string, ProgramaOficial> = {
     "objetivoGeneral": "Aplicar la Ética utilizando la reflexión como cualidad que permite la comprensión de los códigos morales establecidos, para la correcta y congruente toma de decisiones.",
     "unidades": [
       {
+        "numero": 1,
+        "tema": "Ética y Filosofía",
+        "objetivoEspecifico": "Comprender los conceptos de Filosofía y Ética, a través del análisis del procedimiento humano en situaciones diversas, para valorar su importancia.",
+        "subtemas": [
+          "1.1 El pensamiento filosófico.",
+          "1.2 La filosofía formal.",
+          "1.3 Divisiones de la filosofía.",
+          "1.4 Definición de la ética.",
+          "1.5 El campo de la ética.",
+          "1.6 El objeto de estudio de la ética."
+        ],
+        "transversal": false
+      },
+      {
         "numero": 2,
         "tema": "El juicio",
         "objetivoEspecifico": "Comprender los conceptos de Filosofía y Ética, a través del análisis del procedimiento humano en situaciones diversas, para valorar su importancia.",
@@ -218,6 +232,16 @@ export const contenidosMN5: Record<string, ProgramaOficial> = {
         "objetivoEspecifico": "Conocer los dispositivos utilizados en instalaciones eléctricas, Consola de práctica Lab-Volt, del laboratorio eléctrico reconociéndolos por su simbología, para interpretar diagramas.",
         "subtemas": [
           "1.1 Símbolos eléctricos más comunes.",
+          "2.1 Componentes de una consola.",
+          "2.2 Modelos de equipos."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Consola de práctica Lab-Volt, del laboratorio eléctrico",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
           "2.1 Componentes de una consola.",
           "2.2 Modelos de equipos."
         ],
@@ -384,6 +408,20 @@ export const contenidosMN5: Record<string, ProgramaOficial> = {
           "1.8 Adhesión.",
           "1.9 Capilaridad.",
           "1.10 Viscosidad.",
+          "2.1 Propiedades.",
+          "2.2 Presión hidrostática.",
+          "2.3 Empuje.",
+          "2.4 Flotación.",
+          "2.5 Estabilidad.",
+          "2.6 Medición de la densidad."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Líquidos en reposo",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
           "2.1 Propiedades.",
           "2.2 Presión hidrostática.",
           "2.3 Empuje.",
@@ -687,6 +725,17 @@ export const contenidosMN5: Record<string, ProgramaOficial> = {
           "2.1 Partes fijas.",
           "2.2 Partes móviles.",
           "2.3 Accesorios"
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 2,
+        "tema": "Componentes de un motor",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "2.1 Partes fijas.",
+          "2.2 Partes móviles.",
+          "2.3 Accesorios."
         ],
         "transversal": false
       },
@@ -1068,6 +1117,19 @@ export const contenidosMN5: Record<string, ProgramaOficial> = {
           "6.3 Límite de los diámetros de barreno.",
           "6.4 Relación entre diámetro, material y velocidad del taladro.",
           "6.5 Cuidados para evitar accidentes en “avance automático”."
+        ],
+        "transversal": false
+      },
+      {
+        "numero": 6,
+        "tema": "Taladro",
+        "objetivoEspecifico": "Pendiente de revisión",
+        "subtemas": [
+          "6.1 Tipos.",
+          "6.2 Superficie de trabajo.",
+          "6.3 Límite de los diámetros de barreno.",
+          "6.4 Relación entre diámetro, material y velocidad del taladro.",
+          "6.5 Cuidados para evitar accidentes en \"avance automático\"."
         ],
         "transversal": false
       },

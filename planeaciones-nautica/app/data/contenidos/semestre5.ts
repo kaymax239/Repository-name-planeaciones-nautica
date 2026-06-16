@@ -97,6 +97,20 @@ export const contenidosSemestre5: Record<string, ProgramaOficial> = {
     "objetivoGeneral": "Aplicar la Ética utilizando la reflexión como cualidad que permite la comprensión de los códigos morales establecidos, para la correcta y congruente toma de decisiones..",
     "unidades": [
       {
+        "numero": 1,
+        "tema": "Ética y Filosofía",
+        "objetivoEspecifico": "Comprender los conceptos de Filosofía y Ética, a través del análisis del procedimiento humano en situaciones diversas, para valorar su importancia.",
+        "subtemas": [
+          "1.1 El pensamiento filosófico.",
+          "1.2 La filosofía formal.",
+          "1.3 Divisiones de la filosofía.",
+          "1.4 Definición de la ética.",
+          "1.5 El campo de la ética.",
+          "1.6 El objeto de estudio de la ética."
+        ],
+        "transversal": false
+      },
+      {
         "numero": 2,
         "tema": "El juicio",
         "objetivoEspecifico": "Comprender los conceptos de Filosofía y Ética, a través del análisis del procedimiento humano en situaciones diversas, para valorar su importancia.",
