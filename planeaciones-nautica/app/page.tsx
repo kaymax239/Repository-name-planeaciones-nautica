@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { materiasPorSemestre, materiasPorSemestreMN } from "./data/materias";
 import {
   contenidosMaterias,
@@ -19,9 +19,12 @@ import {
 } from "./data/evaluacion";
 import { distribuirPrograma } from "./data/distribucion";
 import { esProgramaOficial } from "./data/tipos";
+// V1 conservada como respaldo en ./data/presentaciones/algebra-u1.ts y ./lib/pptxOficial.ts.
+// El botón usa la versión visual V2, resuelta bajo demanda desde el registro.
+import { obtenerPresentacion } from "./data/presentaciones/registro";
+import { generarPresentacionOficialV2 } from "./lib/pptxOficialV2";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
-import pptxgen from "pptxgenjs";
 import { saveAs } from "file-saver";
 
 type SemanaMateria = {
@@ -43,24 +46,6 @@ type RangoSemanas = {
   fin: number;
 };
 
-type DiapositivaIA = {
-  tipo: string;
-  titulo: string;
-  contenido: string[];
-  notas?: string;
-};
-
-type PresentacionIA = {
-  titulo: string;
-  subtitulo?: string;
-  bibliografia?: Array<{
-    titulo: string;
-    url: string;
-    descripcion?: string;
-  }>;
-  diapositivas: DiapositivaIA[];
-};
-
 const periodosAvance = [
   { nombre: "Julio-Agosto", inicio: 0, fin: 4 },
   { nombre: "Septiembre", inicio: 4, fin: 8 },
@@ -80,51 +65,6 @@ const nombreArchivoSeguro = (valor: string) =>
     .replace(/[^a-zA-Z0-9]+/g, "-")
     .replace(/^-|-$/g, "")
     .toLowerCase();
-
-const dividirTexto = (texto: string, maximo: number) => {
-  const palabras = texto.split(/\s+/);
-  const lineas: string[] = [];
-  let linea = "";
-
-  palabras.forEach((palabra) => {
-    const siguiente = linea ? `${linea} ${palabra}` : palabra;
-    if (siguiente.length > maximo) {
-      lineas.push(linea);
-      linea = palabra;
-    } else {
-      linea = siguiente;
-    }
-  });
-
-  if (linea) {
-    lineas.push(linea);
-  }
-
-  return lineas;
-};
-
-const formatearErrorOpenAI = (error: unknown) => {
-  const errorData = error as {
-    message?: unknown;
-    status?: unknown;
-    code?: unknown;
-    type?: unknown;
-  };
-  const resumen =
-    typeof error === "object" && error !== null
-      ? [
-          "OpenAI Error",
-          `Status: ${errorData.status ?? "N/A"}`,
-          `Code: ${errorData.code ?? "N/A"}`,
-          `Type: ${errorData.type ?? "N/A"}`,
-          `Message: ${errorData.message ?? "Error desconocido"}`,
-          "",
-          JSON.stringify(error, null, 2),
-        ].join("\n")
-      : JSON.stringify(error, null, 2);
-
-  return resumen;
-};
 
 const contieneAlgunaPalabra = (texto: string, palabras: string[]) => {
   const textoNormalizado = texto.toLowerCase();
@@ -499,6 +439,7 @@ export default function Home() {
   const [carrera, setCarrera] = useState<"PN" | "MN">("PN");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
+  const [unidadSeleccionada, setUnidadSeleccionada] = useState(1);
 
   const [docente, setDocente] = useState("");
   const [grupo, setGrupo] = useState("");
@@ -506,7 +447,11 @@ export default function Home() {
   const [fechaInicio, setFechaInicio] = useState("");
   const [mesReportado, setMesReportado] =
     useState<MesReportado>("Julio-Agosto");
-  const [generandoPresentacion, setGenerandoPresentacion] = useState(false);
+  const [generandoPresOficial, setGenerandoPresOficial] = useState(false);
+  const [mensajePresOficial, setMensajePresOficial] = useState<{
+    tipo: "exito" | "error";
+    texto: string;
+  } | null>(null);
   const [generandoPlaneacion, setGenerandoPlaneacion] = useState(false);
   const [mensajePlaneacion, setMensajePlaneacion] = useState<{
     tipo: "exito" | "error";
@@ -527,6 +472,26 @@ export default function Home() {
     carrera === "MN" ? contenidosMateriasMN : contenidosMaterias;
   // Horas reales de la materia seleccionada (del programa oficial PDF).
   const horasMateria = fuenteContenidos[materiaSeleccionada]?.horas;
+
+  // Unidades oficiales de la materia (del programa oficial). Fallback: una unidad.
+  const programaMateria = fuenteContenidos[materiaSeleccionada];
+  const unidadesMateria =
+    esProgramaOficial(programaMateria) && programaMateria.unidades.length
+      ? programaMateria.unidades.map((u) => ({ numero: u.numero, tema: u.tema }))
+      : [{ numero: 1, tema: "Unidad 1" }];
+
+  // Al cambiar de materia o carrera, regresar a la Unidad 1.
+  useEffect(() => {
+    setUnidadSeleccionada(1);
+    setMensajePresOficial(null);
+  }, [materiaSeleccionada, carrera]);
+
+  // Presentación enriquecida disponible para la unidad elegida (o null).
+  const presentacionUnidad = obtenerPresentacion(
+    carrera,
+    materiaSeleccionada,
+    unidadSeleccionada,
+  );
   const licenciatura =
     carrera === "MN"
       ? "Licenciatura en Maquinista Naval"
@@ -536,6 +501,36 @@ export default function Home() {
     setCarrera(c);
     setSemestreSeleccionado("");
     setMateriaSeleccionada("");
+  };
+
+  const generarPresentacionUnidad = async () => {
+    // Resolución y construcción del PPTX SOLO al hacer clic (nada precargado).
+    const pres = obtenerPresentacion(carrera, materiaSeleccionada, unidadSeleccionada);
+    if (!pres) return;
+    setGenerandoPresOficial(true);
+    setMensajePresOficial(null);
+    try {
+      const archivo = await generarPresentacionOficialV2(pres, {
+        docente,
+        grupo,
+        periodo,
+        escuela: escuelaNautica,
+      });
+      setMensajePresOficial({
+        tipo: "exito",
+        texto: `Presentación generada y descargada: ${archivo}`,
+      });
+    } catch (error) {
+      console.error("Error generando presentación oficial:", error);
+      setMensajePresOficial({
+        tipo: "error",
+        texto: `No se pudo generar la presentación. ${
+          error instanceof Error ? error.message : "Error desconocido."
+        }`,
+      });
+    } finally {
+      setGenerandoPresOficial(false);
+    }
   };
   const inputClass =
     "w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-[#c8a45d] focus:ring-2 focus:ring-[#c8a45d]/30";
@@ -832,233 +827,6 @@ export default function Home() {
     } catch (error) {
       console.log(error);
       alert(`Error generando ${tipo.toLowerCase()}`);
-    }
-  };
-
-  const generarPresentacionPowerPoint = async () => {
-    try {
-      setGenerandoPresentacion(true);
-      const datosMateria =
-        fuenteContenidos[materiaSeleccionada] as DatosMateria | undefined;
-      const temas = datosMateria?.semanas || [];
-
-      if (!datosMateria || temas.length === 0) {
-        alert("No hay contenidos registrados para generar la presentación.");
-        return;
-      }
-
-      const unidad = datosMateria.unidad || "I";
-      const temasRelacionados = temas.map(
-        (tema) => `${tema.semana}: ${limpiarTema(tema.tema)}`,
-      );
-      const temaCentral = `Unidad ${unidad}: ${materiaSeleccionada}`;
-      const objetivo =
-        datosMateria.objetivoEspecifico ||
-        datosMateria.objetivoGeneral ||
-        `Comprender y aplicar los temas principales de ${materiaSeleccionada}.`;
-
-      const response = await fetch("/api/presentaciones", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          semestre: semestreSeleccionado,
-          materia: materiaSeleccionada,
-          unidad: `Unidad ${unidad}`,
-          tema: temaCentral,
-          objetivo,
-          temasRelacionados,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as
-          | { error?: unknown }
-          | null;
-        const error =
-          data?.error || "No se pudo generar el contenido IA.";
-        console.error("OPENAI ERROR:", error);
-        alert(formatearErrorOpenAI(error));
-        return;
-      }
-
-      const contenidoIA = (await response.json()) as PresentacionIA;
-      const diapositivas =
-        contenidoIA.diapositivas?.length > 0 ? contenidoIA.diapositivas : [];
-
-      if (diapositivas.length === 0) {
-        alert("La IA no devolvió diapositivas para la presentación.");
-        return;
-      }
-
-      const pptx = new pptxgen();
-      pptx.layout = "LAYOUT_WIDE";
-      pptx.author = docente || "Planeaciones Nautica";
-      pptx.subject = materiaSeleccionada;
-      pptx.title = contenidoIA.titulo || `${materiaSeleccionada} - Unidad ${unidad}`;
-      pptx.company = "Universidad Maritima y Portuaria de Mexico";
-      pptx.theme = {
-        headFontFace: "Arial",
-        bodyFontFace: "Arial",
-      };
-
-      const colores = {
-        azul: "071A33",
-        dorado: "C8A45D",
-        blanco: "FFFFFF",
-        gris: "F4F6F8",
-        texto: "1F2937",
-      };
-
-      const agregarEncabezado = (titulo: string, subtitulo?: string) => {
-        const slide = pptx.addSlide();
-        slide.background = { color: colores.blanco };
-        slide.addShape(pptx.ShapeType.rect, {
-          x: 0,
-          y: 0,
-          w: 13.333,
-          h: 0.28,
-          fill: { color: colores.dorado },
-          line: { color: colores.dorado },
-        });
-        slide.addText(titulo, {
-          x: 0.6,
-          y: 0.45,
-          w: 12.1,
-          h: 0.45,
-          fontSize: 22,
-          bold: true,
-          color: colores.azul,
-          margin: 0,
-          fit: "shrink",
-        });
-        if (subtitulo) {
-          slide.addText(subtitulo, {
-            x: 0.6,
-            y: 0.96,
-            w: 12.1,
-            h: 0.35,
-            fontSize: 11,
-            color: "64748B",
-            margin: 0,
-          });
-        }
-
-        return slide;
-      };
-
-      const agregarContenido = (diapositiva: DiapositivaIA, subtitulo?: string) => {
-        const slide = agregarEncabezado(diapositiva.titulo, subtitulo);
-        slide.addShape(pptx.ShapeType.roundRect, {
-          x: 0.75,
-          y: 1.45,
-          w: 11.8,
-          h: 4.8,
-          rectRadius: 0.08,
-          fill: { color: colores.gris },
-          line: { color: "E2E8F0" },
-        });
-        slide.addText(
-          diapositiva.contenido
-            .flatMap((punto) => dividirTexto(`• ${punto}`, 115))
-            .join("\n"),
-          {
-          x: 1.05,
-          y: 1.75,
-          w: 11.2,
-          h: 4.15,
-          fontSize: 17,
-          color: colores.texto,
-          fit: "shrink",
-          valign: "middle",
-          },
-        );
-      };
-
-      const agregarPortada = () => {
-        const portada = pptx.addSlide();
-        portada.background = { color: colores.azul };
-        portada.addShape(pptx.ShapeType.rect, {
-        x: 0,
-        y: 0,
-        w: 13.333,
-        h: 0.35,
-        fill: { color: colores.dorado },
-        line: { color: colores.dorado },
-        });
-        portada.addText("Universidad Maritima y Portuaria de Mexico", {
-        x: 0.75,
-        y: 0.85,
-        w: 11.8,
-        h: 0.35,
-        fontSize: 16,
-        bold: true,
-        color: colores.dorado,
-        margin: 0,
-        });
-        portada.addText("Escuela Nautica Mercante de Tampico", {
-        x: 0.75,
-        y: 1.25,
-        w: 11.8,
-        h: 0.3,
-        fontSize: 13,
-        color: colores.blanco,
-        margin: 0,
-        });
-        portada.addText(contenidoIA.titulo || `${materiaSeleccionada} - Unidad ${unidad}`, {
-        x: 0.75,
-        y: 2.05,
-        w: 11.8,
-        h: 1.15,
-        fontSize: 34,
-        bold: true,
-        color: colores.blanco,
-        fit: "shrink",
-        margin: 0,
-        });
-        portada.addText(
-          contenidoIA.subtitulo || `${materiaSeleccionada} | ${semestreSeleccionado}`,
-          {
-        x: 0.75,
-        y: 3.45,
-        w: 11.8,
-        h: 0.35,
-        fontSize: 16,
-        color: colores.dorado,
-        margin: 0,
-          },
-        );
-        portada.addText(`Docente: ${docente || "Por definir"} | Grupo: ${grupo || "Por definir"}`, {
-        x: 0.75,
-        y: 6.45,
-        w: 11.8,
-        h: 0.28,
-        fontSize: 11,
-        color: "CBD5E1",
-        margin: 0,
-        });
-      };
-
-      diapositivas.forEach((diapositiva, index) => {
-        if (index === 0 || diapositiva.tipo === "portada") {
-          agregarPortada();
-          return;
-        }
-
-        agregarContenido(diapositiva, `${materiaSeleccionada} | Unidad ${unidad}`);
-      });
-
-      await pptx.writeFile({
-        fileName: `${nombreArchivoSeguro(materiaSeleccionada)}-unidad-${nombreArchivoSeguro(
-          unidad,
-        )}.pptx`,
-      });
-    } catch (error) {
-      console.error("OPENAI ERROR:", error);
-      alert(formatearErrorOpenAI(error));
-    } finally {
-      setGenerandoPresentacion(false);
     }
   };
 
@@ -1527,20 +1295,59 @@ export default function Home() {
                       Presentaciones
                     </p>
                     <p className="mt-2 text-sm text-slate-600">
-                      Genera una presentación IA profesional con la materia,
-                      semestre y temas ya seleccionados.
+                      Genera una presentación oficial elaborada desde el programa
+                      de estudios (PDF). Sin contenido generado por IA.
                     </p>
 
-                    <button
-                      type="button"
-                      onClick={generarPresentacionPowerPoint}
-                      disabled={generandoPresentacion}
-                      className="mt-4 w-full rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52]"
+                    {/* Paso 4 — Selector de unidad (unidades oficiales de la materia). */}
+                    <label className="mt-4 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
+                      Unidad
+                    </label>
+                    <select
+                      value={unidadSeleccionada}
+                      onChange={(e) =>
+                        setUnidadSeleccionada(Number(e.target.value))
+                      }
+                      className={`${inputClass} mt-2`}
                     >
-                      {generandoPresentacion
-                        ? "Generando Presentación IA..."
-                        : "Generar Presentación IA Profesional"}
-                    </button>
+                      {unidadesMateria.map((u) => (
+                        <option key={u.numero} value={u.numero}>
+                          {`Unidad ${u.numero} — ${u.tema}`}
+                        </option>
+                      ))}
+                    </select>
+
+                    {/* Paso 5 — Generar solo si la unidad tiene presentación V2 disponible. */}
+                    {presentacionUnidad ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={generarPresentacionUnidad}
+                          disabled={generandoPresOficial}
+                          className="mt-4 w-full rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {generandoPresOficial
+                            ? "Generando presentación..."
+                            : "Generar Presentación"}
+                        </button>
+                        {mensajePresOficial && (
+                          <div
+                            role="alert"
+                            className={`mt-3 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                              mensajePresOficial.tipo === "exito"
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                                : "border-red-200 bg-red-50 text-red-800"
+                            }`}
+                          >
+                            {mensajePresOficial.texto}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="mt-4 w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-6 py-4 text-center text-sm font-semibold text-slate-500">
+                        Presentación aún no disponible
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
