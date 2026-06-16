@@ -495,11 +495,14 @@ export default function Home() {
   // El botón se muestra para toda materia con programa oficial.
   const materiaTienePrograma = esProgramaOficial(programaMateria);
 
-  // Al cambiar de materia o carrera, regresar a la Unidad 1 y "Unidad completa".
+  // Al cambiar de materia o carrera, seleccionar la PRIMERA unidad disponible
+  // (no siempre es la número 1: algunos programas empiezan en otra unidad) y
+  // volver a "Unidad completa".
   useEffect(() => {
-    setUnidadSeleccionada(1);
+    setUnidadSeleccionada(unidadesMateria[0]?.numero ?? 1);
     setTemaSeleccionado(TEMA_UNIDAD_COMPLETA);
     setMensajePresOficial(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materiaSeleccionada, carrera]);
 
   // Al cambiar de unidad, volver a "Unidad completa" (los temas cambian).
@@ -549,7 +552,14 @@ export default function Home() {
             })
           : null;
 
-    if (!pres) return;
+    if (!pres) {
+      setMensajePresOficial({
+        tipo: "error",
+        texto:
+          "No se pudo preparar la presentación para esta materia/unidad. Verifica que la unidad tenga contenido en el programa oficial.",
+      });
+      return;
+    }
     setGenerandoPresOficial(true);
     setMensajePresOficial(null);
     try {
