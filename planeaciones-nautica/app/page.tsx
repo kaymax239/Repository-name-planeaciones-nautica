@@ -1399,8 +1399,9 @@ export default function Home() {
                       Presentaciones
                     </p>
                     <p className="mt-2 text-sm text-slate-600">
-                      Genera una presentación oficial elaborada desde el programa
-                      de estudios (PDF). Sin contenido generado por IA.
+                      Genera una presentación profesional con IA (Claude Opus),
+                      elaborada a partir del programa oficial de estudios. La
+                      primera vez puede tardar hasta ~1 minuto.
                     </p>
 
                     {/* Paso 4 — Selector de unidad (unidades oficiales de la materia). */}
@@ -1453,6 +1454,12 @@ export default function Home() {
                             ? "Generando presentación..."
                             : "Generar Presentación"}
                         </button>
+                        {generandoPresOficial && (
+                          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+                            Generando con IA… puede tardar hasta ~1 minuto. No
+                            cierres la página.
+                          </div>
+                        )}
                         {mensajePresOficial && (
                           <div
                             role="alert"
