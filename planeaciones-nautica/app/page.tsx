@@ -28,6 +28,7 @@ import {
   TEMA_UNIDAD_COMPLETA,
 } from "./lib/construirPresentacionV2";
 import { temasDeUnidad } from "./data/presentaciones/temas";
+import type { PresentacionV2 } from "./data/presentaciones/tiposV2";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
@@ -533,36 +534,86 @@ export default function Home() {
     setMateriaSeleccionada("");
   };
 
+  // Pide a la IA (servidor) el guion premium de la unidad/tema. Devuelve la
+  // presentación o null si la IA falla o no está configurada (para caer al
+  // generador determinista). Nunca lanza: registra el motivo y devuelve null.
+  const generarPresentacionConIA = async (): Promise<{
+    pres: PresentacionV2;
+    cacheado: boolean;
+  } | null> => {
+    try {
+      const res = await fetch("/api/presentacion", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          carrera,
+          materia: materiaSeleccionada,
+          unidadNumero: unidadSeleccionada,
+          tema: temaSeleccionado,
+          carreraDisplay: licenciatura,
+          semestreDisplay: semestreBonito,
+        }),
+      });
+      if (!res.ok) {
+        const detalle = await res.json().catch(() => null);
+        console.warn("IA no disponible, usando generador oficial:", detalle);
+        return null;
+      }
+      const data = (await res.json()) as {
+        presentacion?: PresentacionV2;
+        cacheado?: boolean;
+      };
+      return data.presentacion
+        ? { pres: data.presentacion, cacheado: !!data.cacheado }
+        : null;
+    } catch (e) {
+      console.warn("Error consultando la IA, usando generador oficial:", e);
+      return null;
+    }
+  };
+
   const generarPresentacionUnidad = async () => {
     // Resolución y construcción del PPTX SOLO al hacer clic (nada precargado).
     const unidadCompleta = temaSeleccionado === TEMA_UNIDAD_COMPLETA;
 
-    // 1) Premium hand-authored tiene prioridad para la unidad completa.
-    // 2) Si no, se construye dinámicamente desde el programa oficial.
-    const pres =
-      unidadCompleta && presentacionPremium
-        ? presentacionPremium
-        : esProgramaOficial(programaMateria)
-          ? construirPresentacionV2({
-              programa: programaMateria,
-              carrera: licenciatura,
-              semestre: semestreBonito,
-              unidadNumero: unidadSeleccionada,
-              tema: temaSeleccionado,
-            })
-          : null;
-
-    if (!pres) {
-      setMensajePresOficial({
-        tipo: "error",
-        texto:
-          "No se pudo preparar la presentación para esta materia/unidad. Verifica que la unidad tenga contenido en el programa oficial.",
-      });
-      return;
-    }
     setGenerandoPresOficial(true);
     setMensajePresOficial(null);
     try {
+      // 1) Premium hand-authored: prioridad para la unidad completa.
+      let pres: PresentacionV2 | null =
+        unidadCompleta && presentacionPremium ? presentacionPremium : null;
+      let fuente = pres ? "plantilla premium" : "";
+
+      // 2) IA bajo demanda (servidor) desde el programa oficial.
+      if (!pres && esProgramaOficial(programaMateria)) {
+        const ia = await generarPresentacionConIA();
+        if (ia) {
+          pres = ia.pres;
+          fuente = ia.cacheado ? "IA (en cache)" : "IA (Opus)";
+        }
+      }
+
+      // 3) Fallback determinista desde el programa oficial.
+      if (!pres && esProgramaOficial(programaMateria)) {
+        pres = construirPresentacionV2({
+          programa: programaMateria,
+          carrera: licenciatura,
+          semestre: semestreBonito,
+          unidadNumero: unidadSeleccionada,
+          tema: temaSeleccionado,
+        });
+        fuente = "generador oficial (sin IA)";
+      }
+
+      if (!pres) {
+        setMensajePresOficial({
+          tipo: "error",
+          texto:
+            "No se pudo preparar la presentación para esta materia/unidad. Verifica que la unidad tenga contenido en el programa oficial.",
+        });
+        return;
+      }
+
       const archivo = await generarPresentacionOficialV2(pres, {
         docente,
         grupo,
@@ -571,7 +622,7 @@ export default function Home() {
       });
       setMensajePresOficial({
         tipo: "exito",
-        texto: `Presentación generada y descargada: ${archivo}`,
+        texto: `Presentación generada (${fuente}) y descargada: ${archivo}`,
       });
     } catch (error) {
       console.error("Error generando presentación oficial:", error);
