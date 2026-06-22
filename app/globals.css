@@ -127,6 +127,12 @@ button {
   padding: 5px 8px;
 }
 
+.rt-map-panel__stats .rt-bus-distance {
+  border-color: rgba(250, 204, 21, 0.5);
+  background: rgba(250, 204, 21, 0.14);
+  color: #fef3c7;
+}
+
 .rt-trip-actions {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
