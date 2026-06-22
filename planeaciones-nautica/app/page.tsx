@@ -18,7 +18,7 @@ import {
   textoPuntuacionesF32,
 } from "./data/evaluacion";
 import { distribuirPrograma } from "./data/distribucion";
-import { esProgramaOficial } from "./data/tipos";
+import { esProgramaOficial, type ProgramaOficial } from "./data/tipos";
 // V1 conservada como respaldo en ./data/presentaciones/algebra-u1.ts y ./lib/pptxOficial.ts.
 // El botón usa la versión visual V2, resuelta bajo demanda desde el registro.
 import { obtenerPresentacion } from "./data/presentaciones/registro";
@@ -63,6 +63,23 @@ const periodosAvance = [
 type MesReportado = (typeof periodosAvance)[number]["nombre"];
 
 const limpiarTema = (tema: string) => tema.trim().replace(/\.$/, "");
+
+// Convierte los subtemas oficiales del programa en "semanas" (un subtema por
+// entrada) para alimentar los exámenes con preguntas basadas en el contenido
+// REAL de la materia. Sin esto, un ProgramaOficial no expone `semanas` y el
+// examen cae a una sola pregunta genérica.
+const semanasDesdePrograma = (programa: ProgramaOficial): SemanaMateria[] => {
+  const limpio = (s: string) =>
+    limpiarTema(s.replace(/^\d+(?:\.\d+)*\.?\s*/, ""));
+
+  return programa.unidades
+    .flatMap((u) => u.subtemas)
+    .map((subtema, index) => ({
+      semana: `Semana ${index + 1}`,
+      tema: limpio(subtema),
+    }))
+    .filter((s) => s.tema.trim().length > 0);
+};
 
 const nombreArchivoSeguro = (valor: string) =>
   valor
@@ -464,6 +481,10 @@ export default function Home() {
     tipo: "exito" | "error";
     texto: string;
   } | null>(null);
+  const [mensajeExamen, setMensajeExamen] = useState<{
+    tipo: "exito" | "error";
+    texto: string;
+  } | null>(null);
 
   const periodo = "Julio-Diciembre 2026";
   const escuelaNautica =
@@ -541,6 +562,11 @@ export default function Home() {
     pres: PresentacionV2;
     cacheado: boolean;
   } | null> => {
+    // Límite de espera: si Claude tarda demasiado (timeout / proveedor lento) se
+    // aborta la solicitud y se cae al generador determinista, para que la demo
+    // nunca se quede colgada esperando a la IA.
+    const controlador = new AbortController();
+    const limite = setTimeout(() => controlador.abort(), 120000);
     try {
       const res = await fetch("/api/presentacion", {
         method: "POST",
@@ -553,6 +579,7 @@ export default function Home() {
           carreraDisplay: licenciatura,
           semestreDisplay: semestreBonito,
         }),
+        signal: controlador.signal,
       });
       if (!res.ok) {
         const detalle = await res.json().catch(() => null);
@@ -569,6 +596,8 @@ export default function Home() {
     } catch (e) {
       console.warn("Error consultando la IA, usando generador oficial:", e);
       return null;
+    } finally {
+      clearTimeout(limite);
     }
   };
 
@@ -620,17 +649,24 @@ export default function Home() {
         periodo,
         escuela: escuelaNautica,
       });
+      // Mensaje amigable: nunca exponemos detalles técnicos. Si se cayó al
+      // generador determinista, lo comunicamos como "generación estándar".
+      const esIA = fuente.startsWith("IA");
+      const esEstandar = fuente.includes("sin IA");
       setMensajePresOficial({
         tipo: "exito",
-        texto: `Presentación generada (${fuente}) y descargada: ${archivo}`,
+        texto: esEstandar
+          ? `Se utilizó generación estándar. Presentación descargada: ${archivo}`
+          : esIA
+            ? `Presentación generada con IA y descargada: ${archivo}`
+            : `Presentación generada y descargada: ${archivo}`,
       });
     } catch (error) {
       console.error("Error generando presentación oficial:", error);
       setMensajePresOficial({
         tipo: "error",
-        texto: `No se pudo generar la presentación. ${
-          error instanceof Error ? error.message : "Error desconocido."
-        }`,
+        texto:
+          "No se pudo generar la presentación en este momento. Intenta de nuevo o cambia de materia.",
       });
     } finally {
       setGenerandoPresOficial(false);
@@ -840,8 +876,18 @@ export default function Home() {
   };
 
   const generarAvanceProgramatico = async () => {
+    setMensajePlaneacion(null);
     try {
+      if (!materiaSeleccionada) {
+        throw new Error("Selecciona una asignatura antes de generar el avance.");
+      }
+
       const response = await fetch("/templates/Avance-Programatico-F51.docx");
+      if (!response.ok) {
+        throw new Error(
+          `No se pudo cargar la plantilla F-51 (HTTP ${response.status}).`,
+        );
+      }
       const content = await response.arrayBuffer();
 
       const zip = new PizZip(content);
@@ -851,8 +897,24 @@ export default function Home() {
         linebreaks: true,
       });
 
-      const datosMateria =
-        fuenteContenidos[materiaSeleccionada] as DatosMateria | undefined;
+      // Las materias con programa oficial (todas las actuales) no exponen
+      // `semanas`; sin esto el avance saldría con "Sin tema programado". Derivamos
+      // las semanas del temario oficial usando la misma distribución del F-32.
+      const programa = fuenteContenidos[materiaSeleccionada];
+      let datosMateria = programa as unknown as DatosMateria | undefined;
+      if (esProgramaOficial(programa)) {
+        const puntuaciones = textoPuntuacionesF32(
+          "teorico-practica",
+          generacionPorSemestre(semestreSeleccionado),
+        );
+        const semanas = distribuirPrograma(programa, puntuaciones)
+          .flatMap((bloque) => bloque.semanas)
+          .map((s) => ({ semana: s.semana, tema: s.tema }));
+        datosMateria = {
+          objetivoGeneral: programa.objetivoGeneral,
+          semanas,
+        };
+      }
 
       doc.render(
         construirDatosAvanceProgramatico({
@@ -870,15 +932,29 @@ export default function Home() {
 
       const blob = doc.getZip().generate({
         type: "blob",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
 
       saveAs(
         blob,
-        `F51_${materiaSeleccionada || "Avance"}_${mesReportado}.docx`,
+        `F51_${nombreArchivoSeguro(materiaSeleccionada) || "Avance"}_${nombreArchivoSeguro(
+          mesReportado,
+        )}.docx`,
       );
+
+      setMensajePlaneacion({
+        tipo: "exito",
+        texto: `Avance Programático F-51 generado y descargado (${mesReportado}).`,
+      });
     } catch (error) {
-      console.log(error);
-      alert("Error generando avance programático F-51");
+      console.error("Error generando F-51:", error);
+      const detalle =
+        error instanceof Error ? error.message : "Error desconocido.";
+      setMensajePlaneacion({
+        tipo: "error",
+        texto: `No se pudo generar el Avance Programático F-51. ${detalle}`,
+      });
     }
   };
 
@@ -887,21 +963,47 @@ export default function Home() {
     templatePath: string,
     rango: RangoSemanas,
   ) => {
+    setMensajeExamen(null);
     try {
-      const response = await fetch(templatePath);
-      const content = await response.arrayBuffer();
+      if (!materiaSeleccionada) {
+        throw new Error("Selecciona una asignatura antes de generar el examen.");
+      }
 
-      const zip = new PizZip(content);
+      let response = await fetch(templatePath);
+      if (!response.ok) {
+        throw new Error(
+          `No se pudo cargar la plantilla (HTTP ${response.status}).`,
+        );
+      }
+      let content = await response.arrayBuffer();
+      let zip = new PizZip(content);
       const documentXml = zip.file("word/document.xml")?.asText() || "";
-      const tienePlaceholders = /\{[^{}]+\}/.test(documentXml);
+
+      // Red de seguridad: si la plantilla elegida no tiene placeholders (caso del
+      // examen ordinario), usamos la de parcial (que sí los tiene) para que el
+      // examen NUNCA se descargue en blanco. El alcance lo define el rango.
+      if (!/\{[^{}]+\}/.test(documentXml)) {
+        response = await fetch("/templates/examen-parcial.docx");
+        if (!response.ok) {
+          throw new Error(
+            `No se pudo cargar la plantilla de examen (HTTP ${response.status}).`,
+          );
+        }
+        content = await response.arrayBuffer();
+        zip = new PizZip(content);
+      }
 
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
         linebreaks: true,
       });
 
-      const datosMateria =
-        fuenteContenidos[materiaSeleccionada] as DatosMateria | undefined;
+      // Las materias con programa oficial no exponen `semanas`; derivamos los
+      // subtemas reales para que las preguntas correspondan a la materia.
+      const programa = fuenteContenidos[materiaSeleccionada];
+      const datosMateria: DatosMateria | undefined = esProgramaOficial(programa)
+        ? { semanas: semanasDesdePrograma(programa) }
+        : (programa as unknown as DatosMateria | undefined);
 
       doc.render(
         construirDatosExamen({
@@ -919,18 +1021,27 @@ export default function Home() {
 
       const blob = doc.getZip().generate({
         type: "blob",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
       });
 
-      saveAs(blob, `${tipo}_${materiaSeleccionada || "Examen"}.docx`);
-      if (!tienePlaceholders) {
-        alert(
-          `La plantilla de ${tipo.toLowerCase()} no contiene placeholders. ` +
-            "Se descargó el formato original sin insertar datos automáticos.",
-        );
-      }
+      saveAs(
+        blob,
+        `${nombreArchivoSeguro(tipo)}_${nombreArchivoSeguro(materiaSeleccionada) || "examen"}.docx`,
+      );
+
+      setMensajeExamen({
+        tipo: "exito",
+        texto: `${tipo} generado y descargado para ${materiaSeleccionada}.`,
+      });
     } catch (error) {
-      console.log(error);
-      alert(`Error generando ${tipo.toLowerCase()}`);
+      console.error(`Error generando ${tipo}:`, error);
+      const detalle =
+        error instanceof Error ? error.message : "Error desconocido.";
+      setMensajeExamen({
+        tipo: "error",
+        texto: `No se pudo generar el ${tipo}. ${detalle}`,
+      });
     }
   };
 
@@ -1392,6 +1503,19 @@ export default function Home() {
                         Generar Examen Ordinario
                       </button>
                     </div>
+
+                    {mensajeExamen && (
+                      <div
+                        role="alert"
+                        className={`mt-4 rounded-2xl border px-4 py-3 text-sm font-semibold ${
+                          mensajeExamen.tipo === "exito"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            : "border-red-200 bg-red-50 text-red-800"
+                        }`}
+                      >
+                        {mensajeExamen.texto}
+                      </div>
+                    )}
                   </div>
 
                   <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">

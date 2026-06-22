@@ -167,10 +167,35 @@ function slidesUnidad(programa: ProgramaOficial, unidad: UnidadOficial): Diaposi
     });
   });
 
+  slides.push(actividadReflexion(unidad));
   slides.push(cierreUnidad(unidad));
   const bib = bibliografia(programa);
   if (bib) slides.push(bib);
   return slides;
+}
+
+// Diapositiva de participación: reflexión + actividad corta basada en los
+// primeros subtemas oficiales de la unidad (sin inventar temario).
+function actividadReflexion(unidad: UnidadOficial): DiapositivaV2 {
+  const temas = unidad.subtemas.slice(0, 3).map((s) => partirSubtema(s).texto);
+  const base = temas.length > 0 ? temas : [unidad.tema];
+  return {
+    etiqueta: "Participación y reflexión",
+    titulo: "Actividad de cierre",
+    bloques: [
+      {
+        tipo: "ejercicio",
+        items: base.map(
+          (t) => `Reflexiona: ¿cómo se aplica "${t}" en el contexto marítimo?`,
+        ),
+      },
+      {
+        tipo: "nota",
+        texto:
+          "Actividad: en equipos, comenten un ejemplo real de la operación a bordo y compártanlo con el grupo.",
+      },
+    ],
+  };
 }
 
 function cierreUnidad(unidad: UnidadOficial): DiapositivaV2 {
