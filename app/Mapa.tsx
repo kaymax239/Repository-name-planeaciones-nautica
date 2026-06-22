@@ -71,6 +71,10 @@ type UsuarioKm = {
 const USER_ID_STORAGE_KEY = "rutasKaymax.userId";
 const VIAJE_ACTIVO_STORAGE_KEY = "rutasKaymax.viajeActivo";
 const EARTH_RADIUS_KM = 6371;
+const GPS_BUS_01_STEREN: [number, number] = [22.364418, -97.882343];
+const VELOCIDAD_PROMEDIO_ETA_BUS_KMH = 25;
+const ZONA_RASTREADOR_BUS = "Zona Norte / Altamira";
+const RUTA_RASTREADOR_BUS_NORMALIZADA = "Tampico - Altamira";
 const USUARIO_KM_INICIAL: UsuarioKm = {
   kmTotales: 0,
   viajesTotales: 0,
@@ -171,6 +175,18 @@ function redondearKm(km: number) {
   return Math.round(km * 100) / 100;
 }
 
+function normalizarRutaRastreador(ruta: string) {
+  const normalizada = ruta.trim().replace(/\s+/g, " ").toLowerCase();
+
+  if (
+    normalizada === "tampico - altamira" ||
+    normalizada === "altamira - tampico"
+  ) {
+    return RUTA_RASTREADOR_BUS_NORMALIZADA;
+  }
+
+  return ruta.trim();
+}
 function distanciaHaversineKm(
   inicio: [number, number],
   fin: [number, number]
@@ -201,6 +217,21 @@ function calcularDistanciaRutaKm(puntos: [number, number][]) {
   }, 0);
 }
 
+function calcularInfoBusPasajero(ubicacionUsuario: [number, number]) {
+  const distanciaKm = distanciaHaversineKm(ubicacionUsuario, GPS_BUS_01_STEREN);
+  const distanciaTexto =
+    distanciaKm < 1
+      ? `${Math.round(distanciaKm * 1000)} m`
+      : `${distanciaKm.toFixed(2)} km`;
+  // ETA aproximado basado solo en distancia Haversine y velocidad promedio;
+  // no usa direccion, trafico ni posicion en tiempo real.
+  const etaMinutos = Math.max(
+    1,
+    Math.round((distanciaKm / VELOCIDAD_PROMEDIO_ETA_BUS_KMH) * 60)
+  );
+
+  return { distanciaKm, distanciaTexto, etaMinutos };
+}
 function calcularKilometrajeViaje(
   ruta: string,
   inicio: [number, number],
@@ -993,6 +1024,18 @@ export default function Mapa({
     );
   }, [buses, rutaSeleccionada]);
 
+  const mostrarInfoBusPasajero =
+    modoUsuario === "pasajero" &&
+    zonaSeleccionada === ZONA_RASTREADOR_BUS &&
+    normalizarRutaRastreador(rutaSeleccionada) ===
+      RUTA_RASTREADOR_BUS_NORMALIZADA &&
+    Boolean(ubicacion);
+  const infoBusPasajero =
+    ubicacion && mostrarInfoBusPasajero
+      ? calcularInfoBusPasajero(ubicacion)
+      : null;
+  const lineaBusPasajero: [number, number][] | null =
+    ubicacion && mostrarInfoBusPasajero ? [ubicacion, GPS_BUS_01_STEREN] : null;
   const usuariosRutaSeleccionada = rutaSeleccionada
     ? conteoUsuariosPorRuta[rutaSeleccionada] || 0
     : 0;
@@ -1451,6 +1494,16 @@ export default function Mapa({
           <span>Zona: {obtenerEtiquetaZona(zonaSeleccionada)}</span>
           <span>Usuarios: {usuariosRutaSeleccionada}</span>
           <span>Camiones: {busesFiltrados.length}</span>
+          {infoBusPasajero && (
+            <>
+              <span className="rt-bus-distance">
+                Bus a {infoBusPasajero.distanciaTexto} de ti
+              </span>
+              <span className="rt-bus-distance">
+                ETA aprox: {infoBusPasajero.etaMinutos} min
+              </span>
+            </>
+          )}
         </div>
 
         <div className="rt-trip-actions">
@@ -1601,15 +1654,27 @@ export default function Mapa({
             </Fragment>
           ))}
 
+        {lineaBusPasajero && (
+          <Polyline
+            positions={lineaBusPasajero}
+            pathOptions={{
+              color: "#facc15",
+              weight: 3,
+              opacity: 0.82,
+              dashArray: "8 10",
+              lineCap: "round",
+              lineJoin: "round",
+            }}
+          />
+        )}
         {ubicacion && (
           <Marker position={ubicacion} icon={miUbicacionIcon}>
             <Popup>Estás aquí</Popup>
           </Marker>
         )}
 
-        {busesFiltrados.map((bus) => (
-          <BusAnimado key={bus.id} bus={bus} />
-        ))}
+        {!mostrarInfoBusPasajero &&
+          busesFiltrados.map((bus) => <BusAnimado key={bus.id} bus={bus} />)}
       </MapContainer>
     </div>
   );
