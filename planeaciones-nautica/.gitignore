@@ -55,3 +55,7 @@ next-env.d.ts
 
 # Temporales de ingestión de históricas (.doc → antiword)
 .tmp-historica-*.doc
+
+# Salidas de prueba generadas (Word F-32 Premium). Se regeneran con el script.
+/salidas
+.planeaciones-cache
