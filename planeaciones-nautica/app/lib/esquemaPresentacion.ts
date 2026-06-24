@@ -153,3 +153,59 @@ export const presentacionIASchema = z.object({
 });
 
 export type PresentacionIA = z.infer<typeof presentacionIASchema>;
+export type DiapositivaIA = z.infer<typeof diapositivaIASchema>;
+export type BloqueIA = z.infer<typeof bloqueIASchema>;
+
+/* --------------------------- Validación tolerante ------------------------- */
+
+export type ResultadoTolerante = {
+  pres: PresentacionIA;
+  /** Nº de bloques individuales descartados por no validar contra el esquema. */
+  bloquesDescartados: number;
+  /** Nº de diapositivas descartadas (sin título válido, etc.). */
+  diapositivasDescartadas: number;
+};
+
+/**
+ * Valida la respuesta cruda de la IA SIN tirar todo el deck si algo no encaja:
+ *  - Cada bloque se valida por separado; los inválidos se descartan.
+ *  - Cada diapositiva se valida con sus bloques ya saneados; si su "cáscara"
+ *    (título requerido) no valida, se descarta esa diapositiva.
+ *  - kicker/subtituloPortada solo se conservan si son strings.
+ * Garantiza que el renderer V2 nunca reciba bloques fuera de su vocabulario.
+ */
+export function validarPresentacionTolerante(raw: unknown): ResultadoTolerante {
+  const root = (raw ?? {}) as Record<string, unknown>;
+  const diapositivasRaw = Array.isArray(root.diapositivas)
+    ? root.diapositivas
+    : [];
+
+  let bloquesDescartados = 0;
+  let diapositivasDescartadas = 0;
+  const diapositivas: DiapositivaIA[] = [];
+
+  for (const d of diapositivasRaw) {
+    const obj = (d ?? {}) as Record<string, unknown>;
+    const bloquesRaw = Array.isArray(obj.bloques) ? obj.bloques : [];
+    const bloques: BloqueIA[] = [];
+    for (const b of bloquesRaw) {
+      const r = bloqueIASchema.safeParse(b);
+      if (r.success) bloques.push(r.data);
+      else bloquesDescartados++;
+    }
+    const r = diapositivaIASchema.safeParse({ ...obj, bloques });
+    if (r.success) diapositivas.push(r.data);
+    else diapositivasDescartadas++;
+  }
+
+  const pres = presentacionIASchema.parse({
+    kicker: typeof root.kicker === "string" ? root.kicker : undefined,
+    subtituloPortada:
+      typeof root.subtituloPortada === "string"
+        ? root.subtituloPortada
+        : undefined,
+    diapositivas,
+  });
+
+  return { pres, bloquesDescartados, diapositivasDescartadas };
+}

@@ -1,11 +1,16 @@
 // Route Handler (servidor) — genera bajo demanda el guion de una presentación
-// premium con Claude y lo devuelve como PresentacionV2 lista para el renderer.
+// premium con Gemini y lo devuelve como PresentacionV2 lista para el renderer.
 //
 // La API key vive SOLO aquí (servidor); nunca llega al navegador. Si falla la
 // IA o falta la key, devuelve un error con código y el cliente cae al generador
 // determinista existente (construirPresentacionV2).
+//
+// Proveedor único: Gemini. El temario SIEMPRE proviene del programa oficial
+// (app/data/contenidos); la IA desarrolla, NUNCA inventa temas. La salida se
+// fuerza a JSON (responseMimeType) y se valida con Zod TOLERANTE: los bloques
+// inválidos se descartan y se conservan los válidos.
 
-import Anthropic from "@anthropic-ai/sdk";
+import { GoogleGenAI } from "@google/genai";
 import {
   contenidosMaterias,
   contenidosMateriasMN,
@@ -13,7 +18,7 @@ import {
 import { esProgramaOficial } from "../../data/tipos";
 import { TEMA_UNIDAD_COMPLETA } from "../../lib/construirPresentacionV2";
 import {
-  presentacionIASchema,
+  validarPresentacionTolerante,
   type PresentacionIA,
 } from "../../lib/esquemaPresentacion";
 import {
@@ -29,11 +34,15 @@ import type { DiapositivaV2, PresentacionV2 } from "../../data/presentaciones/ti
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-// Opus con effort alto puede tardar ~60s en generar un deck completo. Damos
-// holgura (requiere plan Pro; en Hobby Vercel lo limita a 60).
+// gemini-2.5-pro puede tardar en generar un deck completo. Damos holgura
+// (requiere plan Pro en Vercel; en Hobby se limita a 60).
 export const maxDuration = 300;
 
-const MODELO = process.env.ANTHROPIC_MODEL || "claude-opus-4-8";
+// Modelo dedicado a presentaciones (máxima calidad). Planeaciones F-32 usa
+// GEMINI_MODEL (flash) por separado; aquí preferimos pro.
+const MODELO =
+  process.env.GEMINI_MODEL_PRESENTACIONES || "gemini-2.5-pro";
+const TIMEOUT_MS = 120000;
 
 type Cuerpo = {
   carrera?: "PN" | "MN";
@@ -50,15 +59,39 @@ function error(codigo: string, mensaje: string, status: number) {
   return Response.json({ error: codigo, mensaje }, { status });
 }
 
-// Aísla el objeto JSON: quita posibles ```json ... ``` y texto sobrante,
-// quedándose con el primer "{" hasta el último "}".
-function extraerJSON(texto: string): string {
-  let t = texto.trim();
-  const fence = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fence) t = fence[1].trim();
-  const ini = t.indexOf("{");
-  const fin = t.lastIndexOf("}");
-  return ini >= 0 && fin > ini ? t.slice(ini, fin + 1) : t;
+function conTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(() => reject(new Error("timeout")), ms);
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
+}
+
+/** Llama a Gemini forzando salida JSON. Devuelve el texto crudo. */
+async function generarTexto(
+  client: GoogleGenAI,
+  system: string,
+  mensaje: string,
+): Promise<string> {
+  const resp = await client.models.generateContent({
+    model: MODELO,
+    contents: mensaje,
+    config: {
+      systemInstruction: system,
+      responseMimeType: "application/json",
+      temperature: 0.4,
+      maxOutputTokens: 32000,
+    },
+  });
+  return resp.text ?? "";
 }
 
 export async function POST(request: Request) {
@@ -101,18 +134,14 @@ export async function POST(request: Request) {
   }
 
   // A partir de aquí hay que generar con IA: se requiere la API key.
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return error("sin_api_key", "ANTHROPIC_API_KEY no está configurada.", 503);
+  if (!process.env.GEMINI_API_KEY) {
+    return error("sin_api_key", "GEMINI_API_KEY no está configurada.", 503);
   }
 
   const fuente = carrera === "MN" ? contenidosMateriasMN : contenidosMaterias;
   const programa = fuente[materia];
   if (!esProgramaOficial(programa)) {
-    return error(
-      "sin_programa",
-      "La materia no tiene programa oficial.",
-      404,
-    );
+    return error("sin_programa", "La materia no tiene programa oficial.", 404);
   }
 
   const unidad = programa.unidades.find((u) => u.numero === unidadNumero);
@@ -128,43 +157,53 @@ export async function POST(request: Request) {
     tema: temaCompleto,
   });
 
-  const client = new Anthropic();
+  const client = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-  let validado: PresentacionIA;
-  try {
-    const stream = client.messages.stream({
-      model: MODELO,
-      max_tokens: 32000,
-      thinking: { type: "adaptive" },
-      output_config: { effort: "high" },
-      system: SYSTEM_PROMPT,
-      messages: [{ role: "user", content: mensajeUsuario }],
-    });
-    const mensaje = await stream.finalMessage();
-
-    if (mensaje.stop_reason === "refusal") {
-      return error("rechazo_ia", "El modelo rechazó la solicitud.", 502);
+  // Hasta 2 intentos: timeout + reintento. La validación es tolerante: descarta
+  // bloques inválidos y conserva los válidos (el renderer nunca recibe basura).
+  let validado: PresentacionIA | null = null;
+  let motivo = "fallo_ia";
+  for (let intento = 1; intento <= 2 && !validado; intento++) {
+    try {
+      const texto = await conTimeout(
+        generarTexto(client, SYSTEM_PROMPT, mensajeUsuario),
+        TIMEOUT_MS,
+      );
+      if (!texto.trim()) {
+        motivo = "respuesta_vacia";
+        continue;
+      }
+      let datos: unknown;
+      try {
+        datos = JSON.parse(texto);
+      } catch {
+        motivo = "json_invalido";
+        continue;
+      }
+      const r = validarPresentacionTolerante(datos);
+      if (r.bloquesDescartados || r.diapositivasDescartadas) {
+        console.warn(
+          `Presentación IA: descartados ${r.bloquesDescartados} bloque(s) y ${r.diapositivasDescartadas} diapositiva(s) inválidos.`,
+        );
+      }
+      if (r.pres.diapositivas.length === 0) {
+        motivo = "sin_diapositivas";
+        continue;
+      }
+      validado = r.pres;
+    } catch (e) {
+      motivo =
+        e instanceof Error && e.message === "timeout" ? "timeout" : "fallo_ia";
+      console.error(`Error generando presentación con IA (intento ${intento}):`, e);
     }
-
-    let texto = "";
-    for (const b of mensaje.content) {
-      if (b.type === "text") texto += b.text;
-    }
-    if (!texto.trim()) {
-      return error("respuesta_vacia", "La IA no devolvió contenido.", 502);
-    }
-    validado = presentacionIASchema.parse(JSON.parse(extraerJSON(texto)));
-  } catch (e) {
-    console.error("Error generando presentación con IA:", e);
-    return error(
-      "fallo_ia",
-      e instanceof Error ? e.message : "Error desconocido al generar.",
-      502,
-    );
   }
 
-  if (validado.diapositivas.length === 0) {
-    return error("sin_diapositivas", "La IA devolvió 0 diapositivas.", 502);
+  if (!validado) {
+    return error(
+      motivo,
+      "No se pudo generar la presentación con IA.",
+      502,
+    );
   }
 
   const sufijo = temaCompleto ? `U${unidad.numero}_tema` : `U${unidad.numero}`;
