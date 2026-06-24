@@ -47,3 +47,11 @@ next-env.d.ts
 
 # cache de guiones de presentaciones generados por IA (se regeneran)
 .presentaciones-cache
+
+# Importaciones crudas de planeaciones históricas (datos personales, ~57MB).
+# El corpus REDACTADO y derivado vive en app/data/planeaciones-historicas/.
+/importacines
+/importaciones
+
+# Temporales de ingestión de históricas (.doc → antiword)
+.tmp-historica-*.doc
