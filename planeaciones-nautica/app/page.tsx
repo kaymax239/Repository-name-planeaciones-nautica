@@ -33,6 +33,7 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 import { SeccionIngles } from "./components/SeccionIngles";
+import { construirDatosAvanceF51, periodoDesdeSemanas } from "./lib/avanceF51";
 
 type SemanaMateria = {
   semana: string;
@@ -52,16 +53,6 @@ type RangoSemanas = {
   inicio: number;
   fin: number;
 };
-
-const periodosAvance = [
-  { nombre: "Julio-Agosto", inicio: 0, fin: 4 },
-  { nombre: "Septiembre", inicio: 4, fin: 8 },
-  { nombre: "Octubre", inicio: 8, fin: 12 },
-  { nombre: "Noviembre", inicio: 12, fin: 16 },
-  { nombre: "Diciembre", inicio: 16, fin: 18 },
-] as const;
-
-type MesReportado = (typeof periodosAvance)[number]["nombre"];
 
 const limpiarTema = (tema: string) => tema.trim().replace(/\.$/, "");
 
@@ -185,140 +176,6 @@ const generarSecuenciaDidactica = (
     `Desarrollo: Se realiza una explicación guiada de ${tema}, alineada con el propósito de ${objetivo}. Los cadetes desarrollan una actividad práctica basada en ${estrategia}, alternando trabajo individual y colaborativo para resolver ejercicios, analizar casos o elaborar productos aplicados a ${contexto}.`,
     `Cierre: Se socializan resultados y se brinda retroalimentación puntual sobre aciertos, áreas de mejora y criterios de desempeño. La evidencia de aprendizaje será una actividad, ejercicio, reporte breve o participación argumentada relacionada con ${tema}. Cada cadete formula una reflexión final sobre la utilidad del tema. ${enlaceSiguiente}`,
   ].join("\n\n");
-};
-
-const obtenerPeriodoAvance = (mesReportado: MesReportado) =>
-  periodosAvance.find((periodo) => periodo.nombre === mesReportado) ||
-  periodosAvance[0];
-
-const obtenerAnioPeriodo = (periodo: string) =>
-  periodo.match(/\d{4}/)?.[0] || new Date().getFullYear().toString();
-
-const obtenerSemanasAvance = (
-  datosMateria: DatosMateria | undefined,
-  mesReportado: MesReportado,
-) => {
-  const periodoAvance = obtenerPeriodoAvance(mesReportado);
-  const semanasSeleccionadas =
-    datosMateria?.semanas?.slice(periodoAvance.inicio, periodoAvance.fin) || [];
-
-  return Array.from({ length: 4 }, (_, index) => {
-    const semana = semanasSeleccionadas[index];
-
-    return {
-      numero: `Semana ${index + 1}`,
-      tema: semana?.tema
-        ? limpiarTema(semana.tema)
-        : "Sin tema programado para este periodo reportado.",
-      sesiones: semana?.tema ? "1" : "0",
-    };
-  });
-};
-
-const construirDatosAvanceProgramatico = ({
-  materia,
-  datosMateria,
-  docente,
-  grupo,
-  semestre,
-  periodoEscolar,
-  mesReportado,
-  escuela,
-  licenciatura,
-}: {
-  materia: string;
-  datosMateria?: DatosMateria;
-  docente: string;
-  grupo: string;
-  semestre: string;
-  periodoEscolar: string;
-  mesReportado: MesReportado;
-  escuela: string;
-  licenciatura: string;
-}) => {
-  const semanasAvance = obtenerSemanasAvance(datosMateria, mesReportado);
-  const temasSubtemasCubiertos = semanasAvance
-    .filter((semana) => semana.sesiones !== "0")
-    .map((semana) => `${semana.numero}: ${semana.tema}`)
-    .join("\n");
-  const objetivosCompetencias =
-    datosMateria?.objetivoEspecifico ||
-    datosMateria?.objetivoGeneral ||
-    `Desarrollar competencias académicas y profesionales relacionadas con ${materia}.`;
-  const estrategiasTecnicas =
-    datosMateria?.estrategia ||
-    "Exposición guiada, análisis de casos, ejercicios prácticos, trabajo individual y colaborativo.";
-  const recursosDidacticos =
-    "Presentación digital, equipo de cómputo, material didáctico, recursos digitales y referencias académicas.";
-  const evidenciasAprendizaje =
-    "Actividades de clase, ejercicios resueltos, participación, reporte breve y evidencias integradas en el portafolio académico.";
-  const instrumentosEvaluacion =
-    "Lista de cotejo, rúbrica de desempeño, participación guiada y evaluación formativa.";
-
-  return {
-    escuela,
-    asignatura: materia,
-    curso: materia,
-    asignaturaCurso: materia,
-    mes: mesReportado,
-    anio: obtenerAnioPeriodo(periodoEscolar),
-    docente,
-    licenciatura,
-    semestre,
-    grupo,
-    periodoReportado: `${mesReportado} ${obtenerAnioPeriodo(periodoEscolar)}`,
-    periodoEscolar,
-    temasCubiertos:
-      temasSubtemasCubiertos || "Sin temas registrados para este periodo.",
-    temasSubtemasCubiertos:
-      temasSubtemasCubiertos || "Sin temas registrados para este periodo.",
-    objetivosCompetencias,
-    estrategiasTecnicas,
-    evidenciasAprendizaje,
-    recursosDidacticos,
-    instrumentosEvaluacion,
-    actividadesSigaaSi: "X",
-    actividadesSigaaNo: "",
-    nombreFirmaDocente: docente || "Nombre y firma del docente",
-    semana1: semanasAvance[0].numero,
-    tema1: semanasAvance[0].tema,
-    semana1Tema: semanasAvance[0].tema,
-    sesiones1: semanasAvance[0].sesiones,
-    semana1Sesiones: semanasAvance[0].sesiones,
-    estrategia1: estrategiasTecnicas,
-    evidencia1: evidenciasAprendizaje,
-    recursos1: recursosDidacticos,
-    instrumento1: instrumentosEvaluacion,
-    semana2: semanasAvance[1].numero,
-    tema2: semanasAvance[1].tema,
-    semana2Tema: semanasAvance[1].tema,
-    sesiones2: semanasAvance[1].sesiones,
-    semana2Sesiones: semanasAvance[1].sesiones,
-    estrategia2: estrategiasTecnicas,
-    evidencia2: evidenciasAprendizaje,
-    recursos2: recursosDidacticos,
-    instrumento2: instrumentosEvaluacion,
-    semana3: semanasAvance[2].numero,
-    tema3: semanasAvance[2].tema,
-    semana3Tema: semanasAvance[2].tema,
-    sesiones3: semanasAvance[2].sesiones,
-    semana3Sesiones: semanasAvance[2].sesiones,
-    estrategia3: estrategiasTecnicas,
-    evidencia3: evidenciasAprendizaje,
-    recursos3: recursosDidacticos,
-    instrumento3: instrumentosEvaluacion,
-    semana4: semanasAvance[3].numero,
-    tema4: semanasAvance[3].tema,
-    semana4Tema: semanasAvance[3].tema,
-    sesiones4: semanasAvance[3].sesiones,
-    semana4Sesiones: semanasAvance[3].sesiones,
-    estrategia4: estrategiasTecnicas,
-    evidencia4: evidenciasAprendizaje,
-    recursos4: recursosDidacticos,
-    instrumento4: instrumentosEvaluacion,
-    razonesNoCumplio: "",
-    firmaDocente: docente || "Nombre y firma del docente",
-  };
 };
 
 const construirPreguntasExamen = (materia: string, temas: SemanaMateria[]) => {
@@ -473,8 +330,12 @@ export default function Home() {
   const [grupo, setGrupo] = useState("");
   const [cadetes, setCadetes] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
-  const [mesReportado, setMesReportado] =
-    useState<MesReportado>("Julio-Agosto");
+  // Flujo del Avance Programático F-51 (en pasos): "no" oculto; "semanas" elige
+  // las semanas; "preview" muestra la vista previa antes de generar el Word.
+  const [avancePaso, setAvancePaso] = useState<"no" | "semanas" | "preview">(
+    "no",
+  );
+  const [semanasAvance, setSemanasAvance] = useState<number[]>([]);
   const [generandoPresOficial, setGenerandoPresOficial] = useState(false);
   const [mensajePresOficial, setMensajePresOficial] = useState<{
     tipo: "exito" | "error";
@@ -521,6 +382,26 @@ export default function Home() {
   // El botón se muestra para toda materia con programa oficial.
   const materiaTienePrograma = esProgramaOficial(programaMateria);
 
+  // Semanas disponibles del Avance Programático: cada semana del temario oficial
+  // (mismo cálculo que el F-32) con su número, fechas reales y tema derivado
+  // AUTOMÁTICAMENTE. Es la lista que el usuario elige en el paso "Seleccionar
+  // semanas"; el tema no se captura a mano.
+  const semanasDisponibles = esProgramaOficial(programaMateria)
+    ? distribuirPrograma(
+        programaMateria,
+        textoPuntuacionesF32(
+          "teorico-practica",
+          generacionPorSemestre(semestreSeleccionado),
+        ),
+      )
+        .flatMap((bloque) => bloque.semanas)
+        .map((s, i) => ({
+          numero: i + 1,
+          etiqueta: s.semana,
+          tema: s.tema,
+        }))
+    : [];
+
   // Al cambiar de materia o carrera, seleccionar la PRIMERA unidad disponible
   // (no siempre es la número 1: algunos programas empiezan en otra unidad) y
   // volver a "Unidad completa".
@@ -528,6 +409,8 @@ export default function Home() {
     setUnidadSeleccionada(unidadesMateria[0]?.numero ?? 1);
     setTemaSeleccionado(TEMA_UNIDAD_COMPLETA);
     setMensajePresOficial(null);
+    setAvancePaso("no");
+    setSemanasAvance([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materiaSeleccionada, carrera]);
 
@@ -879,12 +762,43 @@ export default function Home() {
     }
   };
 
+  // Abre el flujo en pasos del Avance Programático (no genera directo).
+  const abrirAvance = () => {
+    setMensajePlaneacion(null);
+    setSemanasAvance([]);
+    setAvancePaso("semanas");
+  };
+
+  const cerrarAvance = () => {
+    setAvancePaso("no");
+    setSemanasAvance([]);
+  };
+
+  // Marca/desmarca una semana (tope de 4: el F-51 tiene 4 huecos).
+  const alternarSemanaAvance = (numero: number) => {
+    setSemanasAvance((prev) =>
+      prev.includes(numero)
+        ? prev.filter((n) => n !== numero)
+        : prev.length >= 4
+          ? prev
+          : [...prev, numero],
+    );
+  };
+
+  // Genera el F-51 con las semanas seleccionadas. El tema de cada semana se toma
+  // AUTOMÁTICAMENTE del programa oficial (sin selección manual de temas) y el
+  // periodo se deriva de las semanas elegidas (ya no se usa "Mes reportado").
   const generarAvanceProgramatico = async () => {
     setMensajePlaneacion(null);
     try {
-      if (!materiaSeleccionada) {
-        throw new Error("Selecciona una asignatura antes de generar el avance.");
+      if (semanasAvance.length === 0) {
+        throw new Error("Selecciona al menos una semana.");
       }
+
+      const seleccionadas = semanasDisponibles
+        .filter((s) => semanasAvance.includes(s.numero))
+        .sort((a, b) => a.numero - b.numero)
+        .map((s) => ({ numero: s.numero, tema: s.tema }));
 
       const response = await fetch("/templates/Avance-Programatico-F51.docx");
       if (!response.ok) {
@@ -893,44 +807,21 @@ export default function Home() {
         );
       }
       const content = await response.arrayBuffer();
-
-      const zip = new PizZip(content);
-
-      const doc = new Docxtemplater(zip, {
+      const doc = new Docxtemplater(new PizZip(content), {
         paragraphLoop: true,
         linebreaks: true,
       });
 
-      // Las materias con programa oficial (todas las actuales) no exponen
-      // `semanas`; sin esto el avance saldría con "Sin tema programado". Derivamos
-      // las semanas del temario oficial usando la misma distribución del F-32.
-      const programa = fuenteContenidos[materiaSeleccionada];
-      let datosMateria = programa as unknown as DatosMateria | undefined;
-      if (esProgramaOficial(programa)) {
-        const puntuaciones = textoPuntuacionesF32(
-          "teorico-practica",
-          generacionPorSemestre(semestreSeleccionado),
-        );
-        const semanas = distribuirPrograma(programa, puntuaciones)
-          .flatMap((bloque) => bloque.semanas)
-          .map((s) => ({ semana: s.semana, tema: s.tema }));
-        datosMateria = {
-          objetivoGeneral: programa.objetivoGeneral,
-          semanas,
-        };
-      }
-
       doc.render(
-        construirDatosAvanceProgramatico({
-          materia: materiaSeleccionada,
-          datosMateria,
+        construirDatosAvanceF51(seleccionadas, {
+          asignatura: materiaSeleccionada,
+          licenciatura,
+          semestre: semestreSeleccionado,
           docente,
           grupo,
-          semestre: semestreSeleccionado,
-          periodoEscolar: periodo,
-          mesReportado,
-          escuela: escuelaNautica,
-          licenciatura,
+          objetivosCompetencias: esProgramaOficial(programaMateria)
+            ? programaMateria.objetivoGeneral
+            : "",
         }),
       );
 
@@ -942,14 +833,13 @@ export default function Home() {
 
       saveAs(
         blob,
-        `F51_${nombreArchivoSeguro(materiaSeleccionada) || "Avance"}_${nombreArchivoSeguro(
-          mesReportado,
-        )}.docx`,
+        `F51_${nombreArchivoSeguro(materiaSeleccionada) || "Avance"}.docx`,
       );
 
+      cerrarAvance();
       setMensajePlaneacion({
         tipo: "exito",
-        texto: `Avance Programático F-51 generado y descargado (${mesReportado}).`,
+        texto: "Avance Programático F-51 generado y descargado.",
       });
     } catch (error) {
       console.error("Error generando F-51:", error);
@@ -1249,6 +1139,188 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+            ) : avancePaso !== "no" ? (
+              <div className="px-6 py-8 sm:px-10">
+                <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                      Avance Programático F-51
+                    </p>
+                    <h2 className="mt-2 text-2xl font-black text-[#071a33]">
+                      {materiaSeleccionada}
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {avancePaso === "semanas"
+                        ? "Paso 1 · Selecciona las semanas (hasta 4). Los temas se toman automáticamente del programa."
+                        : "Paso 2 · Vista previa antes de generar el Word."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={cerrarAvance}
+                    className="shrink-0 rounded-2xl border border-[#071a33] px-4 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] transition hover:bg-[#071a33] hover:text-white"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+
+                {avancePaso === "semanas" ? (
+                  <>
+                    <div className="mb-4 flex items-center justify-between">
+                      <p className="text-sm font-bold text-[#071a33]">
+                        Semanas seleccionadas
+                      </p>
+                      <span className="rounded-full bg-[#071a33] px-3 py-1 text-xs font-black text-white">
+                        {semanasAvance.length}/4
+                      </span>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {semanasDisponibles.map((s) => {
+                        const activa = semanasAvance.includes(s.numero);
+                        const bloqueada = !activa && semanasAvance.length >= 4;
+                        return (
+                          <button
+                            key={s.numero}
+                            type="button"
+                            onClick={() => alternarSemanaAvance(s.numero)}
+                            disabled={bloqueada}
+                            className={`rounded-2xl border p-4 text-left shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                              activa
+                                ? "border-[#c8a45d] bg-[#071a33] text-white"
+                                : "border-slate-200 bg-white text-[#071a33] hover:border-[#c8a45d]"
+                            }`}
+                          >
+                            <span
+                              className={`text-xs font-bold uppercase tracking-[0.16em] ${
+                                activa ? "text-[#d7bd7a]" : "text-[#c8a45d]"
+                              }`}
+                            >
+                              {activa ? "✓ Seleccionada" : "Semana"}
+                            </span>
+                            <span className="mt-1 block whitespace-pre-line text-sm font-black">
+                              {s.etiqueta}
+                            </span>
+                            <span
+                              className={`mt-2 block whitespace-pre-line text-xs ${
+                                activa ? "text-slate-200" : "text-slate-500"
+                              }`}
+                            >
+                              {s.tema}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setAvancePaso("preview")}
+                        disabled={semanasAvance.length === 0}
+                        className="rounded-2xl bg-[#c8a45d] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        Continuar a vista previa
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+                    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                      <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                        Temas y semanas del avance
+                      </p>
+                      <ol className="mt-4 space-y-3">
+                        {semanasDisponibles
+                          .filter((s) => semanasAvance.includes(s.numero))
+                          .sort((a, b) => a.numero - b.numero)
+                          .map((s) => (
+                            <li
+                              key={s.numero}
+                              className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                            >
+                              <p className="whitespace-pre-line text-sm font-black text-[#071a33]">
+                                {s.etiqueta}
+                              </p>
+                              <p className="mt-1 whitespace-pre-line text-xs text-slate-600">
+                                {s.tema}
+                              </p>
+                            </li>
+                          ))}
+                      </ol>
+                    </div>
+
+                    <div className="flex flex-col gap-6">
+                      <div className="rounded-3xl bg-[#071a33] p-6 text-white shadow-xl shadow-slate-300/60">
+                        <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#d7bd7a]">
+                          Datos del avance
+                        </p>
+                        <div className="mt-5 space-y-3 text-sm">
+                          <div className="flex justify-between gap-4 border-b border-white/10 pb-2">
+                            <span className="text-slate-300">Carrera</span>
+                            <span className="text-right font-bold">
+                              {licenciatura}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-4 border-b border-white/10 pb-2">
+                            <span className="text-slate-300">Semestre</span>
+                            <span className="font-bold">
+                              {semestreSeleccionado}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-4 border-b border-white/10 pb-2">
+                            <span className="text-slate-300">Docente</span>
+                            <span className="text-right font-bold">
+                              {docente || "Por definir"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-4 border-b border-white/10 pb-2">
+                            <span className="text-slate-300">Grupo</span>
+                            <span className="font-bold">
+                              {grupo || "Por definir"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-slate-300">Periodo</span>
+                            <span className="text-right font-bold">
+                              {periodoDesdeSemanas(semanasAvance)
+                                .periodoReportado || "—"}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setAvancePaso("semanas")}
+                          className="rounded-2xl border border-[#071a33] px-5 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] transition hover:bg-[#071a33] hover:text-white"
+                        >
+                          Regresar a semanas
+                        </button>
+                        <button
+                          type="button"
+                          onClick={generarAvanceProgramatico}
+                          className="rounded-2xl bg-[#c8a45d] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a]"
+                        >
+                          Generar avance en Word
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {mensajePlaneacion && (
+                  <div
+                    role="alert"
+                    className={`mt-6 rounded-2xl border px-5 py-4 text-sm font-semibold ${
+                      mensajePlaneacion.tipo === "exito"
+                        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                        : "border-red-200 bg-red-50 text-red-800"
+                    }`}
+                  >
+                    {mensajePlaneacion.texto}
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="grid gap-8 px-6 py-8 sm:px-10 lg:grid-cols-[1.05fr_0.95fr]">
                 <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -1329,26 +1401,6 @@ export default function Home() {
                         value={periodo}
                         readOnly
                       />
-                    </label>
-
-                    <label>
-                      <span className={labelClass}>Mes reportado F-51</span>
-                      <select
-                        className={inputClass}
-                        value={mesReportado}
-                        onChange={(e) =>
-                          setMesReportado(e.target.value as MesReportado)
-                        }
-                      >
-                        {periodosAvance.map((periodoAvance) => (
-                          <option
-                            key={periodoAvance.nombre}
-                            value={periodoAvance.nombre}
-                          >
-                            {periodoAvance.nombre}
-                          </option>
-                        ))}
-                      </select>
                     </label>
 
                     <label>
@@ -1444,10 +1496,11 @@ export default function Home() {
 
                     <button
                       type="button"
-                      onClick={generarAvanceProgramatico}
-                      className="rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52]"
+                      onClick={abrirAvance}
+                      disabled={!materiaTienePrograma}
+                      className="rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      Generar Avance Programático F-51
+                      Generar Avance Programático
                     </button>
                   </div>
 

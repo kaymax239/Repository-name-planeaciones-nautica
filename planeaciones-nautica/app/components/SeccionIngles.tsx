@@ -15,6 +15,7 @@ import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 import { construirDatosF32DesdeIngles } from "../lib/planeacionInglesF32.js";
+import { construirDatosAvanceF51, periodoDesdeSemanas } from "../lib/avanceF51";
 
 type Props = {
   onVolver: () => void;
@@ -117,14 +118,156 @@ export function SeccionIngles({ onVolver }: Props) {
     texto: string;
   } | null>(null);
 
+  // Flujo del Avance Programático F-51 (en pasos). El "pool" de semanas viene de
+  // la secuencia espejada de las históricas del nivel (secuenciaSemanal).
+  const [avancePaso, setAvancePaso] = useState<"no" | "semanas" | "preview">(
+    "no",
+  );
+  const [cargandoAvance, setCargandoAvance] = useState(false);
+  const [poolSemanas, setPoolSemanas] = useState<
+    { numero: number; tema: string }[]
+  >([]);
+  const [semanasAvance, setSemanasAvance] = useState<number[]>([]);
+  const [metaAvance, setMetaAvance] = useState<{
+    asignatura: string;
+    objetivoGeneral: string;
+  }>({ asignatura: "", objetivoGeneral: "" });
+
   const seleccionarNivel = (n: string) => {
     setNivel(n);
     setMensaje(null);
+    setAvancePaso("no");
+    setSemanasAvance([]);
+    setPoolSemanas([]);
   };
 
   const regresarANiveles = () => {
     setNivel(null);
     setMensaje(null);
+    setAvancePaso("no");
+    setSemanasAvance([]);
+    setPoolSemanas([]);
+  };
+
+  const cerrarAvance = () => {
+    setAvancePaso("no");
+    setSemanasAvance([]);
+  };
+
+  const alternarSemanaAvance = (numero: number) => {
+    setSemanasAvance((prev) =>
+      prev.includes(numero)
+        ? prev.filter((n) => n !== numero)
+        : prev.length >= 4
+          ? prev
+          : [...prev, numero],
+    );
+  };
+
+  // Abre el flujo del avance: obtiene la secuencia semanal del nivel (espejo de
+  // las históricas) para ofrecer las semanas/temas a elegir. Sin JSON ni errores
+  // técnicos a la vista.
+  const abrirAvance = async () => {
+    if (!nivel) return;
+    setMensaje(null);
+    setCargandoAvance(true);
+    try {
+      const res = await fetch("/api/planeacion-ingles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nivel,
+          grupo,
+          semanas,
+          horasPorSemana,
+          observaciones,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.planeacion) {
+        setMensaje({ tipo: "error", texto: mensajeAmigable(data?.error) });
+        return;
+      }
+      const secuencia = Array.isArray(data.planeacion.secuenciaSemanal)
+        ? (data.planeacion.secuenciaSemanal as Record<string, unknown>[])
+        : [];
+      const pool = secuencia.map((s, i) => ({
+        numero: Number(s?.semana) || i + 1,
+        tema:
+          typeof s?.contenido === "string" && s.contenido.trim()
+            ? s.contenido.trim()
+            : `Semana ${Number(s?.semana) || i + 1}`,
+      }));
+      if (pool.length === 0) {
+        setMensaje({ tipo: "error", texto: MENSAJE_BIBLIOTECA_NO_DISPONIBLE });
+        return;
+      }
+      setPoolSemanas(pool);
+      setSemanasAvance([]);
+      setMetaAvance({
+        asignatura:
+          typeof data.planeacion.asignatura === "string"
+            ? data.planeacion.asignatura
+            : `Inglés Nivel ${nivel}`,
+        objetivoGeneral:
+          typeof data.planeacion.objetivoGeneral === "string"
+            ? data.planeacion.objetivoGeneral
+            : "",
+      });
+      setAvancePaso("semanas");
+    } catch {
+      setMensaje({ tipo: "error", texto: MENSAJE_ERROR_GENERICO });
+    } finally {
+      setCargandoAvance(false);
+    }
+  };
+
+  // Genera el Avance Programático F-51 con las semanas elegidas (temas tomados
+  // automáticamente de la secuencia del nivel). Reutiliza la plantilla F-51.
+  const generarAvanceWord = async () => {
+    if (!nivel || semanasAvance.length === 0) return;
+    setMensaje(null);
+    try {
+      const seleccionadas = poolSemanas
+        .filter((s) => semanasAvance.includes(s.numero))
+        .sort((a, b) => a.numero - b.numero);
+
+      const plantilla = await fetch("/templates/Avance-Programatico-F51.docx");
+      if (!plantilla.ok) {
+        setMensaje({ tipo: "error", texto: MENSAJE_ERROR_GENERICO });
+        return;
+      }
+      const content = await plantilla.arrayBuffer();
+      const doc = new Docxtemplater(new PizZip(content), {
+        paragraphLoop: true,
+        linebreaks: true,
+      });
+      doc.render(
+        construirDatosAvanceF51(seleccionadas, {
+          asignatura: metaAvance.asignatura || `Inglés Nivel ${nivel}`,
+          licenciatura: "Inglés",
+          semestre: `Nivel ${nivel}`,
+          docente: "",
+          grupo,
+          objetivosCompetencias: metaAvance.objetivoGeneral,
+        }),
+      );
+      const blob = doc.getZip().generate({
+        type: "blob",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
+      const nombreArchivo = `F51_INGLES_NIVEL${nivel}.docx`;
+      saveAs(blob, nombreArchivo);
+
+      cerrarAvance();
+      setMensaje({
+        tipo: "exito",
+        texto: `Avance Programático generado y descargado: ${nombreArchivo}`,
+      });
+    } catch {
+      setMensaje({ tipo: "error", texto: MENSAJE_ERROR_GENERICO });
+    }
   };
 
   // Genera la planeación de Inglés y descarga el Word automáticamente. Toda la
@@ -239,6 +382,181 @@ export function SeccionIngles({ onVolver }: Props) {
             Regresar al inicio
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // ── Pantalla de Avance Programático (en pasos) ─────────────────────────────
+  if (avancePaso !== "no") {
+    const seleccionadas = poolSemanas
+      .filter((s) => semanasAvance.includes(s.numero))
+      .sort((a, b) => a.numero - b.numero);
+    return (
+      <div className="px-6 py-8 sm:px-10">
+        <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+              Avance Programático F-51 · Inglés
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-[#071a33]">
+              Nivel {nivel}
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              {avancePaso === "semanas"
+                ? "Paso 1 · Selecciona las semanas (hasta 4). Los temas se toman automáticamente de las planeaciones históricas del nivel."
+                : "Paso 2 · Vista previa antes de generar el Word."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={cerrarAvance}
+            className="shrink-0 rounded-2xl border border-[#071a33] px-4 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] transition hover:bg-[#071a33] hover:text-white"
+          >
+            Cancelar
+          </button>
+        </div>
+
+        {avancePaso === "semanas" ? (
+          <>
+            <div className="mb-4 flex items-center justify-between">
+              <p className="text-sm font-bold text-[#071a33]">
+                Semanas seleccionadas
+              </p>
+              <span className="rounded-full bg-[#071a33] px-3 py-1 text-xs font-black text-white">
+                {semanasAvance.length}/4
+              </span>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {poolSemanas.map((s) => {
+                const activa = semanasAvance.includes(s.numero);
+                const bloqueada = !activa && semanasAvance.length >= 4;
+                return (
+                  <button
+                    key={s.numero}
+                    type="button"
+                    onClick={() => alternarSemanaAvance(s.numero)}
+                    disabled={bloqueada}
+                    className={`rounded-2xl border p-4 text-left shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                      activa
+                        ? "border-[#c8a45d] bg-[#071a33] text-white"
+                        : "border-slate-200 bg-white text-[#071a33] hover:border-[#c8a45d]"
+                    }`}
+                  >
+                    <span
+                      className={`text-xs font-bold uppercase tracking-[0.16em] ${
+                        activa ? "text-[#d7bd7a]" : "text-[#c8a45d]"
+                      }`}
+                    >
+                      {activa ? "✓ Seleccionada" : `Semana ${s.numero}`}
+                    </span>
+                    <span className="mt-1 block text-sm font-black">
+                      Semana {s.numero}
+                    </span>
+                    <span
+                      className={`mt-2 block text-xs ${
+                        activa ? "text-slate-200" : "text-slate-500"
+                      }`}
+                    >
+                      {s.tema}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => setAvancePaso("preview")}
+                disabled={semanasAvance.length === 0}
+                className="rounded-2xl bg-[#c8a45d] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Continuar a vista previa
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr]">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+                Temas y semanas del avance
+              </p>
+              <ol className="mt-4 space-y-3">
+                {seleccionadas.map((s) => (
+                  <li
+                    key={s.numero}
+                    className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+                  >
+                    <p className="text-sm font-black text-[#071a33]">
+                      Semana {s.numero}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-600">{s.tema}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="flex flex-col gap-6">
+              <div className="rounded-3xl bg-[#071a33] p-6 text-white shadow-xl shadow-slate-300/60">
+                <p className="text-xs font-bold uppercase tracking-[0.28em] text-[#d7bd7a]">
+                  Datos del avance
+                </p>
+                <div className="mt-5 space-y-3 text-sm">
+                  <div className="flex justify-between gap-4 border-b border-white/10 pb-2">
+                    <span className="text-slate-300">Asignatura</span>
+                    <span className="text-right font-bold">
+                      {metaAvance.asignatura || `Inglés Nivel ${nivel}`}
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4 border-b border-white/10 pb-2">
+                    <span className="text-slate-300">Nivel</span>
+                    <span className="font-bold">Nivel {nivel}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 border-b border-white/10 pb-2">
+                    <span className="text-slate-300">Grupo</span>
+                    <span className="font-bold">{grupo || "Por definir"}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-slate-300">Periodo</span>
+                    <span className="text-right font-bold">
+                      {periodoDesdeSemanas(semanasAvance).periodoReportado ||
+                        "—"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={() => setAvancePaso("semanas")}
+                  className="rounded-2xl border border-[#071a33] px-5 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] transition hover:bg-[#071a33] hover:text-white"
+                >
+                  Regresar a semanas
+                </button>
+                <button
+                  type="button"
+                  onClick={generarAvanceWord}
+                  className="rounded-2xl bg-[#c8a45d] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a]"
+                >
+                  Generar avance en Word
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mensaje && (
+          <div
+            role="alert"
+            className={`mt-6 rounded-2xl border px-5 py-4 text-sm font-semibold ${
+              mensaje.tipo === "exito"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}
+          >
+            {mensaje.texto}
+          </div>
+        )}
       </div>
     );
   }
@@ -363,19 +681,33 @@ export function SeccionIngles({ onVolver }: Props) {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={generarWord}
-            disabled={generando}
-            className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {generando ? "Generando planeación…" : "Generar planeación en Word"}
-          </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={generarWord}
+              disabled={generando || cargandoAvance}
+              className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {generando
+                ? "Generando planeación…"
+                : "Generar planeación en Word"}
+            </button>
+            <button
+              type="button"
+              onClick={abrirAvance}
+              disabled={generando || cargandoAvance}
+              className="rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {cargandoAvance
+                ? "Preparando avance…"
+                : "Generar Avance Programático"}
+            </button>
+          </div>
 
-          {generando && (
+          {(generando || cargandoAvance) && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-              Generando la planeación… puede tardar hasta ~1 minuto. No cierres la
-              página.
+              {generando ? "Generando la planeación" : "Preparando el avance"}…
+              puede tardar hasta ~1 minuto. No cierres la página.
             </div>
           )}
 
