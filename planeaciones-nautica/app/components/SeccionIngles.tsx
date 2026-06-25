@@ -8,7 +8,7 @@
 // sin persistencia en repo). La generación con IA queda preparada como
 // placeholder: se conectará a Gemini en una fase posterior dedicada.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
@@ -19,19 +19,6 @@ type ArchivoHistorico = {
   nombre: string;
   tamano: number;
   tipo: string;
-};
-
-// Resumen del corpus histórico oficial (carpeta del servidor). Coincide con la
-// forma devuelta por /api/biblioteca-ingles (ResumenBibliotecaIngles).
-type ResumenBiblioteca = {
-  existe: boolean;
-  ruta: string;
-  totalArchivos: number;
-  totalDocumentos: number;
-  totalIndexados: number;
-  porTipo: Record<string, number>;
-  fechaIndice: string | null;
-  indiceListo: boolean;
 };
 
 type Props = {
@@ -55,36 +42,6 @@ function formatearTamano(bytes: number): string {
 export function SeccionIngles({ onVolver }: Props) {
   // Biblioteca de inglés: planeaciones históricas subidas (solo en sesión).
   const [historicas, setHistoricas] = useState<ArchivoHistorico[]>([]);
-
-  // Biblioteca histórica OFICIAL (carpeta del servidor). Se carga al montar.
-  const [biblioteca, setBiblioteca] = useState<ResumenBiblioteca | null>(null);
-  const [cargandoBiblioteca, setCargandoBiblioteca] = useState(true);
-  const [errorBiblioteca, setErrorBiblioteca] = useState<string | null>(null);
-
-  useEffect(() => {
-    let activo = true;
-    setCargandoBiblioteca(true);
-    fetch("/api/biblioteca-ingles")
-      .then((r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then((data: ResumenBiblioteca) => {
-        if (activo) setBiblioteca(data);
-      })
-      .catch((e: unknown) => {
-        if (activo)
-          setErrorBiblioteca(
-            e instanceof Error ? e.message : "No se pudo leer la biblioteca.",
-          );
-      })
-      .finally(() => {
-        if (activo) setCargandoBiblioteca(false);
-      });
-    return () => {
-      activo = false;
-    };
-  }, []);
 
   // Datos del formulario de generación (flujo por nivel / espejeo).
   const [nivel, setNivel] = useState("");
@@ -227,77 +184,18 @@ export function SeccionIngles({ onVolver }: Props) {
         </button>
       </div>
 
-      {/* Biblioteca histórica OFICIAL (corpus del servidor para la IA) */}
+      {/* Biblioteca institucional de Inglés (mensaje para el usuario final) */}
       <div className="mb-6 rounded-3xl border border-[#071a33]/15 bg-[#071a33] p-6 text-white shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#d7bd7a]">
-              Biblioteca histórica
-            </p>
-            {cargandoBiblioteca ? (
-              <p className="mt-2 text-lg font-bold text-slate-200">
-                Leyendo biblioteca…
-              </p>
-            ) : errorBiblioteca ? (
-              <p className="mt-2 text-lg font-bold text-red-300">
-                No se pudo leer la biblioteca ({errorBiblioteca})
-              </p>
-            ) : biblioteca && biblioteca.existe ? (
-              <p className="mt-2 text-2xl font-black">
-                <span className="text-[#7fe3a4]">✓</span>{" "}
-                {biblioteca.totalDocumentos} documentos encontrados
-              </p>
-            ) : (
-              <p className="mt-2 text-lg font-bold text-amber-300">
-                Carpeta no encontrada en este entorno
-              </p>
-            )}
-
-            {biblioteca && biblioteca.existe && (
-              <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-                <span className="text-slate-200">
-                  Documentos indexados:{" "}
-                  <strong className="text-white">
-                    {biblioteca.totalIndexados}/{biblioteca.totalDocumentos}
-                  </strong>
-                </span>
-                <span className="text-slate-200">
-                  Índice:{" "}
-                  {biblioteca.indiceListo ? (
-                    <strong className="text-[#7fe3a4]">listo</strong>
-                  ) : (
-                    <strong className="text-amber-300">no listo</strong>
-                  )}
-                </span>
-              </div>
-            )}
-
-            <p className="mt-3 text-xs font-bold uppercase tracking-[0.24em] text-[#d7bd7a]">
-              Ruta
-            </p>
-            <p className="mt-1 font-mono text-sm text-slate-200">
-              {biblioteca?.ruta ?? "planeaciones historicas ingles"}
-            </p>
-          </div>
-
-          {biblioteca && biblioteca.existe && (
-            <div className="flex flex-wrap gap-2">
-              {Object.entries(biblioteca.porTipo)
-                .sort((a, b) => b[1] - a[1])
-                .map(([ext, n]) => (
-                  <span
-                    key={ext}
-                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-[0.1em] text-slate-100"
-                  >
-                    {n} .{ext}
-                  </span>
-                ))}
-            </div>
-          )}
-        </div>
-        <p className="mt-4 border-t border-white/10 pt-3 text-xs text-slate-300">
-          Este corpus será la base que la IA consulte antes de generar nuevas
-          planeaciones de inglés (indexación pendiente para la siguiente fase).
+        <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#d7bd7a]">
+          Biblioteca académica de Inglés
+        </p>
+        <p className="mt-2 text-2xl font-black">
+          <span className="text-[#7fe3a4]">✓</span> Biblioteca institucional
+          disponible
+        </p>
+        <p className="mt-3 max-w-2xl text-sm text-slate-200">
+          La biblioteca institucional de Inglés está disponible y será utilizada
+          automáticamente para generar las planeaciones.
         </p>
       </div>
 
@@ -389,7 +287,7 @@ export function SeccionIngles({ onVolver }: Props) {
         </div>
       </div>
 
-      {/* Paso 3: Generar nuevas planeaciones con Gemini (corpus histórico base) */}
+      {/* Paso 3: Generar nuevas planeaciones usando la biblioteca institucional */}
       <div className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
           Paso 3
@@ -468,8 +366,8 @@ export function SeccionIngles({ onVolver }: Props) {
 
         {generando && (
           <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-            Generando con Gemini usando el corpus histórico… puede tardar hasta
-            ~1 minuto. No cierres la página.
+            Generando la planeación… puede tardar hasta ~1 minuto. No cierres la
+            página.
           </div>
         )}
 
