@@ -43,7 +43,18 @@ const MESES_LARGOS = [
 
 const FECHAS_CICLO = distribuirFechas(18);
 
-const limpiar = (t: string) => t.trim().replace(/\s*\n\s*/g, " — ");
+// Normaliza el tema conservando los saltos de línea (la plantilla F-51 se
+// renderiza con linebreaks:true, así el contenido se ve como lista y no
+// amontonado). Recorta espacios por línea y descarta líneas vacías.
+const limpiarLineas = (t: string) =>
+  t
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .join("\n");
+
+// Primera línea del tema (título de la unidad) para el resumen "temas cubiertos".
+const primeraLinea = (t: string) => limpiarLineas(t).split("\n")[0] ?? "";
 
 /**
  * Deriva el periodo del avance a partir de las semanas seleccionadas, usando el
@@ -94,13 +105,13 @@ export function construirDatosAvanceF51(
   );
 
   const temasCubiertos =
-    sel.map((s) => `Semana ${s.numero}: ${limpiar(s.tema)}`).join("\n") ||
+    sel.map((s) => `Semana ${s.numero}: ${primeraLinea(s.tema)}`).join("\n") ||
     "Sin semanas seleccionadas.";
 
   const hueco = (i: number) => {
     const s = sel[i];
     return {
-      tema: s ? limpiar(s.tema) : "",
+      tema: s ? limpiarLineas(s.tema) : "",
       sesiones: s ? "1" : "",
       estrategia: s ? ESTRATEGIAS : "",
       evidencia: s ? EVIDENCIAS : "",
