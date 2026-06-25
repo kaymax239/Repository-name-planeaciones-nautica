@@ -81,6 +81,28 @@ function conTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
 const sinAcentos = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "");
 
+// Texto institucional de relleno que NUNCA debe aparecer como competencia
+// disciplinar en una planeación generada (p. ej. "Estas competencias las
+// integrará el docente o instructor").
+const RE_DISCIPLINARES_RELLENO = /integrar[aá][^.]*?(docente|instructor)/i;
+
+// Elimina del JSON cualquier "competencia disciplinar" que en realidad sea el
+// texto institucional de relleno. Si tras filtrar no queda ninguna, deja []. No
+// afecta a genéricas, objetivos ni al resto del flujo.
+function sanearDisciplinares(planeacion: unknown): void {
+  if (!planeacion || typeof planeacion !== "object") return;
+  const comp = (planeacion as { competencias?: unknown }).competencias;
+  if (!comp || typeof comp !== "object") return;
+  const c = comp as { disciplinares?: unknown };
+  if (!Array.isArray(c.disciplinares)) return;
+  c.disciplinares = c.disciplinares.filter(
+    (x) =>
+      typeof x === "string" &&
+      x.trim().length > 0 &&
+      !RE_DISCIPLINARES_RELLENO.test(x),
+  );
+}
+
 // Aísla el objeto JSON: quita ```json ... ``` y texto sobrante, quedándose con
 // el primer "{" hasta el último "}".
 function extraerJSON(texto: string): string {
@@ -153,7 +175,7 @@ REGLAS POR APARTADO:
    - "disciplinares": las competencias disciplinares de las históricas.
    - "genericas": { "instrumentales": [...], "interpersonales": [...], "sistemicas": [...] } con las competencias genéricas de las históricas.
    - Si varias históricas difieren, usa las MÁS REPETIDAS o representativas. NO uses competencias STCW.
-   - Competencias disciplinares: si en las históricas el apartado está VACÍO, déjalo como arreglo vacío []. Si contiene competencias, úsalas. Si contiene un texto institucional (p. ej. "Estas competencias las integrará el docente o instructor."), CONSÉRVALO tal cual como único elemento. No inventes texto genérico.
+   - Competencias disciplinares: localiza en las históricas del nivel el apartado COMPETENCIAS DISCIPLINARES (p. ej. "COMPETENCIAS DISCIPLINARES QUE SE FAVORECEN") y EXTRAE las competencias disciplinares reales que ahí aparezcan (son las propias del inglés: comprender/expresar/comunicar, etc.). Si varias históricas las traen, usa las MÁS REPETIDAS o representativas. PROHIBIDO devolver textos institucionales de relleno como "Estas competencias las integrará el docente o instructor" o cualquier variante: NUNCA los escribas. Si tras revisar las históricas no hay competencias disciplinares reales, devuelve un arreglo vacío []. No inventes competencias.
 2) OBJETIVO GENERAL y OBJETIVOS ESPECÍFICOS — no los inventes; derívalos del patrón y la redacción de las históricas del mismo nivel.
 3) ACTIVIDADES — antes de redactarlas, identifica las actividades más frecuentes del nivel y MANTÉN su estructura, longitud, redacción, dificultad y secuencia.
 4) EVALUACIÓN — no inventes ponderaciones. Si las históricas usan una distribución determinada (p. ej. Workbook, exámenes parciales, etc.), RESPÉTALA.
@@ -348,6 +370,9 @@ export async function POST(request: Request) {
       },
     );
   }
+
+  // El texto institucional de relleno nunca debe salir como competencia.
+  sanearDisciplinares(planeacion);
 
   // 10. Devolver JSON a la UI (no se guardan archivos).
   return Response.json({

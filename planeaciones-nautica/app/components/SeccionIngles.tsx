@@ -36,6 +36,57 @@ const MENSAJE_BIBLIOTECA_NO_DISPONIBLE =
 const MENSAJE_ERROR_GENERICO =
   "No se pudo generar la planeación en este momento. Inténtalo de nuevo.";
 
+// Texto institucional de relleno del cuadro "Competencias disciplinares" en la
+// plantilla F-32 (es texto ESTÁTICO, sin placeholder). Nunca debe aparecer en
+// una planeación generada de Inglés: se reemplaza por las disciplinares reales
+// o se deja vacío. Tolerante al acento ("integrará"/"integrara").
+const RE_RUN_DISCIPLINARES_DEFECTO =
+  /<w:t[^>]*>Estas competencias las integrar[^<]*<\/w:t>/;
+const RE_DISCIPLINARES_RELLENO = /integrar[aá][^<]*?(docente|instructor)/i;
+
+function escaparXml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+// Extrae las competencias disciplinares REALES del JSON, descartando vacíos y el
+// texto institucional de relleno.
+function disciplinaresReales(planeacion: unknown): string[] {
+  if (!planeacion || typeof planeacion !== "object") return [];
+  const comp = (planeacion as { competencias?: unknown }).competencias;
+  if (!comp || typeof comp !== "object") return [];
+  const arr = (comp as { disciplinares?: unknown }).disciplinares;
+  if (!Array.isArray(arr)) return [];
+  return arr
+    .filter((x): x is string => typeof x === "string")
+    .map((x) => x.trim())
+    .filter((x) => x.length > 0 && !RE_DISCIPLINARES_RELLENO.test(x));
+}
+
+// Rellena el cuadro "Competencias disciplinares" del F-32 ya renderizado con las
+// disciplinares históricas (una por línea) o lo deja VACÍO. El texto de relleno
+// por defecto nunca permanece. Solo se aplica al Word de Inglés; no toca PN/MN
+// ni la plantilla original.
+function rellenarDisciplinaresDocx(
+  zip: InstanceType<typeof PizZip>,
+  disciplinares: string[],
+): void {
+  const ruta = "word/document.xml";
+  const archivo = zip.file(ruta);
+  if (!archivo) return;
+  let xml = archivo.asText();
+  if (!RE_RUN_DISCIPLINARES_DEFECTO.test(xml)) return;
+  const reemplazo = disciplinares.length
+    ? disciplinares
+        .map((d) => `<w:t xml:space="preserve">${escaparXml(d)}</w:t>`)
+        .join("<w:br/>")
+    : "<w:t></w:t>";
+  xml = xml.replace(RE_RUN_DISCIPLINARES_DEFECTO, reemplazo);
+  zip.file(ruta, xml);
+}
+
 // Traduce cualquier código interno del servidor a un mensaje amable. El usuario
 // nunca ve "sin_corpus", rutas ni detalles técnicos.
 function mensajeAmigable(codigo?: string): string {
@@ -122,7 +173,11 @@ export function SeccionIngles({ onVolver }: Props) {
           horasPorSemana,
         }),
       );
-      const blob = doc.getZip().generate({
+      // El cuadro de competencias disciplinares del F-32 es texto estático: se
+      // sustituye por las disciplinares históricas reales (o se deja vacío).
+      const zipFinal = doc.getZip();
+      rellenarDisciplinaresDocx(zipFinal, disciplinaresReales(data.planeacion));
+      const blob = zipFinal.generate({
         type: "blob",
         mimeType:
           "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
