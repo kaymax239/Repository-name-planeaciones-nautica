@@ -53,6 +53,15 @@ next-env.d.ts
 /importacines
 /importaciones
 
+# Biblioteca histórica de Inglés (corpus crudo ~47MB, datos personales).
+# Es la biblioteca oficial LOCAL que lee el servicio BibliotecaIngles; no se
+# versiona (binarios pesados). No mover ni renombrar la carpeta.
+/planeaciones historicas ingles
+
+# Índice local del corpus de Inglés (texto extraído de los .docx, datos
+# personales). Se regenera con scripts/indexar-ingles.mjs; no se versiona.
+/.indice-ingles
+
 # Temporales de ingestión de históricas (.doc → antiword)
 .tmp-historica-*.doc
 

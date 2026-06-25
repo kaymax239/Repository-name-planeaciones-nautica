@@ -32,6 +32,7 @@ import type { PresentacionV2 } from "./data/presentaciones/tiposV2";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
+import { SeccionIngles } from "./components/SeccionIngles";
 
 type SemanaMateria = {
   semana: string;
@@ -460,6 +461,9 @@ const construirDatosExamen = ({
 
 export default function Home() {
   const [carrera, setCarrera] = useState<"PN" | "MN">("PN");
+  // Sección activa. "general" = flujo PN/MN actual (sin cambios); "ingles" =
+  // sección independiente de Inglés. No afecta al estado `carrera`.
+  const [seccion, setSeccion] = useState<"general" | "ingles">("general");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
   const [unidadSeleccionada, setUnidadSeleccionada] = useState(1);
@@ -1141,7 +1145,9 @@ export default function Home() {
               </div>
             </div>
 
-            {!semestreSeleccionado ? (
+            {seccion === "ingles" ? (
+              <SeccionIngles onVolver={() => setSeccion("general")} />
+            ) : !semestreSeleccionado ? (
               <div className="px-6 py-10 sm:px-10">
                 <div className="rounded-3xl border border-dashed border-[#c8a45d] bg-[#fffaf0] p-6 text-center sm:p-8">
                   <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#071a33] text-xs font-black uppercase tracking-[0.18em] text-[#d7bd7a]">
@@ -1179,6 +1185,13 @@ export default function Home() {
                         {etiqueta}
                       </button>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => setSeccion("ingles")}
+                      className="rounded-2xl border border-[#071a33]/30 bg-white px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:border-[#071a33]"
+                    >
+                      Inglés
+                    </button>
                   </div>
 
                   <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
