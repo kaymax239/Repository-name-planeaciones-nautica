@@ -58,9 +58,12 @@ next-env.d.ts
 # versiona (binarios pesados). No mover ni renombrar la carpeta.
 /planeaciones historicas ingles
 
-# Índice local del corpus de Inglés (texto extraído de los .docx, datos
-# personales). Se regenera con scripts/indexar-ingles.mjs; no se versiona.
-/.indice-ingles
+# Índice local del corpus de Inglés (texto extraído de los .docx). Se regenera
+# con scripts/indexar-ingles.mjs. Se versiona ÚNICAMENTE indice.json para que
+# producción (Vercel) pueda generar Inglés con el índice ya creado; cualquier
+# otro contenido de la carpeta permanece ignorado.
+/.indice-ingles/*
+!/.indice-ingles/indice.json
 
 # Temporales de ingestión de históricas (.doc → antiword)
 .tmp-historica-*.doc

@@ -12,10 +12,15 @@ const nextConfig: NextConfig = {
       "importacines/**",
       "importaciones/**",
       "planeaciones historicas ingles/**",
-      ".indice-ingles/**",
       "salidas/**",
       "**/*.pptx",
     ],
+  },
+  // Incluye el índice de Inglés SOLO en la función que lo lee, para que en
+  // producción BibliotecaIngles.leerIndice() pueda abrir el JSON ya generado.
+  // Acotado a esta ruta para no reintroducir el over-tracing en otras funciones.
+  outputFileTracingIncludes: {
+    "/api/planeacion-ingles": [".indice-ingles/indice.json"],
   },
 };
 
