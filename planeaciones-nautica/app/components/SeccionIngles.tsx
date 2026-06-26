@@ -10,12 +10,14 @@
 // la mecánica (biblioteca histórica + Gemini) ocurre en el servidor. Aquí solo
 // se muestra una experiencia institucional para el usuario final.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
 import { construirDatosF32DesdeIngles } from "../lib/planeacionInglesF32.js";
 import { construirDatosAvanceF51, periodoDesdeSemanas } from "../lib/avanceF51";
+import { generarPresentacionOficialV2 } from "../lib/pptxOficialV2";
+import type { PresentacionV2 } from "../data/presentaciones/tiposV2";
 
 type Props = {
   onVolver: () => void;
@@ -29,8 +31,10 @@ const readOnlyClass =
 const labelClass =
   "mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-[#0b1f3a]";
 
-// Niveles de Inglés (tarjetas equivalentes a los semestres de PN/MN).
-const NIVELES = ["1", "2", "3", "4", "5", "6", "7", "8"] as const;
+// Niveles de Inglés de respaldo si la API no responde. La lista REAL se carga
+// del índice (los niveles con planeaciones históricas) en un useEffect: así, al
+// subir nuevos niveles y reindexar, aparecen solos sin tocar el código.
+const NIVELES_FALLBACK = ["3", "4", "5", "6", "7"];
 
 const MENSAJE_BIBLIOTECA_NO_DISPONIBLE =
   "La biblioteca académica de este nivel aún no está disponible.";
@@ -104,6 +108,30 @@ function mensajeAmigable(codigo?: string): string {
 export function SeccionIngles({ onVolver }: Props) {
   // Nivel elegido (null = pantalla de tarjetas de niveles).
   const [nivel, setNivel] = useState<string | null>(null);
+
+  // Niveles disponibles (los que tienen planeaciones históricas en el índice).
+  const [niveles, setNiveles] = useState<string[]>(NIVELES_FALLBACK);
+  const [generandoPres, setGenerandoPres] = useState(false);
+
+  // Carga los niveles reales del corpus. Si falla, se queda con el respaldo.
+  useEffect(() => {
+    let activo = true;
+    fetch("/api/biblioteca-ingles")
+      .then((r) => r.json())
+      .then((d) => {
+        if (
+          activo &&
+          Array.isArray(d?.nivelesDisponibles) &&
+          d.nivelesDisponibles.length > 0
+        ) {
+          setNiveles(d.nivelesDisponibles as string[]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      activo = false;
+    };
+  }, []);
 
   // Datos del formulario de generación.
   const [grupo, setGrupo] = useState("");
@@ -339,6 +367,42 @@ export function SeccionIngles({ onVolver }: Props) {
     }
   };
 
+  // Genera una PRESENTACIÓN de Inglés con Gemini (espejeando las históricas del
+  // nivel) y descarga el PPTX al momento. No se guarda nada en la página.
+  const generarPresentacion = async () => {
+    if (!nivel) return;
+    setGenerandoPres(true);
+    setMensaje(null);
+    try {
+      const res = await fetch("/api/presentacion-ingles", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nivel }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.presentacion) {
+        setMensaje({ tipo: "error", texto: mensajeAmigable(data?.error) });
+        return;
+      }
+      const archivo = await generarPresentacionOficialV2(
+        data.presentacion as PresentacionV2,
+        {
+          grupo,
+          periodo: "Julio-Diciembre 2026",
+          escuela: "Escuela Náutica Mercante de Tampico",
+        },
+      );
+      setMensaje({
+        tipo: "exito",
+        texto: `Presentación generada y descargada: ${archivo}`,
+      });
+    } catch {
+      setMensaje({ tipo: "error", texto: MENSAJE_ERROR_GENERICO });
+    } finally {
+      setGenerandoPres(false);
+    }
+  };
+
   // ── Pantalla 1: tarjetas de niveles (como los semestres en PN/MN) ──────────
   if (!nivel) {
     return (
@@ -359,7 +423,7 @@ export function SeccionIngles({ onVolver }: Props) {
           </p>
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {NIVELES.map((n) => (
+            {niveles.map((n) => (
               <button
                 key={n}
                 type="button"
@@ -685,7 +749,7 @@ export function SeccionIngles({ onVolver }: Props) {
             <button
               type="button"
               onClick={generarWord}
-              disabled={generando || cargandoAvance}
+              disabled={generando || cargandoAvance || generandoPres}
               className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {generando
@@ -695,7 +759,7 @@ export function SeccionIngles({ onVolver }: Props) {
             <button
               type="button"
               onClick={abrirAvance}
-              disabled={generando || cargandoAvance}
+              disabled={generando || cargandoAvance || generandoPres}
               className="rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {cargandoAvance
@@ -704,10 +768,25 @@ export function SeccionIngles({ onVolver }: Props) {
             </button>
           </div>
 
-          {(generando || cargandoAvance) && (
+          <button
+            type="button"
+            onClick={generarPresentacion}
+            disabled={generando || cargandoAvance || generandoPres}
+            className="rounded-2xl border-2 border-[#c8a45d] bg-white px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {generandoPres
+              ? "Generando presentación…"
+              : "Generar Presentación (PowerPoint)"}
+          </button>
+
+          {(generando || cargandoAvance || generandoPres) && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-              {generando ? "Generando la planeación" : "Preparando el avance"}…
-              puede tardar hasta ~1 minuto. No cierres la página.
+              {generando
+                ? "Generando la planeación"
+                : generandoPres
+                  ? "Generando la presentación con IA"
+                  : "Preparando el avance"}
+              … puede tardar hasta ~1 minuto. No cierres la página.
             </div>
           )}
 

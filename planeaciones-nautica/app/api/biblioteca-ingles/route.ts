@@ -12,7 +12,18 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   try {
     const resumen = await BibliotecaIngles.leer();
-    return Response.json(resumen);
+    // Niveles realmente disponibles en el índice (los que tienen planeaciones
+    // históricas). La UI muestra SOLO estos: así, al subir nuevos niveles y
+    // reindexar, aparecen automáticamente sin tocar el código.
+    const indice = await BibliotecaIngles.leerIndice();
+    const set = new Set<string>();
+    for (const d of indice?.documentos ?? []) {
+      if (d.nivel) set.add(d.nivel);
+    }
+    const nivelesDisponibles = [...set].sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true }),
+    );
+    return Response.json({ ...resumen, nivelesDisponibles });
   } catch (error) {
     const mensaje =
       error instanceof Error ? error.message : "Error desconocido";
