@@ -15,7 +15,9 @@ import {
 import {
   criteriosEvaluacion,
   generacionPorSemestre,
+  textoPonderacionEvaluacion,
   textoPuntuacionesF32,
+  tipoMateriaDesdePrograma,
 } from "./data/evaluacion";
 import { distribuirPrograma } from "./data/distribucion";
 import { esProgramaOficial, type ProgramaOficial } from "./data/tipos";
@@ -27,7 +29,6 @@ import {
   construirPresentacionV2,
   TEMA_UNIDAD_COMPLETA,
 } from "./lib/construirPresentacionV2";
-import { temasDeUnidad } from "./data/presentaciones/temas";
 import type { PresentacionV2 } from "./data/presentaciones/tiposV2";
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
@@ -244,6 +245,7 @@ const construirDatosExamen = ({
   fecha,
   periodoEscolar,
   rango,
+  ponderacion,
 }: {
   tipo: string;
   materia: string;
@@ -254,6 +256,7 @@ const construirDatosExamen = ({
   fecha: string;
   periodoEscolar: string;
   rango: RangoSemanas;
+  ponderacion?: string;
 }) => {
   const semanas = datosMateria?.semanas?.slice(rango.inicio, rango.fin) || [];
   const temasTexto = semanas
@@ -290,7 +293,7 @@ const construirDatosExamen = ({
     objetivosCompetencias: objetivo,
     temas: temasTexto,
     temasMateria: temasTexto,
-    temasEvaluar: temasTexto,
+    temasEvaluar: ponderacion ? `${temasTexto}\n\n${ponderacion}` : temasTexto,
     opcionMultiple: preguntas.opcionMultiple,
     verdaderoFalso: preguntas.verdaderoFalso,
     relacionarColumnas: preguntas.relacionarColumnas,
@@ -323,8 +326,11 @@ export default function Home() {
   const [seccion, setSeccion] = useState<"general" | "ingles">("general");
   const [materiaSeleccionada, setMateriaSeleccionada] = useState("");
   const [semestreSeleccionado, setSemestreSeleccionado] = useState("");
-  const [unidadSeleccionada, setUnidadSeleccionada] = useState(1);
-  const [temaSeleccionado, setTemaSeleccionado] = useState(TEMA_UNIDAD_COMPLETA);
+  // Presentación PN/MN: unidades marcadas con casillas (multi-selección). Cada
+  // unidad marcada se genera COMPLETA y como un PPTX independiente.
+  const [unidadesSeleccionadas, setUnidadesSeleccionadas] = useState<number[]>(
+    [],
+  );
 
   const [docente, setDocente] = useState("");
   const [grupo, setGrupo] = useState("");
@@ -373,12 +379,6 @@ export default function Home() {
       ? programaMateria.unidades.map((u) => ({ numero: u.numero, tema: u.tema }))
       : [{ numero: 1, tema: "Unidad 1" }];
 
-  // Temas (subtemas oficiales) de la unidad elegida, para el segundo dropdown.
-  const temasUnidad = temasDeUnidad(
-    esProgramaOficial(programaMateria) ? programaMateria : undefined,
-    unidadSeleccionada,
-  );
-
   // El botón se muestra para toda materia con programa oficial.
   const materiaTienePrograma = esProgramaOficial(programaMateria);
 
@@ -402,30 +402,16 @@ export default function Home() {
         }))
     : [];
 
-  // Al cambiar de materia o carrera, seleccionar la PRIMERA unidad disponible
-  // (no siempre es la número 1: algunos programas empiezan en otra unidad) y
-  // volver a "Unidad completa".
+  // Al cambiar de materia o carrera, limpiar la selección de unidades de la
+  // presentación y los mensajes/estados del flujo.
   useEffect(() => {
-    setUnidadSeleccionada(unidadesMateria[0]?.numero ?? 1);
-    setTemaSeleccionado(TEMA_UNIDAD_COMPLETA);
+    setUnidadesSeleccionadas([]);
     setMensajePresOficial(null);
     setAvancePaso("no");
     setSemanasAvance([]);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materiaSeleccionada, carrera]);
 
-  // Al cambiar de unidad, volver a "Unidad completa" (los temas cambian).
-  useEffect(() => {
-    setTemaSeleccionado(TEMA_UNIDAD_COMPLETA);
-  }, [unidadSeleccionada]);
-
-  // Presentación PREMIUM hand-authored para la unidad (o null). Tiene prioridad
-  // solo cuando se pide la unidad completa.
-  const presentacionPremium = obtenerPresentacion(
-    carrera,
-    materiaSeleccionada,
-    unidadSeleccionada,
-  );
   const licenciatura =
     carrera === "MN"
       ? "Licenciatura en Maquinista Naval"
@@ -445,7 +431,10 @@ export default function Home() {
   // Pide a la IA (servidor) el guion premium de la unidad/tema. Devuelve la
   // presentación o null si la IA falla o no está configurada (para caer al
   // generador determinista). Nunca lanza: registra el motivo y devuelve null.
-  const generarPresentacionConIA = async (): Promise<{
+  const generarPresentacionConIA = async (
+    unidadNumero: number,
+    tema: string,
+  ): Promise<{
     pres: PresentacionV2;
     cacheado: boolean;
   } | null> => {
@@ -461,8 +450,8 @@ export default function Home() {
         body: JSON.stringify({
           carrera,
           materia: materiaSeleccionada,
-          unidadNumero: unidadSeleccionada,
-          tema: temaSeleccionado,
+          unidadNumero,
+          tema,
           carreraDisplay: licenciatura,
           semestreDisplay: semestreBonito,
         }),
@@ -488,73 +477,89 @@ export default function Home() {
     }
   };
 
-  const generarPresentacionUnidad = async () => {
-    // Resolución y construcción del PPTX SOLO al hacer clic (nada precargado).
-    const unidadCompleta = temaSeleccionado === TEMA_UNIDAD_COMPLETA;
+  // Alterna una unidad en la selección de la presentación (multi-selección).
+  const alternarUnidad = (n: number) => {
+    setUnidadesSeleccionadas((prev) =>
+      prev.includes(n) ? prev.filter((x) => x !== n) : [...prev, n],
+    );
+  };
 
+  // Genera el PPTX de UNA unidad (completa), con la MISMA prioridad de siempre:
+  // premium → IA → generador oficial. No cambia el generador compartido; solo se
+  // invoca por unidad. Devuelve el nombre de archivo o null si no se pudo.
+  const generarUnaUnidad = async (
+    unidadNumero: number,
+  ): Promise<string | null> => {
+    let pres: PresentacionV2 | null =
+      obtenerPresentacion(carrera, materiaSeleccionada, unidadNumero) ?? null;
+
+    if (!pres && esProgramaOficial(programaMateria)) {
+      const ia = await generarPresentacionConIA(
+        unidadNumero,
+        TEMA_UNIDAD_COMPLETA,
+      );
+      if (ia) pres = ia.pres;
+    }
+
+    if (!pres && esProgramaOficial(programaMateria)) {
+      pres = construirPresentacionV2({
+        programa: programaMateria,
+        carrera: licenciatura,
+        semestre: semestreBonito,
+        unidadNumero,
+        tema: TEMA_UNIDAD_COMPLETA,
+      });
+    }
+
+    if (!pres) return null;
+
+    return generarPresentacionOficialV2(pres, {
+      docente,
+      grupo,
+      periodo,
+      escuela: escuelaNautica,
+    });
+  };
+
+  // Genera un PPTX por cada unidad MARCADA (en orden). Cada unidad va completa y
+  // como archivo independiente. No genera nada si no hay casillas marcadas.
+  const generarPresentacionUnidad = async () => {
+    if (unidadesSeleccionadas.length === 0) return;
     setGenerandoPresOficial(true);
     setMensajePresOficial(null);
+    const unidades = [...unidadesSeleccionadas].sort((a, b) => a - b);
+    const generadas: string[] = [];
+    const fallidas: number[] = [];
     try {
-      // 1) Premium hand-authored: prioridad para la unidad completa.
-      let pres: PresentacionV2 | null =
-        unidadCompleta && presentacionPremium ? presentacionPremium : null;
-      let fuente = pres ? "plantilla premium" : "";
-
-      // 2) IA bajo demanda (servidor) desde el programa oficial.
-      if (!pres && esProgramaOficial(programaMateria)) {
-        const ia = await generarPresentacionConIA();
-        if (ia) {
-          pres = ia.pres;
-          fuente = ia.cacheado ? "IA (en cache)" : "IA (Opus)";
+      for (const n of unidades) {
+        try {
+          const archivo = await generarUnaUnidad(n);
+          if (archivo) generadas.push(archivo);
+          else fallidas.push(n);
+        } catch (error) {
+          console.error("Error generando presentación de la unidad", n, error);
+          fallidas.push(n);
         }
       }
 
-      // 3) Fallback determinista desde el programa oficial.
-      if (!pres && esProgramaOficial(programaMateria)) {
-        pres = construirPresentacionV2({
-          programa: programaMateria,
-          carrera: licenciatura,
-          semestre: semestreBonito,
-          unidadNumero: unidadSeleccionada,
-          tema: temaSeleccionado,
-        });
-        fuente = "generador oficial (sin IA)";
-      }
-
-      if (!pres) {
+      if (generadas.length === 0) {
         setMensajePresOficial({
           tipo: "error",
           texto:
-            "No se pudo preparar la presentación para esta materia/unidad. Verifica que la unidad tenga contenido en el programa oficial.",
+            "No se pudo generar la presentación en este momento. Intenta de nuevo o cambia de materia.",
         });
         return;
       }
 
-      const archivo = await generarPresentacionOficialV2(pres, {
-        docente,
-        grupo,
-        periodo,
-        escuela: escuelaNautica,
-      });
-      // Mensaje amigable: nunca exponemos detalles técnicos. Si se cayó al
-      // generador determinista, lo comunicamos como "generación estándar".
-      const esIA = fuente.startsWith("IA");
-      const esEstandar = fuente.includes("sin IA");
-      setMensajePresOficial({
-        tipo: "exito",
-        texto: esEstandar
-          ? `Se utilizó generación estándar. Presentación descargada: ${archivo}`
-          : esIA
-            ? `Presentación generada con IA y descargada: ${archivo}`
-            : `Presentación generada y descargada: ${archivo}`,
-      });
-    } catch (error) {
-      console.error("Error generando presentación oficial:", error);
-      setMensajePresOficial({
-        tipo: "error",
-        texto:
-          "No se pudo generar la presentación en este momento. Intenta de nuevo o cambia de materia.",
-      });
+      const base =
+        generadas.length === 1
+          ? `Presentación generada y descargada: ${generadas[0]}`
+          : `${generadas.length} presentaciones generadas y descargadas.`;
+      const aviso =
+        fallidas.length > 0
+          ? ` No se pudieron generar las unidades: ${fallidas.join(", ")}.`
+          : "";
+      setMensajePresOficial({ tipo: "exito", texto: base + aviso });
     } finally {
       setGenerandoPresOficial(false);
     }
@@ -611,8 +616,14 @@ export default function Home() {
         fuenteContenidos[materiaSeleccionada] as unknown;
 
       const generacion = generacionPorSemestre(semestreSeleccionado);
-      const puntuaciones = textoPuntuacionesF32("teorico-practica", generacion);
-      const criterios = criteriosEvaluacion("teorico-practica", generacion);
+      // Tipo REAL de la materia (teórica/práctica; las T-P se resuelven por
+      // horas). Para materias legacy sin programa oficial se usa "teorica" como
+      // neutro (coincide con el comportamiento previo en 2.º-4.º año).
+      const tipoMateria = esProgramaOficial(programaMateria)
+        ? tipoMateriaDesdePrograma(programaMateria)
+        : "teorica";
+      const puntuaciones = textoPuntuacionesF32(tipoMateria, generacion);
+      const criterios = criteriosEvaluacion(tipoMateria, generacion);
       const porcentaje = (incluye: string) =>
         String(
           criterios.find((c) => c.nombre.includes(incluye))?.porcentaje ?? "",
@@ -800,6 +811,16 @@ export default function Home() {
         .sort((a, b) => a.numero - b.numero)
         .map((s) => ({ numero: s.numero, tema: s.tema }));
 
+      // Ponderación oficial según tipo REAL de la materia (T-P por horas) y la
+      // generación (derivada del semestre). Se inyecta como texto en el F-51.
+      const generacionAvance = generacionPorSemestre(semestreSeleccionado);
+      const ponderacionAvance = esProgramaOficial(programaMateria)
+        ? textoPonderacionEvaluacion(
+            tipoMateriaDesdePrograma(programaMateria),
+            generacionAvance,
+          )
+        : "";
+
       const response = await fetch("/templates/Avance-Programatico-F51.docx");
       if (!response.ok) {
         throw new Error(
@@ -822,6 +843,7 @@ export default function Home() {
           objetivosCompetencias: esProgramaOficial(programaMateria)
             ? programaMateria.objetivoGeneral
             : "",
+          ponderacion: ponderacionAvance,
         }),
       );
 
@@ -899,6 +921,15 @@ export default function Home() {
         ? { semanas: semanasDesdePrograma(programa) }
         : (programa as unknown as DatosMateria | undefined);
 
+      // Ponderación oficial (tipo REAL por horas + generación del semestre). Se
+      // inyecta como texto; la plantilla de examen no tiene celda de % propia.
+      const ponderacionExamen = esProgramaOficial(programa)
+        ? textoPonderacionEvaluacion(
+            tipoMateriaDesdePrograma(programa),
+            generacionPorSemestre(semestreSeleccionado),
+          )
+        : "";
+
       doc.render(
         construirDatosExamen({
           tipo,
@@ -910,6 +941,7 @@ export default function Home() {
           fecha: fechaInicio,
           periodoEscolar: periodo,
           rango,
+          ponderacion: ponderacionExamen,
         }),
       );
 
@@ -1594,42 +1626,36 @@ export default function Home() {
                       primera vez puede tardar hasta ~1 minuto.
                     </p>
 
-                    {/* Paso 4 — Selector de unidad (unidades oficiales de la materia). */}
+                    {/* Unidades a generar — casillas (multi-selección). Cada unidad
+                        marcada se genera COMPLETA y como un PPTX independiente. */}
                     <label className="mt-4 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      Unidad
+                      Unidades a generar
                     </label>
-                    <select
-                      value={unidadSeleccionada}
-                      onChange={(e) =>
-                        setUnidadSeleccionada(Number(e.target.value))
-                      }
-                      className={`${inputClass} mt-2`}
-                    >
-                      {unidadesMateria.map((u) => (
-                        <option key={u.numero} value={u.numero}>
-                          {`Unidad ${u.numero} — ${u.tema}`}
-                        </option>
-                      ))}
-                    </select>
-
-                    {/* Paso 5 — Selector de tema (subtemas oficiales de la unidad). */}
-                    <label className="mt-4 block text-xs font-bold uppercase tracking-[0.16em] text-slate-500">
-                      Tema
-                    </label>
-                    <select
-                      value={temaSeleccionado}
-                      onChange={(e) => setTemaSeleccionado(e.target.value)}
-                      className={`${inputClass} mt-2`}
-                    >
-                      <option value={TEMA_UNIDAD_COMPLETA}>
-                        Unidad completa (todos los temas)
-                      </option>
-                      {temasUnidad.map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="mt-2 space-y-2">
+                      {unidadesMateria.map((u) => {
+                        const marcada = unidadesSeleccionadas.includes(u.numero);
+                        return (
+                          <label
+                            key={u.numero}
+                            className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${
+                              marcada
+                                ? "border-[#c8a45d] bg-[#fffaf0]"
+                                : "border-slate-200 bg-white hover:border-[#c8a45d]"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={marcada}
+                              onChange={() => alternarUnidad(u.numero)}
+                              className="mt-0.5 h-4 w-4 accent-[#c8a45d]"
+                            />
+                            <span className="font-semibold text-[#071a33]">
+                              {`Unidad ${u.numero} — ${u.tema}`}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
 
                     {/* Paso 6 — Generar: visible para toda materia con programa oficial. */}
                     {materiaTienePrograma ? (
@@ -1637,17 +1663,28 @@ export default function Home() {
                         <button
                           type="button"
                           onClick={generarPresentacionUnidad}
-                          disabled={generandoPresOficial}
+                          disabled={
+                            generandoPresOficial ||
+                            unidadesSeleccionadas.length === 0
+                          }
                           className="mt-4 w-full rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {generandoPresOficial
                             ? "Generando presentación..."
-                            : "Generar Presentación"}
+                            : unidadesSeleccionadas.length > 1
+                              ? `Generar ${unidadesSeleccionadas.length} presentaciones`
+                              : "Generar Presentación"}
                         </button>
+                        {unidadesSeleccionadas.length === 0 &&
+                          !generandoPresOficial && (
+                            <p className="mt-2 text-xs font-semibold text-slate-500">
+                              Selecciona al menos una unidad.
+                            </p>
+                          )}
                         {generandoPresOficial && (
                           <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                            Generando con IA… puede tardar hasta ~1 minuto. No
-                            cierres la página.
+                            Generando con IA… cada unidad puede tardar ~1 minuto.
+                            No cierres la página.
                           </div>
                         )}
                         {mensajePresOficial && (

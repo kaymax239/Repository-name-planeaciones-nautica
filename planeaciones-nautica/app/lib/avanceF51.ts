@@ -23,6 +23,9 @@ export type MetaAvanceF51 = {
   docente: string;
   grupo: string;
   objetivosCompetencias: string;
+  /** Texto de ponderación oficial (DEN) a mostrar en la columna de instrumentos.
+   *  Opcional: si no se pasa (p. ej. Inglés), se deja el texto neutro de siempre. */
+  ponderacion?: string;
 };
 
 // Textos institucionales por defecto (mismos que ya usaba el avance). Aplican por
@@ -108,6 +111,12 @@ export function construirDatosAvanceF51(
     sel.map((s) => `Semana ${s.numero}: ${primeraLinea(s.tema)}`).join("\n") ||
     "Sin semanas seleccionadas.";
 
+  // Columna de instrumentos: instrumentos de siempre + la ponderación oficial si
+  // el llamador la pasó (PN/MN). Sin ponderación (Inglés) queda el texto neutro.
+  const instrumentos = meta.ponderacion
+    ? `${INSTRUMENTOS} · ${meta.ponderacion}`
+    : INSTRUMENTOS;
+
   const hueco = (i: number) => {
     const s = sel[i];
     return {
@@ -116,7 +125,7 @@ export function construirDatosAvanceF51(
       estrategia: s ? ESTRATEGIAS : "",
       evidencia: s ? EVIDENCIAS : "",
       recursos: s ? RECURSOS : "",
-      instrumento: s ? INSTRUMENTOS : "",
+      instrumento: s ? instrumentos : "",
     };
   };
   const h = [hueco(0), hueco(1), hueco(2), hueco(3)];

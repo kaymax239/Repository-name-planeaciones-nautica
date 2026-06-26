@@ -161,12 +161,25 @@ export function SeccionIngles({ onVolver }: Props) {
     objetivoGeneral: string;
   }>({ asignatura: "", objetivoGeneral: "" });
 
+  // Flujo de Presentación de Inglés (en pasos): "no" oculto; "temas" muestra las
+  // casillas de temas/semanas del nivel. Cada tema marcado se genera como un PPTX
+  // independiente (enfocado en ese tema vía /api/presentacion-ingles).
+  const [presentacionPaso, setPresentacionPaso] = useState<"no" | "temas">("no");
+  const [cargandoPresPool, setCargandoPresPool] = useState(false);
+  const [poolTemasPres, setPoolTemasPres] = useState<
+    { numero: number; tema: string }[]
+  >([]);
+  const [temasPres, setTemasPres] = useState<number[]>([]);
+
   const seleccionarNivel = (n: string) => {
     setNivel(n);
     setMensaje(null);
     setAvancePaso("no");
     setSemanasAvance([]);
     setPoolSemanas([]);
+    setPresentacionPaso("no");
+    setTemasPres([]);
+    setPoolTemasPres([]);
   };
 
   const regresarANiveles = () => {
@@ -175,11 +188,27 @@ export function SeccionIngles({ onVolver }: Props) {
     setAvancePaso("no");
     setSemanasAvance([]);
     setPoolSemanas([]);
+    setPresentacionPaso("no");
+    setTemasPres([]);
+    setPoolTemasPres([]);
   };
 
   const cerrarAvance = () => {
     setAvancePaso("no");
     setSemanasAvance([]);
+  };
+
+  const cerrarPresentacion = () => {
+    setPresentacionPaso("no");
+    setTemasPres([]);
+  };
+
+  const alternarTemaPres = (numero: number) => {
+    setTemasPres((prev) =>
+      prev.includes(numero)
+        ? prev.filter((n) => n !== numero)
+        : [...prev, numero],
+    );
   };
 
   const alternarSemanaAvance = (numero: number) => {
@@ -367,37 +396,105 @@ export function SeccionIngles({ onVolver }: Props) {
     }
   };
 
-  // Genera una PRESENTACIÓN de Inglés con Gemini (espejeando las históricas del
-  // nivel) y descarga el PPTX al momento. No se guarda nada en la página.
-  const generarPresentacion = async () => {
+  // Abre el flujo de presentación: obtiene los temas/semanas del nivel (secuencia
+  // espejada de las históricas, igual que el Avance) para ofrecerlos como
+  // casillas. Sin JSON ni errores técnicos a la vista.
+  const abrirPresentacion = async () => {
     if (!nivel) return;
-    setGenerandoPres(true);
     setMensaje(null);
+    setCargandoPresPool(true);
     try {
-      const res = await fetch("/api/presentacion-ingles", {
+      const res = await fetch("/api/planeacion-ingles", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nivel }),
+        body: JSON.stringify({
+          nivel,
+          grupo,
+          semanas,
+          horasPorSemana,
+          observaciones,
+        }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.presentacion) {
+      if (!res.ok || !data?.planeacion) {
         setMensaje({ tipo: "error", texto: mensajeAmigable(data?.error) });
         return;
       }
-      const archivo = await generarPresentacionOficialV2(
-        data.presentacion as PresentacionV2,
-        {
-          grupo,
-          periodo: "Julio-Diciembre 2026",
-          escuela: "Escuela Náutica Mercante de Tampico",
-        },
-      );
-      setMensaje({
-        tipo: "exito",
-        texto: `Presentación generada y descargada: ${archivo}`,
-      });
+      const secuencia = Array.isArray(data.planeacion.secuenciaSemanal)
+        ? (data.planeacion.secuenciaSemanal as Record<string, unknown>[])
+        : [];
+      const pool = secuencia.map((s, i) => ({
+        numero: Number(s?.semana) || i + 1,
+        tema:
+          typeof s?.contenido === "string" && s.contenido.trim()
+            ? s.contenido.trim()
+            : `Semana ${Number(s?.semana) || i + 1}`,
+      }));
+      if (pool.length === 0) {
+        setMensaje({ tipo: "error", texto: MENSAJE_BIBLIOTECA_NO_DISPONIBLE });
+        return;
+      }
+      setPoolTemasPres(pool);
+      setTemasPres([]);
+      setPresentacionPaso("temas");
     } catch {
       setMensaje({ tipo: "error", texto: MENSAJE_ERROR_GENERICO });
+    } finally {
+      setCargandoPresPool(false);
+    }
+  };
+
+  // Genera una PRESENTACIÓN (PPTX) por cada tema marcado, enfocada en ese tema
+  // vía /api/presentacion-ingles. Un archivo por tema. No genera nada si no hay
+  // casillas marcadas.
+  const generarPresentacionSeleccion = async () => {
+    if (!nivel || temasPres.length === 0) return;
+    setGenerandoPres(true);
+    setMensaje(null);
+    const seleccionados = poolTemasPres
+      .filter((t) => temasPres.includes(t.numero))
+      .sort((a, b) => a.numero - b.numero);
+    const generadas: string[] = [];
+    let huboError = false;
+    try {
+      for (const t of seleccionados) {
+        try {
+          const res = await fetch("/api/presentacion-ingles", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ nivel, tema: t.tema }),
+          });
+          const data = await res.json().catch(() => null);
+          if (!res.ok || !data?.presentacion) {
+            huboError = true;
+            continue;
+          }
+          const archivo = await generarPresentacionOficialV2(
+            data.presentacion as PresentacionV2,
+            {
+              grupo,
+              periodo: "Julio-Diciembre 2026",
+              escuela: "Escuela Náutica Mercante de Tampico",
+            },
+          );
+          generadas.push(archivo);
+        } catch {
+          huboError = true;
+        }
+      }
+      if (generadas.length === 0) {
+        setMensaje({ tipo: "error", texto: MENSAJE_ERROR_GENERICO });
+        return;
+      }
+      cerrarPresentacion();
+      const base =
+        generadas.length === 1
+          ? `Presentación generada y descargada: ${generadas[0]}`
+          : `${generadas.length} presentaciones generadas y descargadas.`;
+      setMensaje({
+        tipo: "exito",
+        texto: huboError ? `${base} Algunas no se pudieron generar.` : base,
+      });
     } finally {
       setGenerandoPres(false);
     }
@@ -625,6 +722,112 @@ export function SeccionIngles({ onVolver }: Props) {
     );
   }
 
+  // ── Pantalla de Presentación (selección de temas con casillas) ─────────────
+  if (presentacionPaso !== "no") {
+    return (
+      <div className="px-6 py-8 sm:px-10">
+        <div className="mb-6 flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.24em] text-[#c8a45d]">
+              Presentación (PowerPoint) · Inglés
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-[#071a33]">
+              Nivel {nivel}
+            </h2>
+            <p className="mt-1 text-sm text-slate-600">
+              Marca los temas a generar. Cada tema se descarga como una
+              presentación independiente.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={cerrarPresentacion}
+            className="shrink-0 rounded-2xl border border-[#071a33] px-4 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] transition hover:bg-[#071a33] hover:text-white"
+          >
+            Cancelar
+          </button>
+        </div>
+
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm font-bold text-[#071a33]">Temas seleccionados</p>
+          <span className="rounded-full bg-[#071a33] px-3 py-1 text-xs font-black text-white">
+            {temasPres.length}
+          </span>
+        </div>
+        <div className="space-y-2">
+          {poolTemasPres.map((t) => {
+            const marcado = temasPres.includes(t.numero);
+            return (
+              <label
+                key={t.numero}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition ${
+                  marcado
+                    ? "border-[#c8a45d] bg-[#fffaf0]"
+                    : "border-slate-200 bg-white hover:border-[#c8a45d]"
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={marcado}
+                  onChange={() => alternarTemaPres(t.numero)}
+                  className="mt-0.5 h-4 w-4 accent-[#c8a45d]"
+                />
+                <span>
+                  <span className="block font-black text-[#071a33]">
+                    Semana {t.numero}
+                  </span>
+                  <span className="mt-0.5 block text-xs text-slate-600">
+                    {t.tema}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={generarPresentacionSeleccion}
+            disabled={generandoPres || temasPres.length === 0}
+            className="rounded-2xl bg-[#c8a45d] px-6 py-3 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {generandoPres
+              ? "Generando presentación…"
+              : temasPres.length > 1
+                ? `Generar ${temasPres.length} presentaciones`
+                : "Generar presentación"}
+          </button>
+          {temasPres.length === 0 && !generandoPres && (
+            <p className="text-xs font-semibold text-slate-500">
+              Selecciona al menos un tema.
+            </p>
+          )}
+        </div>
+
+        {generandoPres && (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+            Generando con IA… cada tema puede tardar ~1 minuto. No cierres la
+            página.
+          </div>
+        )}
+
+        {mensaje && (
+          <div
+            role="alert"
+            className={`mt-6 rounded-2xl border px-5 py-4 text-sm font-semibold ${
+              mensaje.tipo === "exito"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                : "border-red-200 bg-red-50 text-red-800"
+            }`}
+          >
+            {mensaje.texto}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   // ── Pantalla 2: generación de la planeación del nivel elegido ──────────────
   return (
     <div className="px-6 py-8 sm:px-10">
@@ -749,7 +952,9 @@ export function SeccionIngles({ onVolver }: Props) {
             <button
               type="button"
               onClick={generarWord}
-              disabled={generando || cargandoAvance || generandoPres}
+              disabled={
+                generando || cargandoAvance || generandoPres || cargandoPresPool
+              }
               className="rounded-2xl bg-[#c8a45d] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-lg shadow-[#c8a45d]/30 transition hover:bg-[#d7bd7a] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {generando
@@ -759,7 +964,9 @@ export function SeccionIngles({ onVolver }: Props) {
             <button
               type="button"
               onClick={abrirAvance}
-              disabled={generando || cargandoAvance || generandoPres}
+              disabled={
+                generando || cargandoAvance || generandoPres || cargandoPresPool
+              }
               className="rounded-2xl bg-[#071a33] px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-white shadow-lg shadow-slate-300/70 transition hover:bg-[#0b2a52] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {cargandoAvance
@@ -770,22 +977,26 @@ export function SeccionIngles({ onVolver }: Props) {
 
           <button
             type="button"
-            onClick={generarPresentacion}
-            disabled={generando || cargandoAvance || generandoPres}
+            onClick={abrirPresentacion}
+            disabled={
+              generando || cargandoAvance || generandoPres || cargandoPresPool
+            }
             className="rounded-2xl border-2 border-[#c8a45d] bg-white px-6 py-4 text-sm font-black uppercase tracking-[0.16em] text-[#071a33] shadow-sm transition hover:bg-[#fffaf0] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {generandoPres
-              ? "Generando presentación…"
+            {cargandoPresPool
+              ? "Preparando presentación…"
               : "Generar Presentación (PowerPoint)"}
           </button>
 
-          {(generando || cargandoAvance || generandoPres) && (
+          {(generando || cargandoAvance || generandoPres || cargandoPresPool) && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
               {generando
                 ? "Generando la planeación"
-                : generandoPres
-                  ? "Generando la presentación con IA"
-                  : "Preparando el avance"}
+                : cargandoPresPool
+                  ? "Preparando la presentación"
+                  : generandoPres
+                    ? "Generando la presentación con IA"
+                    : "Preparando el avance"}
               … puede tardar hasta ~1 minuto. No cierres la página.
             </div>
           )}

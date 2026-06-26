@@ -21,7 +21,11 @@ import {
   contenidosMateriasMN,
 } from "../../data/contenidosMaterias";
 import { esProgramaOficial, type ProgramaOficial } from "../../data/tipos";
-import { textoPuntuacionesF32, generacionPorSemestre } from "../../data/evaluacion";
+import {
+  textoPuntuacionesF32,
+  generacionPorSemestre,
+  tipoMateriaDesdePrograma,
+} from "../../data/evaluacion";
 import {
   seleccionarHistoricas,
   rutaCorpus,
@@ -200,7 +204,7 @@ export async function POST(request: Request) {
   ).filter((r): r is ReferenciaHistorica => r !== null);
 
   const lineamientosDEN = textoPuntuacionesF32(
-    "teorico-practica",
+    tipoMateriaDesdePrograma(programa),
     generacionPorSemestre(cuerpo.semestreDisplay || ""),
   );
 

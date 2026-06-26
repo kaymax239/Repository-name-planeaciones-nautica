@@ -3,6 +3,8 @@
 // extraordinarias y de regularización), ratificado por DEN/773/2025 y DEN/065/2026.
 // Vigente para el ciclo Agosto-Diciembre 2026 (semestres I, III, V y VII).
 
+import type { ProgramaOficial } from "./tipos";
+
 export type TipoMateria = "teorica" | "practica" | "teorico-practica";
 
 // La generación define tanto los porcentajes como la escala aprobatoria.
@@ -16,11 +18,12 @@ const CONOCIMIENTO = "Conocimiento";
 const ACTIVIDADES = "Prácticas y Actividades de Aprendizaje";
 const PARTICIPACION = "Participaciones y uso de las TIC's";
 
-// Art. 25 — generación nuevo ingreso (1.er Año): teóricas y prácticas iguales.
+// Generación nuevo ingreso (1.er Año, Gen 2025-2029), mínima 7.0. El reparto SÍ
+// depende del tipo de materia (DEN/526/2025 + DEN/065/2026).
 const CRITERIOS_NUEVO_INGRESO: Record<TipoMateria, Criterio[]> = {
   teorica: [
-    { nombre: CONOCIMIENTO, porcentaje: 20 },
-    { nombre: ACTIVIDADES, porcentaje: 70 },
+    { nombre: CONOCIMIENTO, porcentaje: 70 },
+    { nombre: ACTIVIDADES, porcentaje: 20 },
     { nombre: PARTICIPACION, porcentaje: 10 },
   ],
   practica: [
@@ -28,10 +31,12 @@ const CRITERIOS_NUEVO_INGRESO: Record<TipoMateria, Criterio[]> = {
     { nombre: ACTIVIDADES, porcentaje: 70 },
     { nombre: PARTICIPACION, porcentaje: 10 },
   ],
-  // No diferenciada en este esquema; se usa el mismo reparto.
+  // El oficio solo define teóricas y prácticas. Las "teórico-prácticas" se
+  // resuelven a uno de esos dos esquemas por horas (ver tipoMateriaDesdePrograma),
+  // así que esta fila es solo un respaldo neutro = esquema teórico.
   "teorico-practica": [
-    { nombre: CONOCIMIENTO, porcentaje: 20 },
-    { nombre: ACTIVIDADES, porcentaje: 70 },
+    { nombre: CONOCIMIENTO, porcentaje: 70 },
+    { nombre: ACTIVIDADES, porcentaje: 20 },
     { nombre: PARTICIPACION, porcentaje: 10 },
   ],
 };
@@ -104,6 +109,48 @@ export const textoPuntuacionesF32 = (
     `Instrumentos: lista de cotejo y rúbrica de desempeño. ` +
     `Escala: ${escala.competente} Competente (aprobatorio); ` +
     `${escala.noCompetente} Aún no competente. ` +
+    `Mínima aprobatoria: ${escala.minimaAprobatoria.toFixed(1)}.`
+  );
+};
+
+/**
+ * Resuelve el TipoMateria OFICIAL (solo "teorica" o "practica", como el oficio)
+ * a partir del programa de la materia:
+ *  - Si `tipo` es claramente "Teórica" o "Práctica", lo usa.
+ *  - Si es "Teórico-práctica" (o no se reconoce), DECIDE POR HORAS: más horas
+ *    prácticas que teóricas => práctica; en empate o más teóricas => teórica.
+ */
+export const tipoMateriaDesdePrograma = (
+  programa: ProgramaOficial,
+): "teorica" | "practica" => {
+  const t = (programa?.tipo ?? "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+  const teo = programa?.horas?.teoricas ?? 0;
+  const pra = programa?.horas?.practicas ?? 0;
+  const porHoras = (): "teorica" | "practica" =>
+    pra > teo ? "practica" : "teorica"; // empate => teorica
+
+  // "Teórico-práctica" (contiene ambas palabras): se decide por horas.
+  if (/teor/.test(t) && /pract/.test(t)) return porHoras();
+  if (/pract/.test(t)) return "practica";
+  if (/teor/.test(t)) return "teorica";
+  return porHoras(); // tipo desconocido => por horas
+};
+
+/** Línea compacta de ponderación para meter como TEXTO en F-51 y exámenes
+ *  (sin tocar las plantillas .docx). */
+export const textoPonderacionEvaluacion = (
+  tipo: TipoMateria,
+  generacion: Generacion,
+): string => {
+  const criterios = criteriosEvaluacion(tipo, generacion)
+    .map((c) => `${c.nombre} ${c.porcentaje}%`)
+    .join(" · ");
+  const escala = ESCALA[generacion];
+  return (
+    `Ponderación (DEN/526/2025): ${criterios}. ` +
     `Mínima aprobatoria: ${escala.minimaAprobatoria.toFixed(1)}.`
   );
 };
